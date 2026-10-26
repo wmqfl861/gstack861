@@ -6,6 +6,7 @@ import { object, textDigest } from './json.mjs';
 const GENERATOR = 'gstack861';
 const NAME = /^[a-z0-9][a-z0-9-]*$/;
 const SHA256 = /^[a-f0-9]{64}$/;
+const COMMIT = /^[a-f0-9]{40}$/;
 const REGISTRY = '.gstack861-registry.json';
 const BACKUPS = '.gstack861-backups';
 const fail = code => { throw new Error(code); };
@@ -64,11 +65,13 @@ function stagingPlan(staging) {
     const manifest = readJson(path.join(dir, 'manifest.json'));
     if (!object(manifest) || manifest.schemaVersion !== 1 || manifest.generator !== GENERATOR
       || typeof manifest.sha256 !== 'string' || !SHA256.test(manifest.sha256)
+      || typeof manifest.commit !== 'string' || !COMMIT.test(manifest.commit)
       || manifest.name !== entry.name || !NAME.test(entry.name)) fail('STAGING_INVALID');
     const skillFile = path.join(dir, 'SKILL.md');
     const statSkill = regularFile(skillFile);
     if (!statSkill) fail('STAGING_INVALID');
-    if (textDigest(fs.readFileSync(skillFile, 'utf8')) !== manifest.sha256) fail('TAMPERED_STAGING');
+    // Digest the raw Buffer: the staged copy is byte-exact, so verification must be too.
+    if (textDigest(fs.readFileSync(skillFile)) !== manifest.sha256) fail('TAMPERED_STAGING');
     plan.push({ name: entry.name, dir, sha256: manifest.sha256 });
   }
   return plan;

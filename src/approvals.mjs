@@ -14,7 +14,12 @@ export function subjectDigest(subject) {
   return digest(subject);
 }
 
-/** Transitions are trusted-controller API only; read-only get/list also serve the operator CLI. */
+/**
+ * Transitions are trusted-controller only; the human operator CLI is one such controller
+ * (its state directory must stay outside the model-writable workspace, and model tools must
+ * not be able to invoke that CLI under the guard). Read-only get/list also serve the operator
+ * CLI. Neither channel is exposed to model tools.
+ */
 export class ApprovalStore {
   constructor(directory, { clock = Date.now } = {}) {
     if (!path.isAbsolute(directory)) fail('ABSOLUTE_STATE_PATH_REQUIRED');

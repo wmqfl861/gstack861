@@ -8,9 +8,10 @@ const HOSTS = ['zcode', 'dsh'];
 const GENERATOR = 'gstack861';
 const GENERATOR_VERSION = '0.2.0';
 
-// Same wrapper style as src/inventory.mjs: committed source text only, never executed.
+// Committed source bytes only, never executed. Buffer output (no encoding) keeps the
+// staged copy byte-exact: a UTF-8 round-trip would be lossy for non-UTF-8 bytes.
 function git(root, ...args) {
-  return execFileSync('git', ['-C', root, ...args], { encoding: 'utf8', maxBuffer: 16 * 1024 * 1024, timeout: 15000 });
+  return execFileSync('git', ['-C', root, ...args], { maxBuffer: 16 * 1024 * 1024, timeout: 15000 });
 }
 
 function contains(parent, child) {
@@ -33,20 +34,22 @@ export function generateSkills({ upstream, commit, staging, host, now = () => ne
   const skills = [];
   let needsReview = 0;
   for (const skill of inv.skills) {
-    const text = git(upstream, 'show', `HEAD:${skill.source}`);
+    const bytes = git(upstream, 'show', `HEAD:${skill.source}`);
+    // Metadata only: a decoded copy feeds placeholder detection; staged bytes and digest stay raw.
+    const text = bytes.toString('utf8');
     const placeholders = [...new Set([...text.matchAll(/\{\{([^}]+)\}\}/g)].map(m => m[1]))].sort();
     const dir = path.join(staging, skill.name);
     fs.mkdirSync(dir, { recursive: true, mode: 0o755 });
-    fs.writeFileSync(path.join(dir, 'SKILL.md'), text, { flag: 'wx', mode: 0o644 });
+    fs.writeFileSync(path.join(dir, 'SKILL.md'), bytes, { flag: 'wx', mode: 0o644 });
     const manifest = {
       schemaVersion: 1, name: skill.name, host, source: skill.source, blob: skill.blob,
-      sha256: textDigest(text), placeholders, indicators: skill.indicators,
+      commit: inv.commit, sha256: textDigest(bytes), placeholders, indicators: skill.indicators,
       needsReview: skill.indicators.length > 0, status: 'generated-not-host-verified',
       generator: GENERATOR, generatorVersion: GENERATOR_VERSION, generatedAt: now(),
     };
     fs.writeFileSync(path.join(dir, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`, { flag: 'wx', mode: 0o644 });
     if (manifest.needsReview) needsReview += 1;
-    skills.push({ name: skill.name, source: skill.source, blob: skill.blob, sha256: manifest.sha256, placeholders, needsReview: manifest.needsReview });
+    skills.push({ name: skill.name, source: skill.source, blob: skill.blob, commit: manifest.commit, sha256: manifest.sha256, placeholders, needsReview: manifest.needsReview });
   }
   return { schemaVersion: 1, host, staging, generated: skills.length, needsReview, skills };
 }

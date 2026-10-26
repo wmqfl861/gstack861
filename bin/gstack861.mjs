@@ -90,7 +90,8 @@ if (args[0] === 'hook') {
       } else throw new Error('UNKNOWN_SUBCOMMAND');
     } else {
       process.stderr.write('Usage: gstack861 doctor | inventory --upstream PATH | zcode-config --policy ABS_PATH\n'
-        + '  generate --upstream PATH --staging DIR --host zcode|dsh\n'
+        + '  generate --upstream PATH --staging DIR --host zcode|dsh [--commit 40-HEX]\n'
+        + '    (--commit is TEST-ONLY: overrides the upstream lock pin; default = upstream.lock.json)\n'
         + '  install --staging DIR --target DIR | uninstall --target DIR [--purge]\n'
         + '  approvals list --state DIR | show --state DIR --id ID\n'
         + '  approvals approve|reject --state DIR --id ID --host H --session S --run R --policy-hash HASH --action-file F\n');

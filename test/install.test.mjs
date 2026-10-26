@@ -28,7 +28,7 @@ function stage(staging, name, text, overrides = {}) {
   fs.writeFileSync(path.join(dir, 'SKILL.md'), text);
   const manifest = {
     schemaVersion: 1, name, host: 'zcode', source: `${name}/SKILL.md`, blob: 'a'.repeat(40),
-    sha256: textDigest(text), placeholders: [], indicators: [], needsReview: false,
+    commit: 'b'.repeat(40), sha256: textDigest(text), placeholders: [], indicators: [], needsReview: false,
     status: 'generated-not-host-verified', generator: 'gstack861', generatorVersion: '0.2.0',
     generatedAt: WHEN, ...overrides,
   };
@@ -181,13 +181,18 @@ test('installSkills refuses empty staging and malformed staging entries', t => {
   stage(mismatch, 'alpha', ALPHA_V1, { name: 'beta' });
   assert.throws(() => installSkills({ staging: mismatch, target: path.join(root, 't3'), now: NOW }), /STAGING_INVALID/);
 
+  const badCommit = path.join(root, 'bad-commit');
+  fs.mkdirSync(badCommit);
+  stage(badCommit, 'alpha', ALPHA_V1, { commit: 'not-a-full-commit' });
+  assert.throws(() => installSkills({ staging: badCommit, target: path.join(root, 't5'), now: NOW }), /STAGING_INVALID/);
+
   const noSkill = path.join(root, 'no-skill-md');
   fs.mkdirSync(noSkill);
   stage(noSkill, 'alpha', ALPHA_V1);
   fs.unlinkSync(path.join(noSkill, 'alpha', 'SKILL.md'));
   assert.throws(() => installSkills({ staging: noSkill, target: path.join(root, 't4'), now: NOW }), /STAGING_INVALID/);
 
-  for (const name of ['t0', 't1', 't2', 't3', 't4']) {
+  for (const name of ['t0', 't1', 't2', 't3', 't4', 't5']) {
     assert.ok(!fs.existsSync(path.join(root, name)), `${name} must not be created by a refused install`);
   }
 });

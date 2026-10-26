@@ -9,6 +9,9 @@ import { textDigest } from '../src/json.mjs';
 
 const WHEN = '2026-10-26T00:00:00.000Z';
 const NOW = () => WHEN;
+// Byte-exactness fixture: the trailing 0xff is invalid UTF-8, so a lossy UTF-8
+// round-trip through git show would replace it and fail the digest/byte checks.
+const INVESTIGATE = Buffer.concat([Buffer.from('investigate first'), Buffer.from([0xff])]);
 
 function base(t) {
   const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'gstack861-generate-')));
@@ -26,7 +29,7 @@ function repository(t) {
   const files = {
     'review/SKILL.md': 'generated copy',
     'review/SKILL.md.tmpl': 'AskUserQuestion {{TOOLS}} claude -p test',
-    'investigate/SKILL.md': 'investigate first',
+    'investigate/SKILL.md': INVESTIGATE,
     '.agents/skills/gstack-review/SKILL.md': 'foreign render',
   };
   for (const [name, text] of Object.entries(files)) {
@@ -47,12 +50,12 @@ test('generateSkills writes verbatim SKILL.md copies and exact manifests', t => 
   assert.equal(result.generated, 2);
   assert.equal(result.needsReview, 1);
   const git = (...args) => execFileSync('git', ['-C', r.root, ...args], { encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }).trim();
-  const investigate = 'investigate first', review = 'AskUserQuestion {{TOOLS}} claude -p test';
+  const investigate = INVESTIGATE, review = 'AskUserQuestion {{TOOLS}} claude -p test';
   assert.deepEqual(result.skills, [
     { name: 'investigate', source: 'investigate/SKILL.md', blob: git('rev-parse', 'HEAD:investigate/SKILL.md'),
-      sha256: textDigest(investigate), placeholders: [], needsReview: false },
+      commit: r.commit, sha256: textDigest(investigate), placeholders: [], needsReview: false },
     { name: 'review', source: 'review/SKILL.md.tmpl', blob: git('rev-parse', 'HEAD:review/SKILL.md.tmpl'),
-      sha256: textDigest(review), placeholders: ['TOOLS'], needsReview: true },
+      commit: r.commit, sha256: textDigest(review), placeholders: ['TOOLS'], needsReview: true },
   ]);
   // staged bytes must equal `git show HEAD:<source>` byte for byte
   const show = file => execFileSync('git', ['-C', r.root, 'show', `HEAD:${file}`], { stdio: ['pipe', 'pipe', 'pipe'] });
@@ -60,12 +63,12 @@ test('generateSkills writes verbatim SKILL.md copies and exact manifests', t => 
   assert.deepEqual(fs.readFileSync(path.join(staging, 'review', 'SKILL.md')), show('review/SKILL.md.tmpl'));
   assert.deepEqual(JSON.parse(fs.readFileSync(path.join(staging, 'investigate', 'manifest.json'), 'utf8')), {
     schemaVersion: 1, name: 'investigate', host: 'zcode', source: 'investigate/SKILL.md',
-    blob: result.skills[0].blob, sha256: textDigest(investigate), placeholders: [], indicators: [],
+    blob: result.skills[0].blob, commit: r.commit, sha256: textDigest(investigate), placeholders: [], indicators: [],
     needsReview: false, status: 'generated-not-host-verified', generator: 'gstack861', generatorVersion: '0.2.0', generatedAt: WHEN,
   });
   assert.deepEqual(JSON.parse(fs.readFileSync(path.join(staging, 'review', 'manifest.json'), 'utf8')), {
     schemaVersion: 1, name: 'review', host: 'zcode', source: 'review/SKILL.md.tmpl',
-    blob: result.skills[1].blob, sha256: textDigest(review), placeholders: ['TOOLS'],
+    blob: result.skills[1].blob, commit: r.commit, sha256: textDigest(review), placeholders: ['TOOLS'],
     indicators: ['claude-reference', 'host-interaction', 'template-resolvers'], needsReview: true,
     status: 'generated-not-host-verified', generator: 'gstack861', generatorVersion: '0.2.0', generatedAt: WHEN,
   });
