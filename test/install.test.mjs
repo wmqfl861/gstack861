@@ -3,13 +3,17 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 import { installSkills, uninstallSkills } from '../src/install.mjs';
 import { textDigest } from '../src/json.mjs';
 
+const execute = promisify(execFile);
 const WHEN = '2026-10-26T00:00:00.000Z';
 const NOW = () => WHEN;
 const REGISTRY = '.gstack861-registry.json';
 const BACKUPS = '.gstack861-backups';
+const LOCK = '.gstack861-install.lock';
 const ALPHA_V1 = 'alpha skill body v1';
 const ALPHA_V2 = 'alpha skill body v2';
 const BETA_V1 = 'beta skill body v1';
@@ -281,4 +285,206 @@ test('uninstallSkills returns empty results without a registry', t => {
   assert.deepEqual(uninstallSkills({ target, now: NOW }), { uninstalled: [], backupsRemoved: 0 });
   assert.equal(fs.readFileSync(path.join(target, 'stray', 'SKILL.md'), 'utf8'), 'user content');
   assert.ok(!fs.existsSync(registryFile(target)), 'uninstall must not invent a registry');
+});
+
+// --- Codex-audit regression hardening -----------------------------------------
+
+test('uninstallSkills refuses a user-modified SKILL.md and deletes nothing anywhere', t => {
+  const root = base(t), staging = path.join(root, 'staging'), target = path.join(root, 'target');
+  fs.mkdirSync(staging);
+  stage(staging, 'alpha', ALPHA_V1);
+  stage(staging, 'beta', BETA_V1);
+  installSkills({ staging, target, now: NOW });
+  const registryBefore = fs.readFileSync(registryFile(target), 'utf8');
+  fs.writeFileSync(path.join(target, 'alpha', 'SKILL.md'), `${ALPHA_V1}\nuser note`);
+  assert.throws(() => uninstallSkills({ target, now: NOW }), /USER_FILE_REFUSED/);
+  assert.equal(fs.readFileSync(path.join(target, 'alpha', 'SKILL.md'), 'utf8'), `${ALPHA_V1}\nuser note`, 'user-modified file must survive');
+  assert.equal(fs.readFileSync(path.join(target, 'beta', 'SKILL.md'), 'utf8'), BETA_V1, 'two-phase: other skills survive too');
+  assert.equal(fs.readFileSync(registryFile(target), 'utf8'), registryBefore, 'registry must be left untouched');
+});
+
+test('uninstallSkills refuses an extra user file inside a skill directory', t => {
+  const root = base(t), staging = path.join(root, 'staging'), target = path.join(root, 'target');
+  fs.mkdirSync(staging);
+  stage(staging, 'alpha', ALPHA_V1);
+  installSkills({ staging, target, now: NOW });
+  fs.writeFileSync(path.join(target, 'alpha', 'notes.txt'), 'user data');
+  assert.throws(() => uninstallSkills({ target, now: NOW }), /USER_FILE_REFUSED/);
+  assert.equal(fs.readFileSync(path.join(target, 'alpha', 'notes.txt'), 'utf8'), 'user data');
+  assert.equal(fs.readFileSync(path.join(target, 'alpha', 'SKILL.md'), 'utf8'), ALPHA_V1);
+  assert.ok(fs.existsSync(path.join(target, 'alpha', 'manifest.json')));
+});
+
+test('uninstallSkills refuses a forged registry even with a bare generator marker manifest', t => {
+  const root = base(t), staging = path.join(root, 'staging'), target = path.join(root, 'target');
+  fs.mkdirSync(staging);
+  stage(staging, 'alpha', ALPHA_V1);
+  installSkills({ staging, target, now: NOW });
+  // Foreign directory whose manifest merely claims our generator; the forged registry
+  // records a sha256 that disagrees with the directory's own manifest and bytes.
+  fs.mkdirSync(path.join(target, 'evil'));
+  fs.writeFileSync(path.join(target, 'evil', 'SKILL.md'), 'foreign body');
+  const evilManifest = `${JSON.stringify({
+    schemaVersion: 1, generator: 'gstack861', sha256: textDigest('foreign body'),
+  }, null, 2)}\n`;
+  fs.writeFileSync(path.join(target, 'evil', 'manifest.json'), evilManifest);
+  const forged = `${JSON.stringify({
+    schemaVersion: 1, updatedAt: WHEN,
+    skills: [{ name: 'alpha', sha256: textDigest(ALPHA_V1) }, { name: 'evil', sha256: 'c'.repeat(64) }],
+  }, null, 2)}\n`;
+  fs.writeFileSync(registryFile(target), forged);
+  assert.throws(() => uninstallSkills({ target, now: NOW }), /USER_FILE_REFUSED/);
+  assert.equal(fs.readFileSync(path.join(target, 'evil', 'SKILL.md'), 'utf8'), 'foreign body', 'foreign directory must survive verbatim');
+  assert.equal(fs.readFileSync(path.join(target, 'evil', 'manifest.json'), 'utf8'), evilManifest);
+  assert.equal(fs.readFileSync(path.join(target, 'alpha', 'SKILL.md'), 'utf8'), ALPHA_V1, 'own skill must also survive the abort');
+  assert.equal(fs.readFileSync(registryFile(target), 'utf8'), forged);
+});
+
+if (process.platform === 'win32') {
+  test('installSkills refuses a junction at the backups path and writes nothing outside the target', t => {
+    const root = base(t), target = path.join(root, 'target');
+    const v1 = path.join(root, 'v1'), v2 = path.join(root, 'v2');
+    fs.mkdirSync(v1); fs.mkdirSync(v2);
+    stage(v1, 'alpha', ALPHA_V1);
+    stage(v2, 'alpha', ALPHA_V2);
+    installSkills({ staging: v1, target, now: NOW });
+    const outside = path.join(root, 'outside');
+    fs.mkdirSync(outside);
+    fs.symlinkSync(outside, path.join(target, BACKUPS), 'junction');
+    const registryBefore = fs.readFileSync(registryFile(target), 'utf8');
+    assert.throws(() => installSkills({ staging: v2, target, now: NOW }), /USER_FILE_REFUSED/);
+    assert.deepEqual(fs.readdirSync(outside), [], 'nothing may be written outside the target through the junction');
+    assert.equal(fs.readFileSync(path.join(target, 'alpha', 'SKILL.md'), 'utf8'), ALPHA_V1, 'drift install must not proceed');
+    assert.equal(fs.readFileSync(registryFile(target), 'utf8'), registryBefore);
+    assert.ok(!fs.existsSync(path.join(target, LOCK)), 'the lock must be released on refusal');
+  });
+}
+
+if (process.platform !== 'win32') {
+  test('installSkills refuses a symlink at the backups path and writes nothing outside the target', t => {
+    const root = base(t), target = path.join(root, 'target');
+    const v1 = path.join(root, 'v1'), v2 = path.join(root, 'v2');
+    fs.mkdirSync(v1); fs.mkdirSync(v2);
+    stage(v1, 'alpha', ALPHA_V1);
+    stage(v2, 'alpha', ALPHA_V2);
+    installSkills({ staging: v1, target, now: NOW });
+    const outside = path.join(root, 'outside');
+    fs.mkdirSync(outside);
+    fs.symlinkSync(outside, path.join(target, BACKUPS));
+    const registryBefore = fs.readFileSync(registryFile(target), 'utf8');
+    assert.throws(() => installSkills({ staging: v2, target, now: NOW }), /USER_FILE_REFUSED/);
+    assert.deepEqual(fs.readdirSync(outside), [], 'nothing may be written outside the target through the symlink');
+    assert.equal(fs.readFileSync(path.join(target, 'alpha', 'SKILL.md'), 'utf8'), ALPHA_V1);
+    assert.equal(fs.readFileSync(registryFile(target), 'utf8'), registryBefore);
+    assert.ok(!fs.existsSync(path.join(target, LOCK)), 'the lock must be released on refusal');
+  });
+}
+
+test('installSkills refuses a directory at the registry path with zero writes', t => {
+  const root = base(t), staging = path.join(root, 'staging'), target = path.join(root, 'target');
+  fs.mkdirSync(staging);
+  stage(staging, 'alpha', ALPHA_V1);
+  fs.mkdirSync(target);
+  fs.mkdirSync(registryFile(target));
+  fs.writeFileSync(path.join(registryFile(target), 'keep.txt'), 'user data');
+  assert.throws(() => installSkills({ staging, target, now: NOW }), /USER_FILE_REFUSED/);
+  assert.equal(fs.readFileSync(path.join(registryFile(target), 'keep.txt'), 'utf8'), 'user data', 'the squatter directory must survive verbatim');
+  assert.ok(!fs.existsSync(path.join(target, 'alpha')), 'no skill file may be written');
+  assert.ok(!fs.existsSync(path.join(target, BACKUPS)));
+  assert.deepEqual(fs.readdirSync(target).sort(), [REGISTRY], 'the lock must be released, nothing else may appear');
+});
+
+if (process.platform !== 'win32') {
+  test('installSkills refuses a symlink at the registry path and leaves it in place', t => {
+    const root = base(t), staging = path.join(root, 'staging'), target = path.join(root, 'target');
+    fs.mkdirSync(staging);
+    stage(staging, 'alpha', ALPHA_V1);
+    fs.mkdirSync(target);
+    const victim = path.join(root, 'victim-registry.json');
+    fs.writeFileSync(victim, 'someone else data');
+    fs.symlinkSync(victim, registryFile(target));
+    assert.throws(() => installSkills({ staging, target, now: NOW }), /USER_FILE_REFUSED/);
+    assert.ok(fs.lstatSync(registryFile(target)).isSymbolicLink(), 'the symlink itself must not be replaced');
+    assert.equal(fs.readFileSync(victim, 'utf8'), 'someone else data');
+    assert.ok(!fs.existsSync(path.join(target, 'alpha')), 'no skill file may be written');
+  });
+}
+
+test('a stale install lock fails closed with INSTALL_BUSY and is never auto-cleared', t => {
+  const root = base(t), staging = path.join(root, 'staging'), target = path.join(root, 'target');
+  fs.mkdirSync(staging);
+  stage(staging, 'alpha', ALPHA_V1);
+  fs.mkdirSync(target);
+  const lock = path.join(target, LOCK);
+  fs.mkdirSync(lock);
+  assert.throws(() => installSkills({ staging, target, now: NOW }), /INSTALL_BUSY/);
+  assert.throws(() => uninstallSkills({ target, now: NOW }), /INSTALL_BUSY/, 'uninstall shares the same lock');
+  assert.ok(fs.existsSync(lock), 'a stale lock is never removed automatically');
+  assert.ok(!fs.existsSync(path.join(target, 'alpha')), 'no skill file may be written while the lock is held');
+  assert.ok(!fs.existsSync(registryFile(target)));
+  fs.rmdirSync(lock);
+  assert.deepEqual(installSkills({ staging, target, now: NOW }), { installed: ['alpha'], skipped: [], backedUp: [] });
+});
+
+test('two real processes racing one install: exactly one wins, the other gets INSTALL_BUSY', async t => {
+  const root = base(t), target = path.join(root, 'target');
+  fs.mkdirSync(target);
+  // The first child installs four large skills so its lock-held window is long and
+  // observable; the second child waits until the lock is really held, then races in
+  // with its own batch — the exact two-writer scenario that used to lose registry
+  // updates and orphan skill directories.
+  const big = 'G'.repeat(2 * 1024 * 1024);
+  const sA = path.join(root, 'staging-a'), sB = path.join(root, 'staging-b');
+  fs.mkdirSync(sA); fs.mkdirSync(sB);
+  for (const name of ['a1', 'a2', 'a3', 'a4']) stage(sA, name, `${name}\n${big}`);
+  stage(sB, 'beta', 'small competing batch');
+  const readyA = path.join(root, 'ready-a'), readyB = path.join(root, 'ready-b');
+  const moduleHref = JSON.stringify(new URL('../src/install.mjs', import.meta.url).href);
+  const child = waitForLock => `import fs from 'node:fs';\n`
+    + `import { installSkills } from ${moduleHref};\n`
+    + `const [staging, target, ready, peer, lock] = [process.argv[1], process.argv[2], process.argv[3], process.argv[4], process.argv[5]];\n`
+    + `fs.writeFileSync(ready, '');\n`
+    + `const deadline = Date.now() + 15000;\n`
+    + `while (!fs.existsSync(peer) && Date.now() < deadline) {}\n`
+    + `if (!fs.existsSync(peer)) { process.stdout.write('PEER_TIMEOUT'); process.exit(3); }\n`
+    + (waitForLock ? `while (!fs.existsSync(lock) && Date.now() < deadline) {}\n` : '')
+    + `try { installSkills({ staging, target }); process.stdout.write('OK'); }\n`
+    + `catch (error) { process.stdout.write(String(error && error.message)); process.exitCode = 2; }`;
+  const spawn = (staging, ready, peer, waitForLock) => execute(process.execPath,
+    ['--input-type=module', '-e', child(waitForLock), staging, target, ready, peer, path.join(target, LOCK)]);
+  const results = await Promise.allSettled([
+    spawn(sA, readyA, readyB, false),
+    spawn(sB, readyB, readyA, true),
+  ]);
+  const winners = results.filter(r => r.status === 'fulfilled' && r.value.stdout === 'OK');
+  const losers = results.filter(r => r.status === 'rejected');
+  assert.equal(winners.length, 1, 'exactly one process may install');
+  assert.equal(losers.length, 1);
+  assert.equal(losers[0].reason.stdout, 'INSTALL_BUSY');
+  assert.equal(losers[0].reason.code, 2);
+  const winnerIsRacer = results[0].status === 'fulfilled';
+  assert.ok(winnerIsRacer, 'the process that acquired the lock first must be the winner');
+  assert.deepEqual(readRegistry(target).skills, ['a1', 'a2', 'a3', 'a4']
+    .map(name => ({ name, sha256: textDigest(`${name}\n${big}`) })), 'registry must match the winner, no lost updates');
+  assert.ok(!fs.existsSync(path.join(target, 'beta')), 'the refused batch must leave no orphan directory');
+  assert.deepEqual(fs.readdirSync(target).sort(), [REGISTRY, 'a1', 'a2', 'a3', 'a4'], 'no orphan directories and no leftover lock');
+});
+
+test('uninstallSkills purge keeps user entries that do not match the backup naming scheme', t => {
+  const root = base(t), target = path.join(root, 'target');
+  const v1 = path.join(root, 'v1'), v2 = path.join(root, 'v2');
+  fs.mkdirSync(v1); fs.mkdirSync(v2);
+  stage(v1, 'alpha', ALPHA_V1);
+  stage(v2, 'alpha', ALPHA_V2);
+  installSkills({ staging: v1, target, now: NOW });
+  installSkills({ staging: v2, target, now: NOW });
+  const backupsRoot = path.join(target, BACKUPS);
+  fs.mkdirSync(path.join(backupsRoot, 'user-archive'));
+  fs.writeFileSync(path.join(backupsRoot, 'user-archive', 'SKILL.md'), 'user archive');
+  fs.writeFileSync(path.join(backupsRoot, 'keeper.txt'), 'user file');
+  const result = uninstallSkills({ target, purge: true, now: NOW });
+  assert.deepEqual(result, { uninstalled: ['alpha'], backupsRemoved: 1 });
+  assert.deepEqual(fs.readdirSync(backupsRoot).sort(), ['keeper.txt', 'user-archive'], 'non-matching user entries must survive purge');
+  assert.equal(fs.readFileSync(path.join(backupsRoot, 'user-archive', 'SKILL.md'), 'utf8'), 'user archive');
+  assert.deepEqual(readRegistry(target).skills, []);
 });

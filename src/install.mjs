@@ -9,6 +9,8 @@ const SHA256 = /^[a-f0-9]{64}$/;
 const COMMIT = /^[a-f0-9]{40}$/;
 const REGISTRY = '.gstack861-registry.json';
 const BACKUPS = '.gstack861-backups';
+const LOCK = '.gstack861-install.lock';
+const OUR_BACKUP = /^[a-z0-9][a-z0-9-]*-\d+$/;
 const fail = code => { throw new Error(code); };
 const byName = (a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0);
 
@@ -46,6 +48,47 @@ function loadRegistry(target) {
       || typeof entry.sha256 !== 'string' || !SHA256.test(entry.sha256)) fail('REGISTRY_INVALID');
     return { name: entry.name, sha256: entry.sha256 };
   });
+}
+
+/**
+ * Mutual exclusion for every install/uninstall mutation: one writer per target, ever.
+ * The lock directory is never auto-cleared — a leftover one means an operator must
+ * look before removing it, mirroring the ApprovalStore.transition lock semantics.
+ */
+function withInstallLock(target, body) {
+  const lock = path.join(target, LOCK);
+  try { fs.mkdirSync(lock, { mode: 0o700 }); } catch { fail('INSTALL_BUSY'); }
+  try {
+    return body();
+  } finally {
+    fs.rmdirSync(lock);
+  }
+}
+
+/**
+ * Validation-phase guard: anything other than a plain regular file at the registry
+ * path (a directory, a symlink/reparse point) refuses the whole install before a
+ * single skill byte is written — no partial installs, no silent link replacement.
+ */
+function assertRegistryPathSafe(target) {
+  const stat = fs.lstatSync(registryFile(target), { throwIfNoEntry: false });
+  if (stat && !stat.isFile()) fail('USER_FILE_REFUSED');
+}
+
+/**
+ * Backups-root safety: an existing entry must be a plain directory (never a symlink
+ * or junction), and once created/verified its real path must still resolve inside the
+ * target so no rename can be redirected outside it.
+ */
+function prepareBackups(target) {
+  const backupsRoot = path.join(target, BACKUPS);
+  const stat = fs.lstatSync(backupsRoot, { throwIfNoEntry: false });
+  if (stat && (!stat.isDirectory() || stat.isSymbolicLink())) fail('USER_FILE_REFUSED');
+  if (!stat) fs.mkdirSync(backupsRoot, { mode: 0o755 });
+  const realTarget = fs.realpathSync(target);
+  const realBackups = fs.realpathSync(backupsRoot);
+  if (realBackups !== realTarget && !realBackups.startsWith(`${realTarget}${path.sep}`)) fail('USER_FILE_REFUSED');
+  return backupsRoot;
 }
 
 /**
@@ -111,33 +154,53 @@ function classify(plan, target) {
 export function installSkills({ staging, target, now = () => new Date().toISOString() }) {
   const plan = stagingPlan(staging);
   prepareTarget(target);
-  const previous = loadRegistry(target);
-  classify(plan, target);
-  const installed = [], skipped = [], backedUp = [];
-  const backupsRoot = path.join(target, BACKUPS);
-  for (const item of plan) {
-    if (item.action === 'skip') {
-      skipped.push(item.name);
-      continue;
+  return withInstallLock(target, () => {
+    assertRegistryPathSafe(target);
+    // Read-modify-write inside the lock: a concurrent installer can never lose updates.
+    const previous = loadRegistry(target);
+    classify(plan, target);
+    const backupsRoot = plan.some(item => item.action === 'backup') ? prepareBackups(target) : null;
+    const installed = [], skipped = [], backedUp = [];
+    for (const item of plan) {
+      if (item.action === 'skip') {
+        skipped.push(item.name);
+        continue;
+      }
+      if (item.action === 'backup') {
+        let stamp = Date.now();
+        while (fs.existsSync(path.join(backupsRoot, `${item.name}-${stamp}`))) stamp += 1;
+        fs.renameSync(path.join(target, item.name), path.join(backupsRoot, `${item.name}-${stamp}`));
+        backedUp.push(item.name);
+      }
+      const dir = path.join(target, item.name);
+      fs.mkdirSync(dir, { mode: 0o755 });
+      fs.writeFileSync(path.join(dir, 'SKILL.md'), fs.readFileSync(path.join(item.dir, 'SKILL.md')), { flag: 'wx', mode: 0o644 });
+      fs.writeFileSync(path.join(dir, 'manifest.json'), fs.readFileSync(path.join(item.dir, 'manifest.json')), { flag: 'wx', mode: 0o644 });
+      installed.push(item.name);
     }
-    if (item.action === 'backup') {
-      fs.mkdirSync(backupsRoot, { recursive: true, mode: 0o755 });
-      let stamp = Date.now();
-      while (fs.existsSync(path.join(backupsRoot, `${item.name}-${stamp}`))) stamp += 1;
-      fs.renameSync(path.join(target, item.name), path.join(backupsRoot, `${item.name}-${stamp}`));
-      backedUp.push(item.name);
-    }
-    const dir = path.join(target, item.name);
-    fs.mkdirSync(dir, { mode: 0o755 });
-    fs.writeFileSync(path.join(dir, 'SKILL.md'), fs.readFileSync(path.join(item.dir, 'SKILL.md')), { flag: 'wx', mode: 0o644 });
-    fs.writeFileSync(path.join(dir, 'manifest.json'), fs.readFileSync(path.join(item.dir, 'manifest.json')), { flag: 'wx', mode: 0o644 });
-    installed.push(item.name);
-  }
-  // Registry holds one entry per skill at its current sha256; this batch replaces older entries.
-  const merged = new Map(previous.map(entry => [entry.name, entry]));
-  for (const item of plan) merged.set(item.name, { name: item.name, sha256: item.sha256 });
-  writeRegistry(target, [...merged.values()].sort(byName), now);
-  return { installed, skipped, backedUp };
+    // Registry holds one entry per skill at its current sha256; this batch replaces older entries.
+    const merged = new Map(previous.map(entry => [entry.name, entry]));
+    for (const item of plan) merged.set(item.name, { name: item.name, sha256: item.sha256 });
+    writeRegistry(target, [...merged.values()].sort(byName), now);
+    return { installed, skipped, backedUp };
+  });
+}
+
+/**
+ * Uninstall ownership is proven by content, not markers: a directory may only be
+ * deleted when its manifest is parseable and generated by us at the registry's
+ * recorded sha256, the SKILL.md bytes still hash to that same sha256, and the
+ * directory holds nothing besides those two files. Any drift — a user edit, an
+ * extra file, a forged registry — refuses the entire uninstall with zero deletions.
+ */
+function verifyOwned(dir, sha256) {
+  const dirStat = fs.lstatSync(dir, { throwIfNoEntry: false });
+  if (!dirStat || !dirStat.isDirectory() || dirStat.isSymbolicLink()) fail('USER_FILE_REFUSED');
+  const entries = fs.readdirSync(dir).sort();
+  if (entries.length !== 2 || entries[0] !== 'SKILL.md' || entries[1] !== 'manifest.json') fail('USER_FILE_REFUSED');
+  const manifest = readJson(path.join(dir, 'manifest.json'));
+  if (!object(manifest) || manifest.generator !== GENERATOR || manifest.sha256 !== sha256) fail('USER_FILE_REFUSED');
+  if (textDigest(fs.readFileSync(path.join(dir, 'SKILL.md'))) !== sha256) fail('USER_FILE_REFUSED');
 }
 
 export function uninstallSkills({ target, purge = false, now = () => new Date().toISOString() }) {
@@ -145,30 +208,31 @@ export function uninstallSkills({ target, purge = false, now = () => new Date().
   const stat = fs.lstatSync(target, { throwIfNoEntry: false });
   if (!stat) return { uninstalled: [], backupsRemoved: 0 };
   if (!stat.isDirectory() || stat.isSymbolicLink()) fail('INVALID_TARGET');
-  if (!regularFile(registryFile(target))) return { uninstalled: [], backupsRemoved: 0 };
-  const names = [];
-  for (const entry of loadRegistry(target)) {
-    if (!names.includes(entry.name)) names.push(entry.name);
-  }
-  // Phase 1 — every registered directory must be verifiably ours before anything is deleted.
-  for (const name of names) {
-    const dir = path.join(target, name);
-    const dirStat = fs.lstatSync(dir, { throwIfNoEntry: false });
-    if (!dirStat || !dirStat.isDirectory() || dirStat.isSymbolicLink()) fail('USER_FILE_REFUSED');
-    const manifest = readJson(path.join(dir, 'manifest.json'));
-    if (!object(manifest) || manifest.generator !== GENERATOR) fail('USER_FILE_REFUSED');
-  }
-  // Phase 2 — delete, then rewrite the registry atomically.
-  for (const name of names) fs.rmSync(path.join(target, name), { recursive: true });
-  let backupsRemoved = 0;
-  const backupsRoot = path.join(target, BACKUPS);
-  if (purge) {
-    const backupsStat = fs.lstatSync(backupsRoot, { throwIfNoEntry: false });
-    if (backupsStat?.isDirectory() && !backupsStat.isSymbolicLink()) {
-      backupsRemoved = fs.readdirSync(backupsRoot).length;
-      fs.rmSync(backupsRoot, { recursive: true });
+  return withInstallLock(target, () => {
+    if (!regularFile(registryFile(target))) return { uninstalled: [], backupsRemoved: 0 };
+    const recorded = new Map();
+    for (const entry of loadRegistry(target)) {
+      if (!recorded.has(entry.name)) recorded.set(entry.name, entry.sha256);
     }
-  }
-  writeRegistry(target, [], now);
-  return { uninstalled: names, backupsRemoved };
+    // Phase 1 — every registered directory must still be entirely ours before anything is deleted.
+    for (const [name, sha256] of recorded) verifyOwned(path.join(target, name), sha256);
+    // Phase 2 — delete, then rewrite the registry atomically.
+    for (const name of recorded.keys()) fs.rmSync(path.join(target, name), { recursive: true });
+    let backupsRemoved = 0;
+    const backupsRoot = path.join(target, BACKUPS);
+    if (purge) {
+      const backupsStat = fs.lstatSync(backupsRoot, { throwIfNoEntry: false });
+      if (backupsStat?.isDirectory() && !backupsStat.isSymbolicLink()) {
+        // Only our own <name>-<timestamp> backup directories; user archives always stay.
+        for (const entry of fs.readdirSync(backupsRoot)) {
+          if (!OUR_BACKUP.test(entry)) continue;
+          fs.rmSync(path.join(backupsRoot, entry), { recursive: true });
+          backupsRemoved += 1;
+        }
+        if (fs.readdirSync(backupsRoot).length === 0) fs.rmdirSync(backupsRoot);
+      }
+    }
+    writeRegistry(target, [], now);
+    return { uninstalled: [...recorded.keys()], backupsRemoved };
+  });
 }
