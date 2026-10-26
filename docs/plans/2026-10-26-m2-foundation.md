@@ -18,7 +18,7 @@
 - 平台安全：POSIX 权限断言必须 `process.platform !== 'win32'` 条件包裹（参照 `src/approvals.mjs`）；不得写平台无条件的分隔符/权限断言；路径比较用 `path` 模块。
 - 文件写入用 `wx` 或临时文件 + `rename`；记录文件大小上限 4096 字节、`nlink === 1`、非符号链接（参照 `ApprovalStore.transition`）。
 - 状态诚实：新功能状态只写 `implemented` / `contract_tested`；生成物 `status: 'generated-not-host-verified'`；不把本计划任何产物标为 `host_verified` 或 `full`。
-- 子代理任务**不提交 git、不改共享文件**（`bin/`、`package.json`、`README.md`、`docs/FEATURE_MATRIX.md`）；提交由协调者完成。
+- 实现子代理按顺序派发，各自**提交自己任务的全部文件**（commit 信息用 `feat:`/`test:` 前缀）；共享文件（`bin/`、`package.json`、`README.md`、`docs/FEATURE_MATRIX.md`、`src/adapters/zcode.mjs`）只有协调者的集成任务能改。Task 4（后台调研）不提交，产物由协调者提交。
 
 ## Review Focus
 
@@ -53,7 +53,7 @@
 - [ ] **Step 2: 跑测试确认失败**：`node --test test/tasks.test.mjs` → FAIL（模块不存在）
 - [ ] **Step 3: 实现**：先在 `src/approvals.mjs` 导出 `subjectDigest`（原 `subjectHash` 改名，行为与现有测试不变），再实现 `src/tasks.mjs`
 - [ ] **Step 4: 全量回归**：`npm test` → 全部通过（含既有 50 项）
-- [ ] **Step 5: 报告**（不提交，交协调者审核提交）
+- [ ] **Step 5: 提交并报告**（提交本任务 src+test，跑 `npm test` 全绿后 commit）
 
 ### Task 2: 固定上游技能生成器
 
@@ -73,7 +73,7 @@
 - [ ] **Step 2: 确认失败**：`node --test test/generate.test.mjs` → FAIL
 - [ ] **Step 3: 实现 `src/generate.mjs`**
 - [ ] **Step 4: 全量回归**：`npm test` 全通过
-- [ ] **Step 5: 报告**（不提交）
+- [ ] **Step 5: 提交并报告**（提交本任务 src+test，跑 `npm test` 全绿后 commit）
 
 ### Task 3: 安装 / 卸载注册
 
@@ -94,7 +94,7 @@
 - [ ] **Step 2: 确认失败**：`node --test test/install.test.mjs` → FAIL
 - [ ] **Step 3: 实现 `src/install.mjs`**
 - [ ] **Step 4: 全量回归**：`npm test` 全通过
-- [ ] **Step 5: 报告**（不提交）
+- [ ] **Step 5: 提交并报告**（提交本任务 src+test，跑 `npm test` 全绿后 commit）
 
 ### Task 4: 本机 DSH 真实加载调研（只读 + 一份发现文档）
 
@@ -109,7 +109,7 @@
 - [ ] **Step 1: 读 dsh skill 文档与本机 DSH 安装，确认版本、插件加载、guard API**
 - [ ] **Step 2: 若可隔离：跑一次插件加载冒烟（加载 gstack861 guard，观察激活/拒绝输出）；否则记录 blocked 与确切原因**
 - [ ] **Step 3: 写 `docs/integration/dsh-local-findings.md`，只记录真实运行过的命令与输出**
-- [ ] **Step 4: 报告**（不提交）
+- [ ] **Step 4: 报告**（不提交；后台并行任务，产物由协调者审核后提交）
 
 ### Task 5: 集成（协调者执行，不派子代理）
 
