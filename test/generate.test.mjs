@@ -116,6 +116,48 @@ test('generateSkills inherits upstream inventory refusals before writing staging
   assert.throws(() => generateSkills({ upstream: r.root, commit: 'a'.repeat(40), staging: other, host: 'zcode', now: NOW }), /COMMIT_MISMATCH/);
   assert.ok(!fs.existsSync(other));
 });
+// Codex probe 09 regression fixture: two commits where the newer one changes beta.
+// generateSkills must read skill bytes at the verified pinned commit, so HEAD
+// moving between inventory() and the reads cannot swap in unpinned content.
+function pinnedRepository(t) {
+  const root = path.join(base(t), 'upstream');
+  fs.mkdirSync(root);
+  const git = (...args) => execFileSync('git', ['-C', root, ...args], { encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }).trim();
+  git('init', '--initial-branch=main');
+  for (const name of ['alpha', 'beta']) {
+    fs.mkdirSync(path.join(root, name));
+    fs.writeFileSync(path.join(root, name, 'SKILL.md'), `${name} pinned`);
+  }
+  git('add', '.');
+  git('-c', 'user.name=gstack861 test', '-c', 'user.email=test@example.invalid', '-c', 'commit.gpgsign=false', 'commit', '-m', 'pinned');
+  const commit = git('rev-parse', 'HEAD');
+  const pinnedBetaBlob = git('rev-parse', `${commit}:beta/SKILL.md`);
+  fs.writeFileSync(path.join(root, 'beta', 'SKILL.md'), 'beta newer');
+  git('add', '.');
+  git('-c', 'user.name=gstack861 test', '-c', 'user.email=test@example.invalid', '-c', 'commit.gpgsign=false', 'commit', '-m', 'newer beta');
+  const newer = git('rev-parse', 'HEAD');
+  git('checkout', commit); // generation runs from the pinned checkout
+  return { root, base: path.dirname(root), commit, newer, pinnedBetaBlob };
+}
+
+test('generateSkills stages pinned-commit bytes even when HEAD moves mid-run', t => {
+  const r = pinnedRepository(t), staging = path.join(r.base, 'staging');
+  const git = (...args) => execFileSync('git', ['-C', r.root, ...args], { encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }).trim();
+  let switched = false;
+  // Mirrors the audited probe: after inventory() verified the pin, HEAD moves to the newer commit.
+  const now = () => { if (!switched) { switched = true; git('checkout', r.newer); } return WHEN; };
+  const result = generateSkills({ upstream: r.root, commit: r.commit, staging, host: 'zcode', now });
+  assert.equal(git('rev-parse', 'HEAD'), r.newer, 'the race fixture must actually have moved HEAD');
+  const beta = result.skills.find(s => s.name === 'beta');
+  assert.equal(beta.commit, r.commit);
+  assert.equal(beta.blob, r.pinnedBetaBlob);
+  assert.equal(beta.sha256, textDigest('beta pinned'));
+  assert.equal(fs.readFileSync(path.join(staging, 'beta', 'SKILL.md'), 'utf8'), 'beta pinned');
+  const manifest = JSON.parse(fs.readFileSync(path.join(staging, 'beta', 'manifest.json'), 'utf8'));
+  assert.equal(manifest.commit, r.commit);
+  assert.equal(manifest.blob, r.pinnedBetaBlob);
+  assert.equal(manifest.sha256, textDigest('beta pinned'));
+});
 test('generateSkills refuses relative or missing paths', t => {
   const r = repository(t);
   assert.throws(() => generateSkills({ upstream: 'upstream', commit: r.commit, staging: path.join(r.base, 's1'), host: 'zcode', now: NOW }), /INVALID_UPSTREAM/);

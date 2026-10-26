@@ -24,9 +24,12 @@ export function handleZcode(event, policy) {
   } catch { return blocked('INVALID_EVENT'); }
 }
 
+// The host compiles matchers as regexes; refuse strings it would fail to compile ('*', trailing '\').
+const compiles = matcher => { try { new RegExp(matcher); return true; } catch { return false; } };
+
 export function zcodeHookConfig({ nodePath, cliPath, policyPath, matcher = '.*' }) {
   if (![nodePath, cliPath, policyPath].every(p => typeof p === 'string' && path.isAbsolute(p))) throw new Error('ABSOLUTE_PATH_REQUIRED');
-  if (typeof matcher !== 'string' || !/^[A-Za-z0-9_|.*\\-]+$/.test(matcher)) throw new Error('INVALID_MATCHER');
+  if (typeof matcher !== 'string' || !/^[A-Za-z0-9_|.*\\-]+$/.test(matcher) || !compiles(matcher)) throw new Error('INVALID_MATCHER');
   return { hooks: { enabled: true, events: { PreToolUse: [{ matcher, hooks: [{
     type: 'process', command: nodePath,
     args: [cliPath, 'hook', 'zcode', '--policy', policyPath], timeoutMs: 10000,

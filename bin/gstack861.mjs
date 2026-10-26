@@ -79,15 +79,19 @@ if (args[0] === 'hook') {
       print(uninstallSkills({ target: absolute(options['--target']), purge: options['--purge'] === true }));
     } else if (args[0] === 'approvals') {
       const options = flags(args.slice(2), ['--state', '--id', '--host', '--session', '--run', '--policy-hash', '--action-file']);
+      // Validate before constructing the store: a rejected subcommand must not leave a state directory behind.
+      if (!['list', 'show', 'approve', 'reject'].includes(args[1])) throw new Error('UNKNOWN_SUBCOMMAND');
       const store = new ApprovalStore(absolute(options['--state']));
       if (args[1] === 'list') print(store.list().map(({ id, state, issuedAt, expiresAt }) => ({ id, state, issuedAt, expiresAt })));
       else if (args[1] === 'show') print(store.get(options['--id']));
-      else if (args[1] === 'approve' || args[1] === 'reject') {
-        const action = JSON.parse(fs.readFileSync(absolute(options['--action-file']), 'utf8'));
+      else {
+        let action;
+        try { action = JSON.parse(fs.readFileSync(absolute(options['--action-file']), 'utf8')); }
+        catch (error) { if (error instanceof SyntaxError) throw new Error('INVALID_ACTION_FILE'); throw error; }
         const subject = { host: options['--host'], sessionId: options['--session'], runId: options['--run'],
           policyHash: options['--policy-hash'], action };
         print(args[1] === 'approve' ? store.approve(options['--id'], subject) : store.reject(options['--id'], subject));
-      } else throw new Error('UNKNOWN_SUBCOMMAND');
+      }
     } else {
       process.stderr.write('Usage: gstack861 doctor | inventory --upstream PATH | zcode-config --policy ABS_PATH\n'
         + '  generate --upstream PATH --staging DIR --host zcode|dsh [--commit 40-HEX]\n'

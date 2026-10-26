@@ -69,6 +69,16 @@ test('symlink state directories and record tampering fail closed', t => {
   const id = store.issue(s); fs.writeFileSync(store.file(id), '{');
   assert.throws(() => store.approve(id, s));
 });
+test('get keeps NOT_FOUND for missing ids and refuses tampered record shapes', t => {
+  const f = fixture(t), dir = path.join(f.base, 'approvals'), store = new ApprovalStore(dir), s = subject(f);
+  assert.throws(() => store.get('00000000-0000-4000-8000-000000000000'), /NOT_FOUND/);
+  const nullId = store.issue(s);
+  fs.writeFileSync(store.file(nullId), 'null\n');
+  assert.throws(() => store.get(nullId), /INVALID_APPROVAL_RECORD/);
+  const stateId = store.issue(s);
+  fs.writeFileSync(store.file(stateId), JSON.stringify({ ...store.get(stateId), state: 'invented-state' }) + '\n');
+  assert.throws(() => store.get(stateId), /INVALID_APPROVAL_RECORD/);
+});
 test('two real processes cannot both consume one approval', async t => {
   const f = fixture(t), dir = path.join(f.base, 'approvals'), store = new ApprovalStore(dir), s = subject(f);
   const id = store.issue(s); store.approve(id, s);

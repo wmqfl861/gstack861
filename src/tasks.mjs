@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { subjectDigest } from './approvals.mjs';
+import { object } from './json.mjs';
 
 const ID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 const STATES = ['planned', 'running', 'completed', 'failed', 'cancelled', 'interrupted'];
@@ -39,7 +40,7 @@ export class TaskStore {
     if (process.platform !== 'win32' && (stat.mode & 0o077)) fail('UNSAFE_TASK_PERMISSIONS');
     let record;
     try { record = JSON.parse(fs.readFileSync(filename, 'utf8')); } catch { fail('INVALID_TASK_RECORD'); }
-    if (record.schemaVersion !== 1 || record.id !== id || !STATES.includes(record.state)
+    if (!object(record) || record.schemaVersion !== 1 || record.id !== id || !STATES.includes(record.state)
       || !Number.isSafeInteger(record.attempts) || record.attempts < 0
       || !Number.isSafeInteger(record.createdAt) || !Number.isSafeInteger(record.updatedAt)
       || typeof record.subjectHash !== 'string' || !/^[a-f0-9]{64}$/.test(record.subjectHash)) fail('INVALID_TASK_RECORD');

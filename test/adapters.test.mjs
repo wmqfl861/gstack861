@@ -73,6 +73,13 @@ test('ZCode hook config can scope the matcher to bound file tools only', t => {
   assert.equal(scoped.hooks.events.PreToolUse[0].matcher, 'Read|Write|Edit');
   assert.throws(() => zcodeHookConfig({ nodePath: process.execPath, cliPath: cli, policyPath: f.policyPath, matcher: '((' }), /INVALID_MATCHER/);
 });
+test('ZCode hook config refuses matchers that are not compilable regexes', t => {
+  const f = fixture(t);
+  // These pass the character allowlist but the host would fail to compile them.
+  for (const matcher of ['*', '\\', 'a**b']) {
+    assert.throws(() => zcodeHookConfig({ nodePath: process.execPath, cliPath: cli, policyPath: f.policyPath, matcher }), /INVALID_MATCHER/);
+  }
+});
 test('CLI generate, install and uninstall round-trip real skill packages', t => {
   const r = repository(t), staging = path.join(r.base, 'staging'), target = path.join(r.base, 'target');
   const run = (...a) => spawnSync(process.execPath, [cli, ...a], { encoding: 'utf8', timeout: 30000 });
@@ -124,6 +131,30 @@ test('approvals CLI lists, approves bound subjects, and refuses mismatches or re
     '--host', 'zcode', '--session', 'other-session', '--run', 'r1', '--policy-hash', subject.policyHash, '--action-file', actionFile], { encoding: 'utf8' });
   assert.equal(mismatch.status, 1);
   assert.match(mismatch.stderr, /APPROVAL_BINDING_MISMATCH/);
+});
+test('approvals CLI rejects unknown subcommands, invented states and malformed action files', t => {
+  const f = fixture(t), state = path.join(f.base, 'approvals');
+  const store = new ApprovalStore(state);
+  const subject = { host: 'zcode', sessionId: 's1', runId: 'r1', policyHash: f.policy.policyHash, action: { tool: 'Write', input: { file_path: 'src/a' } } };
+  const id = store.issue(subject);
+  // Unknown subcommand must fail before the store constructor creates any state directory.
+  const absent = path.join(f.base, 'never-created');
+  const bogus = spawnSync(process.execPath, [cli, 'approvals', 'bogus', '--state', absent], { encoding: 'utf8' });
+  assert.equal(bogus.status, 1);
+  assert.match(bogus.stderr, /UNKNOWN_SUBCOMMAND/);
+  assert.equal(fs.existsSync(absent), false, 'unknown subcommand must not leave a state directory behind');
+  // Read views must refuse records carrying states outside the state machine.
+  fs.writeFileSync(store.file(id), JSON.stringify({ ...JSON.parse(fs.readFileSync(store.file(id), 'utf8')), state: 'invented-state' }) + '\n');
+  const show = spawnSync(process.execPath, [cli, 'approvals', 'show', '--state', state, '--id', id], { encoding: 'utf8' });
+  assert.equal(show.status, 1);
+  assert.match(show.stderr, /INVALID_APPROVAL_RECORD/);
+  // Malformed action files surface a stable code, not a raw V8 parse message.
+  const badAction = path.join(f.base, 'bad-action.json');
+  fs.writeFileSync(badAction, '{ not json');
+  const approve = spawnSync(process.execPath, [cli, 'approvals', 'approve', '--state', state, '--id', id, '--host', 'zcode',
+    '--session', 's1', '--run', 'r1', '--policy-hash', subject.policyHash, '--action-file', badAction], { encoding: 'utf8' });
+  assert.equal(approve.status, 1);
+  assert.match(approve.stderr, /gstack861: INVALID_ACTION_FILE/);
 });
 test('DSH registers a monotonic guard, not a permissive waterfall', t => {
   const f = fixture(t);

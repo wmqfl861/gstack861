@@ -75,10 +75,12 @@ export class ApprovalStore {
     const filename = this.file(id);
     let stat;
     try { stat = fs.lstatSync(filename); }
-    catch { fail('NOT_FOUND'); }
+    catch (error) { if (error.code === 'ENOENT') fail('NOT_FOUND'); throw error; }
     if (!stat.isFile() || stat.isSymbolicLink() || stat.nlink !== 1 || stat.size > 4096) fail('UNSAFE_APPROVAL_FILE');
     const record = JSON.parse(fs.readFileSync(filename, 'utf8'));
-    if (record.schemaVersion !== 1 || record.id !== id || !Number.isSafeInteger(record.expiresAt)) fail('INVALID_APPROVAL_RECORD');
+    // Read views only ever surface records in a real state-machine state.
+    if (!object(record) || record.schemaVersion !== 1 || record.id !== id || !Number.isSafeInteger(record.expiresAt)
+      || !['pending', 'approved', 'rejected', 'consumed'].includes(record.state)) fail('INVALID_APPROVAL_RECORD');
     return Object.freeze(record);
   }
   /** Read-only operator view; skips lock dirs and temp files by name. */

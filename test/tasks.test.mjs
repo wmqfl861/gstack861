@@ -101,6 +101,15 @@ test('tampered task records fail closed', t => {
   assert.throws(() => store.start(id, s), /INVALID_TASK_RECORD/);
   assert.throws(() => store.get(id), /INVALID_TASK_RECORD/);
 });
+test('null and non-object task records fail closed as INVALID_TASK_RECORD', t => {
+  const f = fixture(t), store = new TaskStore(path.join(f.base, 'tasks')), s = subject(f);
+  const id = store.create(s);
+  fs.writeFileSync(store.file(id), 'null\n');
+  assert.throws(() => store.get(id), /INVALID_TASK_RECORD/);
+  assert.throws(() => store.start(id, s), /INVALID_TASK_RECORD/);
+  fs.writeFileSync(store.file(id), '[]\n');
+  assert.throws(() => store.get(id), /INVALID_TASK_RECORD/);
+});
 test('an abandoned lock directory reports busy without auto-clearing', t => {
   const f = fixture(t), store = new TaskStore(path.join(f.base, 'tasks')), s = subject(f);
   const id = store.create(s), lock = store.file(id) + '.lock';

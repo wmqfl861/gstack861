@@ -34,7 +34,8 @@ export function generateSkills({ upstream, commit, staging, host, now = () => ne
   const skills = [];
   let needsReview = 0;
   for (const skill of inv.skills) {
-    const bytes = git(upstream, 'show', `HEAD:${skill.source}`);
+    // Pinned read: the verified commit, not HEAD, which may drift after inventory().
+    const bytes = git(upstream, 'show', `${inv.commit}:${skill.source}`);
     // Metadata only: a decoded copy feeds placeholder detection; staged bytes and digest stay raw.
     const text = bytes.toString('utf8');
     const placeholders = [...new Set([...text.matchAll(/\{\{([^}]+)\}\}/g)].map(m => m[1]))].sort();
