@@ -105,7 +105,15 @@ test('policy symlinks and writable-by-others policies are rejected', t => {
 });
 test('file-as-parent, NUL, foreign separators and cwd escapes fail closed', t => {
   const f = fixture(t);
-  for (const file of ['src/a.txt/new', 'src/a\u0000.txt', 'src\\a.txt']) assert.equal(evaluate(f.policy, call(f, file)).decision, 'deny');
+  for (const file of ['src/a.txt/new', 'src/a\u0000.txt']) assert.equal(evaluate(f.policy, call(f, file)).decision, 'deny');
+  if (process.platform === 'win32') {
+    // Backslash is a native separator on Windows: resolves to the same in-scope file, not a foreign path.
+    assert.equal(evaluate(f.policy, call(f, 'src\\a.txt')).decision, 'abstain');
+  } else {
+    assert.equal(evaluate(f.policy, call(f, 'src\\a.txt')).decision, 'deny');
+  }
+  // Native-separator traversal must be rejected before normalization on every platform.
+  assert.equal(evaluate(f.policy, call(f, 'src\\..\\..\\secret.txt')).decision, 'deny');
   assert.equal(evaluate(f.policy, { ...call(f, 'new'), cwd: f.outside }).decision, 'deny');
 });
 

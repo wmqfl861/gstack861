@@ -1,10 +1,11 @@
 # 功能与证据矩阵
 
-状态：2026-10-26，M0/M1 基础开发。两个宿主均未获得 `host_verified` 或 `full`。
+状态：2026-10-26，M0/M1 基础开发；Windows 离线回归已接入。两个宿主均未获得 `host_verified` 或 `full`。
 
 | 范围 | ZCode | DSH | 已有证据 / 剩余工作 |
 |---|---|---|---|
 | 固定上游版本 | implemented | implemented | 锁文件 + 固定子模块 |
+| 离线回归平台 | contract_tested | contract_tested | Linux 首轮；真实 Windows 本机 50/50 + CI 双平台矩阵 |
 | 源技能盘点器 | contract_tested | contract_tested | 临时 Git 仓库实测；完整上游盘点在 CI 中另跑 |
 | 文件范围策略 | contract_tested | contract_tested | 真实临时文件、链接与配置测试 |
 | 原生入口 | contract_tested | contract_tested | ZCode 真实 Hook 子进程；DSH guard 接口替身，不是宿主集成 |
@@ -22,4 +23,4 @@
 | CSO/iOS/远程等专项 | planned | planned | Docker/设备/账号等依赖验收 |
 | 真实模型质量对等 | not_run | not_run | 未调用模型，未使用预算 |
 
-`contract_tested` 不是 `host_verified`。源码盘点仅枚举顶层源技能，不涵盖全部命令选项、独立二进制和生命周期语义；`fullParity` 固定为 false，避免空集合或局部盘点误报完整支持。
+`contract_tested` 不是 `host_verified`。源码盘点仅枚举顶层源技能，不涵盖全部命令选项、独立二进制和生命周期语义；`fullParity` 固定为 false，避免空集合或局部盘点误报完整支持。macOS 仍未运行，不声明通过；CI 结果以 GitHub Actions 实际运行为准。

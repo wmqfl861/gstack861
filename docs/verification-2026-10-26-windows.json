@@ -1,0 +1,144 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-26",
+  "round": "windows-native-baseline",
+  "environment": {
+    "kind": "real-windows-machine",
+    "os": "win32-10.0.22624-x64",
+    "node": "v24.21.0",
+    "shell": "git-bash"
+  },
+  "commands": [
+    {
+      "command": "npm run check",
+      "result": "passed",
+      "modules": 15
+    },
+    {
+      "command": "npm test",
+      "result": "first-run-49-of-50-platform-dependent-assertion",
+      "defect": "test/policy.test.mjs expected deny for srca.txt on win32 where backslash is a native separator",
+      "then": "fixed platform-conditional assertion; re-run passed",
+      "tests": 50,
+      "failed": 0,
+      "skipped": 0,
+      "cancelled": 0
+    },
+    {
+      "command": "npm run doctor",
+      "result": "passed",
+      "version": "0.1.1"
+    },
+    {
+      "command": "git submodule update --init upstream/gstack",
+      "result": "passed",
+      "checkedOut": "5755601dac5d35ebd7dde181fdefe52a023c73d9"
+    },
+    {
+      "command": "node bin/gstack861.mjs inventory --upstream upstream/gstack",
+      "result": "passed",
+      "skills": 57,
+      "fullParity": false,
+      "note": "first full-upstream inventory on a real machine; round 1 was DNS-blocked"
+    }
+  ],
+  "fixes": [
+    {
+      "path": "test/policy.test.mjs",
+      "change": "platform-conditional backslash assertion; added cross-platform native-separator traversal denial"
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "change": "CI matrix ubuntu-latest + windows-latest; CI pass/fail pending real GitHub Actions runs"
+    }
+  ],
+  "hostCertification": {
+    "zcode": "not-run",
+    "dsh": "not-run"
+  },
+  "macOS": "not-run",
+  "paidModelCalls": 0,
+  "testedFiles": [
+    {
+      "path": "bin/gstack861.mjs",
+      "gitBlobSha1": "dcf44ede7a2cd0fff4e15d71811ec24cfb1d0724",
+      "sha256": "c569d4d6529b5fb33761676333c60f888210b8eed24bf107abaa0ea30695fdd1"
+    },
+    {
+      "path": "package.json",
+      "gitBlobSha1": "e854de3c019c9e89404fe6adb82fb05efb3fc386",
+      "sha256": "a275ebf6bcb6a70b6b93e6c37ac91229533fc128a99b1fbbe8503871739f0d93"
+    },
+    {
+      "path": "scripts/check.mjs",
+      "gitBlobSha1": "8f6cdf75483864d8f4fa415bc8c1404aa79f0b8b",
+      "sha256": "ae2569bf33be178d607d49cb9c8dd509494ee50e3272f0d9e7dd0b2776d695f0"
+    },
+    {
+      "path": "src/adapters/dsh.mjs",
+      "gitBlobSha1": "92b2188912f2781ca414fa8e8ba5078597ee907e",
+      "sha256": "44caf2c956880e0a2b9ca18403ddb9c079e5c287801d206a07d8a6a0bc0d8951"
+    },
+    {
+      "path": "src/adapters/zcode.mjs",
+      "gitBlobSha1": "0a251c9fd25b9e4e0809024e5989243536eb6fef",
+      "sha256": "1c1337bedcfbaf6bdf1012a6033ade84e9a1e3307cb29536224f7daade9415f3"
+    },
+    {
+      "path": "src/approvals.mjs",
+      "gitBlobSha1": "0a6f82bc4cb6453d23cf7ccb3dc54ddb6832817f",
+      "sha256": "f8618e7c37242ea84c6523c5395cbbe196e15e6df982fe7bdcda218265e6705a"
+    },
+    {
+      "path": "src/inventory.mjs",
+      "gitBlobSha1": "ae15a9fa5dccf8f0341787ad73a5382288b69a79",
+      "sha256": "520fdfe3e4def01263603c3a875144257bc0668966c2571ea03a322c56f09011"
+    },
+    {
+      "path": "src/json.mjs",
+      "gitBlobSha1": "e8723b9857ef3b044a38d13f225d85e71cce81a6",
+      "sha256": "f1865cee2953f68fe6330544b3f0ce7db8f6b00d5a55327d59de2f348c83bb8e"
+    },
+    {
+      "path": "src/policy.mjs",
+      "gitBlobSha1": "c3dae02b7b49ef9285e879fde012360ae4c6f4bd",
+      "sha256": "0d96bf3c001cc767d7b528d6f24ef41e194581fcb73d199abc8e5a73b77770be"
+    },
+    {
+      "path": "test/adapters.test.mjs",
+      "gitBlobSha1": "d745cb2814ef4f24915098223c9615d25f1ca23e",
+      "sha256": "cc9b65ee06f25c4c9964347e08bcd7a52c6a3d41ecce13fe9d70d4cf849c5ede"
+    },
+    {
+      "path": "test/approvals.test.mjs",
+      "gitBlobSha1": "338250c3f5f42c5a4cac70bd67396569d5bab6b3",
+      "sha256": "ed786e83022d8c1646f5f0ec7904ff8ebde6e51d8b5ceef5c46d3701c753596d"
+    },
+    {
+      "path": "test/helpers.mjs",
+      "gitBlobSha1": "7742917074d1ee18587a156cd551298e6d3b7b69",
+      "sha256": "1705e6663ccbd4b1739daa65f4e4a4452c983ef02c7d6a08f2deef7490431531"
+    },
+    {
+      "path": "test/inventory.test.mjs",
+      "gitBlobSha1": "07797f44357073208c8590d27db2e72d397be025",
+      "sha256": "c2106c006eb24131c738420fc1e9b056efa4fcab906f3cda8cc34d08405e31ab"
+    },
+    {
+      "path": "test/json.test.mjs",
+      "gitBlobSha1": "2cc1b0f2b5b93fd457e017a257db450be7d0cf0f",
+      "sha256": "576fea350051d411e460fb2eb0bd45467c34120ac5b39f072f2060a9af54ac39"
+    },
+    {
+      "path": "test/policy.test.mjs",
+      "gitBlobSha1": "4ebea4dc9f180bde2375691f7f226552012de774",
+      "sha256": "e0a0289830faea20d1fd75fb260cfcfe4f401ef1fcddefacd12847d79c0ecd08"
+    },
+    {
+      "path": "upstream.lock.json",
+      "gitBlobSha1": "31332137cf1bf980b25ca044208a9c53adb70edc",
+      "sha256": "160e2ca165946815dbec63ed39df1cc3be6c756536282012546b97d2fbf483dc"
+    }
+  ],
+  "digestMethod": "git ls-tree/show at HEAD commit (repository blob bytes, LF); independent of platform autocrlf"
+}

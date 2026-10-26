@@ -2,14 +2,14 @@
 
 将 gstack 原生适配到 **ZCode** 与 **DeepSeek Harness（DSH）**。一套核心，两套独立宿主适配，不隐藏调用 Claude Code，不把提示词复制当作功能对等。
 
-**当前版本：0.1.0 / foundation。不是完整可用的 gstack 双宿主发行版。**
+**当前版本：0.1.1 / foundation。不是完整可用的 gstack 双宿主发行版。**
 
 ## 开发文档
 
 - [完整蓝图与阶段验收](docs/BLUEPRINT.md)
 - [功能与证据矩阵](docs/FEATURE_MATRIX.md)
 - [本轮测试说明及限制](docs/VERIFICATION.md)
-- [精确测试文件摘要](docs/verification-2026-10-26.json)
+- [精确测试文件摘要](docs/verification-2026-10-26.json)（首轮 Linux）；[Windows 轮](docs/verification-2026-10-26-windows.json)
 - [固定上游和宿主提交](upstream.lock.json)
 
 ## 已实现
@@ -33,7 +33,7 @@ npm run doctor
 node bin/gstack861.mjs inventory --upstream upstream/gstack
 ```
 
-子模块保留完整上游源码和许可，并固定在锁文件提交。离线单元/协议测试不需要子模块、宿主安装、API Key 或网络；完整上游盘点需要已拉取的子模块。这里没有执行 gstack `setup`，不会安装 Claude Code 或启动模型。
+子模块保留完整上游源码和许可，并固定在锁文件提交。离线单元/协议测试不需要子模块、宿主安装、API Key 或网络；完整上游盘点需要已拉取的子模块。这里没有执行 gstack `setup`，不会安装 Claude Code 或启动模型。离线回归已在 Linux（Node 22）与真实 Windows（Node 24）本机各自跑通；CI 同时跑两个平台。路径策略在 Windows 上接受反斜杠作为原生分隔符，`..`、NUL、悬空符号链接与越界目标在各平台一律拒绝。
 
 ## ZCode 接入（实验性，需人工审查与真实宿主验证）
 
