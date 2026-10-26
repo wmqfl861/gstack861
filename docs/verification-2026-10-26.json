@@ -1,0 +1,117 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-26",
+  "environment": {
+    "kind": "isolated-conversation-runtime",
+    "os": "linux",
+    "node": "v22.16.0"
+  },
+  "commands": [
+    {
+      "command": "npm run check",
+      "result": "passed",
+      "modules": 14
+    },
+    {
+      "command": "npm test",
+      "result": "passed",
+      "tests": 50,
+      "failed": 0,
+      "skipped": 0,
+      "cancelled": 0
+    },
+    {
+      "command": "npm run doctor",
+      "result": "passed"
+    }
+  ],
+  "hostCertification": {
+    "zcode": "not-run",
+    "dsh": "not-run"
+  },
+  "cloudVerification": "blocked-no-online-device",
+  "fullUpstreamInventory": "not-run-locally-DNS-unavailable",
+  "paidModelCalls": 0,
+  "testedFiles": [
+    {
+      "path": "bin/gstack861.mjs",
+      "gitBlobSha1": "69ea15572b3801e8ce3dea6abfdb20fb74bb69a1",
+      "sha256": "91117e1dcce778faae59fc3917e34c858ad010c34504379f3317452f82a07b32"
+    },
+    {
+      "path": "package.json",
+      "gitBlobSha1": "0e75d7b4a41afc058b32eda6debacc8870d37d09",
+      "sha256": "f06100c732cd25b4e1dd3d8d02b3ff3d11b77d10cc051687998186781c97c6b5"
+    },
+    {
+      "path": "scripts/check.mjs",
+      "gitBlobSha1": "8f6cdf75483864d8f4fa415bc8c1404aa79f0b8b",
+      "sha256": "ae2569bf33be178d607d49cb9c8dd509494ee50e3272f0d9e7dd0b2776d695f0"
+    },
+    {
+      "path": "src/adapters/dsh.mjs",
+      "gitBlobSha1": "92b2188912f2781ca414fa8e8ba5078597ee907e",
+      "sha256": "44caf2c956880e0a2b9ca18403ddb9c079e5c287801d206a07d8a6a0bc0d8951"
+    },
+    {
+      "path": "src/adapters/zcode.mjs",
+      "gitBlobSha1": "0a251c9fd25b9e4e0809024e5989243536eb6fef",
+      "sha256": "1c1337bedcfbaf6bdf1012a6033ade84e9a1e3307cb29536224f7daade9415f3"
+    },
+    {
+      "path": "src/approvals.mjs",
+      "gitBlobSha1": "0a6f82bc4cb6453d23cf7ccb3dc54ddb6832817f",
+      "sha256": "f8618e7c37242ea84c6523c5395cbbe196e15e6df982fe7bdcda218265e6705a"
+    },
+    {
+      "path": "src/inventory.mjs",
+      "gitBlobSha1": "ae15a9fa5dccf8f0341787ad73a5382288b69a79",
+      "sha256": "520fdfe3e4def01263603c3a875144257bc0668966c2571ea03a322c56f09011"
+    },
+    {
+      "path": "src/json.mjs",
+      "gitBlobSha1": "e8723b9857ef3b044a38d13f225d85e71cce81a6",
+      "sha256": "f1865cee2953f68fe6330544b3f0ce7db8f6b00d5a55327d59de2f348c83bb8e"
+    },
+    {
+      "path": "src/policy.mjs",
+      "gitBlobSha1": "c3dae02b7b49ef9285e879fde012360ae4c6f4bd",
+      "sha256": "0d96bf3c001cc767d7b528d6f24ef41e194581fcb73d199abc8e5a73b77770be"
+    },
+    {
+      "path": "test/adapters.test.mjs",
+      "gitBlobSha1": "d745cb2814ef4f24915098223c9615d25f1ca23e",
+      "sha256": "cc9b65ee06f25c4c9964347e08bcd7a52c6a3d41ecce13fe9d70d4cf849c5ede"
+    },
+    {
+      "path": "test/approvals.test.mjs",
+      "gitBlobSha1": "338250c3f5f42c5a4cac70bd67396569d5bab6b3",
+      "sha256": "ed786e83022d8c1646f5f0ec7904ff8ebde6e51d8b5ceef5c46d3701c753596d"
+    },
+    {
+      "path": "test/helpers.mjs",
+      "gitBlobSha1": "7742917074d1ee18587a156cd551298e6d3b7b69",
+      "sha256": "1705e6663ccbd4b1739daa65f4e4a4452c983ef02c7d6a08f2deef7490431531"
+    },
+    {
+      "path": "test/inventory.test.mjs",
+      "gitBlobSha1": "07797f44357073208c8590d27db2e72d397be025",
+      "sha256": "c2106c006eb24131c738420fc1e9b056efa4fcab906f3cda8cc34d08405e31ab"
+    },
+    {
+      "path": "test/json.test.mjs",
+      "gitBlobSha1": "2cc1b0f2b5b93fd457e017a257db450be7d0cf0f",
+      "sha256": "576fea350051d411e460fb2eb0bd45467c34120ac5b39f072f2060a9af54ac39"
+    },
+    {
+      "path": "test/policy.test.mjs",
+      "gitBlobSha1": "2840e64a9883884637879a7bc129bf09854bcfa2",
+      "sha256": "48d20fc7b9d9bd48a880f951a7709e139502a6247185fa8ad7ebb3f0c0036479"
+    },
+    {
+      "path": "upstream.lock.json",
+      "gitBlobSha1": "31332137cf1bf980b25ca044208a9c53adb70edc",
+      "sha256": "160e2ca165946815dbec63ed39df1cc3be6c756536282012546b97d2fbf483dc"
+    }
+  ]
+}

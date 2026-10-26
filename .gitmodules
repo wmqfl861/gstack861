@@ -1,0 +1,3 @@
+[submodule "upstream/gstack"]
+	path = upstream/gstack
+	url = https://github.com/garrytan/gstack.git

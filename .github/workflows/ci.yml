@@ -1,0 +1,23 @@
+name: native-foundation
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  offline-contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+          submodules: true
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22.16.0'
+      - run: npm run check
+      - run: npm test
+      - run: npm run doctor
+      - name: Inventory pinned upstream without executing its code
+        run: node bin/gstack861.mjs inventory --upstream upstream/gstack

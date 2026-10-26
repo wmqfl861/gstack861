@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "workspace": "/absolute/project",
+  "readRoots": ["/absolute/project"],
+  "writeRoots": ["/absolute/project/src"],
+  "protectedRoots": [],
+  "bindings": {
+    "zcode": {
+      "Read": { "effect": "read", "pathKey": "file_path" },
+      "Write": { "effect": "write", "pathKey": "file_path" },
+      "Edit": { "effect": "write", "pathKey": "file_path" }
+    },
+    "dsh": {}
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "reviewedAt": "2026-10-26",
+  "gstack": {
+    "repository": "https://github.com/garrytan/gstack.git",
+    "commit": "5755601dac5d35ebd7dde181fdefe52a023c73d9",
+    "path": "upstream/gstack"
+  },
+  "hosts": {
+    "zcode": {
+      "repository": "https://github.com/zai-org/ZCode.git",
+      "commit": "3c5b227649371507ddc4eb46ac5133afe6db1cab",
+      "evidence": "source-inspected",
+      "certification": "not-run"
+    },
+    "dsh": {
+      "repository": "https://github.com/deepseek-ai/deepseek-harness.git",
+      "commit": "22ddee3792402c3e70ec5f86a63c3e3e895a2f60",
+      "evidence": "source-inspected",
+      "certification": "not-run"
+    }
+  }
+}
