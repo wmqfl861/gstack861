@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
+import { execFileSync } from 'node:child_process';
 import { compilePolicy } from '../src/policy.mjs';
 
 export function fixture(t) {
@@ -24,4 +25,21 @@ export function fixture(t) {
   fs.writeFileSync(policyPath, JSON.stringify(raw), { mode: 0o600 });
   t.after(() => fs.rmSync(base, { recursive: true, force: true }));
   return { base, workspace, src, locked, outside, raw, policyPath, policy: compilePolicy(raw) };
+}
+
+/** Minimal pinned-upstream lookalike for generate/install CLI tests (same shape as inventory fixtures). */
+export function repository(t) {
+  const f = fixture(t), root = path.join(f.base, 'upstream'); fs.mkdirSync(root);
+  const git = (...args) => execFileSync('git', ['-C', root, ...args], { encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }).trim();
+  git('init', '--initial-branch=main');
+  const files = {
+    'review/SKILL.md': 'generated copy', 'review/SKILL.md.tmpl': 'AskUserQuestion {{TOOLS}} claude -p test',
+    'investigate/SKILL.md': 'investigate first', '.agents/skills/gstack-review/SKILL.md': 'foreign render',
+  };
+  for (const [name, text] of Object.entries(files)) {
+    fs.mkdirSync(path.dirname(path.join(root, name)), { recursive: true }); fs.writeFileSync(path.join(root, name), text);
+  }
+  git('add', '.');
+  git('-c', 'user.name=gstack861 test', '-c', 'user.email=test@example.invalid', '-c', 'commit.gpgsign=false', 'commit', '-m', 'fixture');
+  return { ...f, root, commit: git('rev-parse', 'HEAD') };
 }

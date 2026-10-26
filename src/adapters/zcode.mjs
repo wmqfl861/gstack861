@@ -24,9 +24,10 @@ export function handleZcode(event, policy) {
   } catch { return blocked('INVALID_EVENT'); }
 }
 
-export function zcodeHookConfig({ nodePath, cliPath, policyPath }) {
+export function zcodeHookConfig({ nodePath, cliPath, policyPath, matcher = '.*' }) {
   if (![nodePath, cliPath, policyPath].every(p => typeof p === 'string' && path.isAbsolute(p))) throw new Error('ABSOLUTE_PATH_REQUIRED');
-  return { hooks: { enabled: true, events: { PreToolUse: [{ matcher: '.*', hooks: [{
+  if (typeof matcher !== 'string' || !/^[A-Za-z0-9_|.*\\-]+$/.test(matcher)) throw new Error('INVALID_MATCHER');
+  return { hooks: { enabled: true, events: { PreToolUse: [{ matcher, hooks: [{
     type: 'process', command: nodePath,
     args: [cliPath, 'hook', 'zcode', '--policy', policyPath], timeoutMs: 10000,
   }] }] } } };

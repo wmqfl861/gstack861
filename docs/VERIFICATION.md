@@ -63,3 +63,31 @@
 ## 下一验收
 
 沿用蓝图接续优先级：两侧真实宿主离线集成（在受控会话安装 ZCode Hook、加载 DSH 插件，验证启动失败/超时/旁路工具行为），然后技能生成器与安装注册。
+
+# 第三轮验证记录：M2 前置基础批次
+
+日期：2026-10-26（同日续开发）。范围：0.2.0，按 `docs/plans/2026-10-26-m2-foundation.md` 以多子代理流程交付：持久任务日志、固定上游技能生成器、两阶段安装/卸载注册、审批操作员 CLI、ZCode matcher 收窄，以及本机 DSH 真实加载调研。
+
+## 实际运行
+
+环境：真实 Windows 本机（win32 10.0.22624 x64），Node.js v24.21.0，Git Bash。每个实现任务由独立子代理以 TDD 实现，并由另一个独立子代理对照任务简报做规格+质量双裁决审查；审查发现的遗留项均为 Minor 并记录在案。
+
+| 命令 | 结果 |
+|---|---|
+| `npm run check` | 21 个模块语法与 3 个固定提交校验通过 |
+| `npm test` | 86 passed，0 failed（新增 TaskStore 13、生成器 7、安装 12、集成 4） |
+| `npm run doctor` | 成功，版本 0.2.0，两宿主仍为 `not-host-verified` |
+| CLI 子进程端到端 | generate→install→幂等 install→uninstall 全链路通过；approvals list/approve/绑定不匹配/重放拒绝通过 |
+| DSH 隔离冒烟（子代理执行） | 真实 DSH 0.2.1-rc.3 隔离 `DSH_HOME` 下加载未改动适配器：激活成功；负控按设计失败于 `POLICY_PATH_REQUIRED`；全程 0 次付费调用、未触碰 `~/.dsh`。详见 `docs/integration/dsh-local-findings.md` |
+
+精确文件摘要见 `verification-2026-10-26-m2.json`（按仓库 blob 字节计算）。本批新发现并已记录的宿主行为：DSH `apply()` 抛错只产生 `dsh: warning: N entries did not activate` 且退出码仍为 0——集成验收不能只看退出码，必须解析警告；DSH 最小插件树需同时包含 `system-prompt` 与 `tools` 闭包。
+
+## 本轮仍未运行
+
+- CI（ubuntu + windows 矩阵）：以 GitHub Actions 实际运行结果为准。
+- macOS；ZCode 真实宿主 Hook 信任链；DSH guard 在真实工具执行管线中的拒绝路径（`gstack861:*` 理由串进入工具结果）；付费模型调用。
+- 生成器/安装器对真实宿主技能目录的写入（安装目标目前仅为测试目录，宿主技能目录布局待各自集成任务）。
+
+## 下一验收
+
+两侧真实宿主离线集成：ZCode 在受控新会话安装 Hook 并验证信任摘要、启动失败与超时行为；DSH 在隔离配置中触发真实工具调用验证 guard 拒绝路径与警告解析；随后把生成/安装接入真实宿主技能目录，并开始 /investigate、/review 纵向流程。

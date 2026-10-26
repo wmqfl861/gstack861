@@ -2,23 +2,28 @@
 
 将 gstack 原生适配到 **ZCode** 与 **DeepSeek Harness（DSH）**。一套核心，两套独立宿主适配，不隐藏调用 Claude Code，不把提示词复制当作功能对等。
 
-**当前版本：0.1.1 / foundation。不是完整可用的 gstack 双宿主发行版。**
+**当前版本：0.2.0 / foundation。不是完整可用的 gstack 双宿主发行版。**
 
 ## 开发文档
 
 - [完整蓝图与阶段验收](docs/BLUEPRINT.md)
 - [功能与证据矩阵](docs/FEATURE_MATRIX.md)
 - [本轮测试说明及限制](docs/VERIFICATION.md)
-- [精确测试文件摘要](docs/verification-2026-10-26.json)（首轮 Linux）；[Windows 轮](docs/verification-2026-10-26-windows.json)
+- [精确测试文件摘要](docs/verification-2026-10-26.json)（首轮 Linux）；[Windows 轮](docs/verification-2026-10-26-windows.json)；[M2 基础批次](docs/verification-2026-10-26-m2.json)
+- [M2 基础批次实施计划](docs/plans/2026-10-26-m2-foundation.md)
+- [本机 DSH 真实加载调研](docs/integration/dsh-local-findings.md)
 - [固定上游和宿主提交](upstream.lock.json)
 
 ## 已实现
 
 1. 宿主中立策略核心：显式文件工具绑定、读写范围分离、符号链接和路径越界检查、未知工具默认拒绝、配置摘要。
-2. ZCode 同步 PreToolUse 协议适配与配置片段生成；实际 Node Hook 子进程回归。
-3. DSH 原生 `ctx.tools.guard` 插件入口；针对固定上游接口的协议测试，尚未加载真实 DSH。
-4. 持久审批状态核心：等待人工批准、会话/操作/配置绑定、过期、拒绝、单次消费、跨进程竞争保护。审批 UI 与真实任务执行尚未接通。
+2. ZCode 同步 PreToolUse 协议适配与配置片段生成（支持按绑定工具收窄 matcher）；实际 Node Hook 子进程回归。
+3. DSH 原生 `ctx.tools.guard` 插件入口；协议测试通过；并已在本机真实 DSH 0.2.1-rc.3 隔离配置中完成加载/激活冒烟（见调研文档），guard 工具执行级拒绝路径仍未验证。
+4. 持久审批状态核心：等待人工批准、会话/操作/配置绑定、过期、拒绝、单次消费、跨进程竞争保护；操作员 CLI（`approvals list/show/approve/reject`）已接通审批通道，宿主内询问 UI 仍未接通。
 5. 固定提交的上游源技能盘点器：模板去重、文件摘要、宿主依赖提示；不执行上游代码，不自动宣布兼容。
+6. 持久任务日志：planned/running/completed/failed/cancelled/interrupted 状态机、断点恢复标记、跨进程转移锁、防篡改记录校验。
+7. 固定上游技能生成器：从盘点结果生成宿主技能包（逐字节复制的 SKILL.md + manifest，含占位符与宿主依赖提示、`generated-not-host-verified` 标记），不解析模板、不执行上游代码。
+8. 两阶段安装/卸载注册：先全量校验后写入、绝不覆盖用户文件（`USER_FILE_REFUSED`）、幂等跳过、版本漂移自动备份、注册表原子更新。
 
 ## 开发与离线检查
 
@@ -42,6 +47,8 @@ node bin/gstack861.mjs inventory --upstream upstream/gstack
 ```sh
 node bin/gstack861.mjs zcode-config --policy /absolute/private/policy.json
 ```
+
+生成片段默认 matcher 为 `.*`；可用 `--matcher 'Read|Write|Edit'` 把 Hook 范围收窄到策略中绑定的文件工具（见 `src/adapters/zcode.mjs` 的 `zcodeHookConfig`）。
 
 该命令只输出配置片段，不修改用户设置，不自动授予 Hook 信任。按固定版本 ZCode 的 Hooks 文档合并配置并审查 trust digest，创建新会话验证。允许的调用返回空结果，保留 ZCode 自身权限检查；拒绝返回结构化 deny 和退出码 2。
 

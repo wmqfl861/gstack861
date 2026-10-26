@@ -49,11 +49,11 @@
   - `get(id)` → 冻结记录，不存在抛 `NOT_FOUND`；`list({ state } = {})` → 按 id 排序的冻结记录数组。
   - 每次转移：锁目录 `file.lock`（`mkdir 0700`，失败抛 `TASK_BUSY`，`finally rmdir`）；记录校验照抄 `ApprovalStore.transition`（大小 ≤ 4096、`nlink === 1`、schema/id/`subjectHash` 匹配、POSIX mode 0077 为 0）；非法顺序抛 `TASK_WRONG_STATE`；写回用 tmp + rename；`updatedAt` 更新。
 
-- [ ] **Step 1: 写失败测试**（覆盖：create→start→complete 全程状态与 attempts；非法转移 `planned→complete` 抛 `TASK_WRONG_STATE`；subject 绑定不匹配拒绝；`get`/`list` 过滤；跨实例持久化；篡改记录（改 id）抛 `INVALID_TASK_RECORD`；锁目录残留抛 `TASK_BUSY` 不自动清锁；`subjectDigest` 与 `ApprovalStore` 对同一 subject 一致——用 `test/approvals.test.mjs` 的 subject 构造方式；双真实进程并发 `start` 仅一个成功，参照 `test/approvals.test.mjs` 的双进程模式）
-- [ ] **Step 2: 跑测试确认失败**：`node --test test/tasks.test.mjs` → FAIL（模块不存在）
-- [ ] **Step 3: 实现**：先在 `src/approvals.mjs` 导出 `subjectDigest`（原 `subjectHash` 改名，行为与现有测试不变），再实现 `src/tasks.mjs`
-- [ ] **Step 4: 全量回归**：`npm test` → 全部通过（含既有 50 项）
-- [ ] **Step 5: 提交并报告**（提交本任务 src+test，跑 `npm test` 全绿后 commit）
+- [x] **Step 1: 写失败测试**（覆盖：create→start→complete 全程状态与 attempts；非法转移 `planned→complete` 抛 `TASK_WRONG_STATE`；subject 绑定不匹配拒绝；`get`/`list` 过滤；跨实例持久化；篡改记录（改 id）抛 `INVALID_TASK_RECORD`；锁目录残留抛 `TASK_BUSY` 不自动清锁；`subjectDigest` 与 `ApprovalStore` 对同一 subject 一致——用 `test/approvals.test.mjs` 的 subject 构造方式；双真实进程并发 `start` 仅一个成功，参照 `test/approvals.test.mjs` 的双进程模式）
+- [x] **Step 2: 跑测试确认失败**：`node --test test/tasks.test.mjs` → FAIL（模块不存在）
+- [x] **Step 3: 实现**：先在 `src/approvals.mjs` 导出 `subjectDigest`（原 `subjectHash` 改名，行为与现有测试不变），再实现 `src/tasks.mjs`
+- [x] **Step 4: 全量回归**：`npm test` → 全部通过（含既有 50 项）
+- [x] **Step 5: 提交并报告**（提交本任务 src+test，跑 `npm test` 全绿后 commit）
 
 ### Task 2: 固定上游技能生成器
 
@@ -69,11 +69,11 @@
   - 每个技能：`text = git show HEAD:<source>`（`execFileSync` 照抄 `src/inventory.mjs` 的 `git()` 封装）；`placeholders` = `/\{\{([^}]+)\}\}/g` 全部匹配去重排序；`sha256 = textDigest(text)`；写 `staging/<name>/SKILL.md`（`wx`，0644，字节与 git show 完全一致）与 `staging/<name>/manifest.json`（`wx`，0644）：`{ schemaVersion: 1, name, host, source, blob, sha256, placeholders, indicators, needsReview: indicators.length > 0, status: 'generated-not-host-verified', generator: 'gstack861', generatorVersion: '0.2.0', generatedAt: now() }`。
   - 返回值中 `needsReview` = 有 needsReview 技能的数量。
 
-- [ ] **Step 1: 写失败测试**（复用 `test/inventory.test.mjs` 的 `repository(t)` fixture 模式；断言：SKILL.md 字节 === `git show` 输出；manifest 各字段精确匹配，`review` 因 indicators 非空 `needsReview: true`、`investigate` 为 false；placeholders `['TOOLS']`；非空 staging 抛 `STAGING_NOT_EMPTY`；staging 在 upstream 内抛 `OVERLAPPING_PATHS`；非法 host 抛 `INVALID_HOST`；脏 upstream 继承 `UPSTREAM_DIRTY`）
-- [ ] **Step 2: 确认失败**：`node --test test/generate.test.mjs` → FAIL
-- [ ] **Step 3: 实现 `src/generate.mjs`**
-- [ ] **Step 4: 全量回归**：`npm test` 全通过
-- [ ] **Step 5: 提交并报告**（提交本任务 src+test，跑 `npm test` 全绿后 commit）
+- [x] **Step 1: 写失败测试**（复用 `test/inventory.test.mjs` 的 `repository(t)` fixture 模式；断言：SKILL.md 字节 === `git show` 输出；manifest 各字段精确匹配，`review` 因 indicators 非空 `needsReview: true`、`investigate` 为 false；placeholders `['TOOLS']`；非空 staging 抛 `STAGING_NOT_EMPTY`；staging 在 upstream 内抛 `OVERLAPPING_PATHS`；非法 host 抛 `INVALID_HOST`；脏 upstream 继承 `UPSTREAM_DIRTY`）
+- [x] **Step 2: 确认失败**：`node --test test/generate.test.mjs` → FAIL
+- [x] **Step 3: 实现 `src/generate.mjs`**
+- [x] **Step 4: 全量回归**：`npm test` 全通过
+- [x] **Step 5: 提交并报告**（提交本任务 src+test，跑 `npm test` 全绿后 commit）
 
 ### Task 3: 安装 / 卸载注册
 
@@ -90,11 +90,11 @@
     - `target/<name>` 不存在 → 安装（SKILL.md + manifest.json，`wx`）；存在且其 manifest 缺失或 `generator !== 'gstack861'` → `USER_FILE_REFUSED`；存在且 `sha256` 相同 → `skipped`；不同 → 先把 `target/<name>` 移入 `target/.gstack861-backups/<name>-<Date.now()>/` 再安装，计入 `backedUp`。
     - 注册表 `target/.gstack861-registry.json`：`{ schemaVersion: 1, updatedAt, skills: [{ name, sha256 }] }`，tmp + rename 原子写。
   - `uninstallSkills({ target, purge = false })` → `{ uninstalled: [names], backupsRemoved: 数量 }`：按注册表两阶段——先全部验证每个 `target/<name>/manifest.json` 的 `generator === 'gstack861'`（缺失或不符抛 `USER_FILE_REFUSED`，整体中止不删任何东西），再统一删除目录；注册表重写为空列表；`purge: true` 额外删除 `.gstack861-backups`。
-- [ ] **Step 1: 写失败测试**（空目标安装→installed 两人；重复安装→skipped 且文件未变；目标被 foreign 文件占用→`USER_FILE_REFUSED` 且已校验的其他条目也**没有**写入；staging 篡改（改 SKILL.md 内容）→`TAMPERED_STAGING` 零写入；版本漂移→backedUp、备份目录含旧 SKILL.md、目标为新内容；卸载只删注册表内自有目录、注册表外的目录原样保留、卸载后再卸载返回空；purge 清备份；伪造注册表指向 foreign 目录→整体 `USER_FILE_REFUSED` 不删）
-- [ ] **Step 2: 确认失败**：`node --test test/install.test.mjs` → FAIL
-- [ ] **Step 3: 实现 `src/install.mjs`**
-- [ ] **Step 4: 全量回归**：`npm test` 全通过
-- [ ] **Step 5: 提交并报告**（提交本任务 src+test，跑 `npm test` 全绿后 commit）
+- [x] **Step 1: 写失败测试**（空目标安装→installed 两人；重复安装→skipped 且文件未变；目标被 foreign 文件占用→`USER_FILE_REFUSED` 且已校验的其他条目也**没有**写入；staging 篡改（改 SKILL.md 内容）→`TAMPERED_STAGING` 零写入；版本漂移→backedUp、备份目录含旧 SKILL.md、目标为新内容；卸载只删注册表内自有目录、注册表外的目录原样保留、卸载后再卸载返回空；purge 清备份；伪造注册表指向 foreign 目录→整体 `USER_FILE_REFUSED` 不删）
+- [x] **Step 2: 确认失败**：`node --test test/install.test.mjs` → FAIL
+- [x] **Step 3: 实现 `src/install.mjs`**
+- [x] **Step 4: 全量回归**：`npm test` 全通过
+- [x] **Step 5: 提交并报告**（提交本任务 src+test，跑 `npm test` 全绿后 commit）
 
 ### Task 4: 本机 DSH 真实加载调研（只读 + 一份发现文档）
 
@@ -106,10 +106,10 @@
 - Produces: 发现文档，固定小节：`安装位置与版本`、`插件发现机制`、`配置格式与隔离方式（env/flag）`、`ctx.tools.guard 是否存在于该版本`、`受控冒烟（命令、策略、真实输出）或 blocked 原因`、`对 src/adapters/dsh.mjs 的差异清单`。
 - 约束：只读调研；**不得修改用户级 DSH 配置**；冒烟仅当能用隔离配置目录（独立 HOME/env）运行时执行，运行前把完整命令写入文档；不调用付费模型（dsh 冒烟若会触发模型调用则记 blocked）。
 
-- [ ] **Step 1: 读 dsh skill 文档与本机 DSH 安装，确认版本、插件加载、guard API**
-- [ ] **Step 2: 若可隔离：跑一次插件加载冒烟（加载 gstack861 guard，观察激活/拒绝输出）；否则记录 blocked 与确切原因**
-- [ ] **Step 3: 写 `docs/integration/dsh-local-findings.md`，只记录真实运行过的命令与输出**
-- [ ] **Step 4: 报告**（不提交；后台并行任务，产物由协调者审核后提交）
+- [x] **Step 1: 读 dsh skill 文档与本机 DSH 安装，确认版本、插件加载、guard API**
+- [x] **Step 2: 若可隔离：跑一次插件加载冒烟（加载 gstack861 guard，观察激活/拒绝输出）；否则记录 blocked 与确切原因**
+- [x] **Step 3: 写 `docs/integration/dsh-local-findings.md`，只记录真实运行过的命令与输出**
+- [x] **Step 4: 报告**（不提交；后台并行任务，产物由协调者审核后提交）
 
 ### Task 5: 集成（协调者执行，不派子代理）
 
@@ -127,8 +127,8 @@
 - `scripts/round-digests.mjs`：文件清单加入新文件；上一轮对照文件改为参数（默认 `docs/verification-2026-10-26-windows.json`）。
 - 文档：README「已实现」增列 4 项并更新版本；FEATURE_MATRIX 三行状态推进为 `contract_tested`（任务日志、生成器、安装）与 `implemented`（审批 CLI）；VERIFICATION 第三轮记录 + 新摘要 JSON。
 
-- [ ] **Step 1: matcher 失败测试 → 实现 → 通过**（matcher 只覆盖绑定工具；非法 matcher 抛错；旧调用不变）
-- [ ] **Step 2: CLI 失败测试（子进程）→ 实现新命令 → 通过**（generate→install→uninstall 全链路子进程冒烟；approvals approve 后 core consume 成功；错误路径 exit 1 + 错误码前缀）
-- [ ] **Step 3: 版本、exports、README、FEATURE_MATRIX、VERIFICATION、摘要 JSON**
-- [ ] **Step 4: `npm run check && npm test && npm run doctor` 全绿**
-- [ ] **Step 5: 独立审查子代理审整个 diff → 处理发现 → 提交并推送 GitHub**
+- [x] **Step 1: matcher 失败测试 → 实现 → 通过**（matcher 只覆盖绑定工具；非法 matcher 抛错；旧调用不变）
+- [x] **Step 2: CLI 失败测试（子进程）→ 实现新命令 → 通过**（generate→install→uninstall 全链路子进程冒烟；approvals approve 后 core consume 成功；错误路径 exit 1 + 错误码前缀）
+- [x] **Step 3: 版本、exports、README、FEATURE_MATRIX、VERIFICATION、摘要 JSON**
+- [x] **Step 4: `npm run check && npm test && npm run doctor` 全绿**
+- [x] **Step 5: 独立审查子代理审整个 diff → 处理发现 → 提交并推送 GitHub**

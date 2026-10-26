@@ -14,7 +14,7 @@ export function subjectDigest(subject) {
   return digest(subject);
 }
 
-/** Trusted-controller API only. Not exposed to model tools or the CLI. */
+/** Transitions are trusted-controller API only; read-only get/list also serve the operator CLI. */
 export class ApprovalStore {
   constructor(directory, { clock = Date.now } = {}) {
     if (!path.isAbsolute(directory)) fail('ABSOLUTE_STATE_PATH_REQUIRED');
@@ -66,4 +66,21 @@ export class ApprovalStore {
   approve(id, subject) { return this.transition(id, subject, ['pending'], 'approved'); }
   reject(id, subject) { return this.transition(id, subject, ['pending', 'approved'], 'rejected'); }
   consume(id, subject) { return this.transition(id, subject, ['approved'], 'consumed'); }
+  get(id) {
+    const filename = this.file(id);
+    let stat;
+    try { stat = fs.lstatSync(filename); }
+    catch { fail('NOT_FOUND'); }
+    if (!stat.isFile() || stat.isSymbolicLink() || stat.nlink !== 1 || stat.size > 4096) fail('UNSAFE_APPROVAL_FILE');
+    const record = JSON.parse(fs.readFileSync(filename, 'utf8'));
+    if (record.schemaVersion !== 1 || record.id !== id || !Number.isSafeInteger(record.expiresAt)) fail('INVALID_APPROVAL_RECORD');
+    return Object.freeze(record);
+  }
+  /** Read-only operator view; skips lock dirs and temp files by name. */
+  list() {
+    return fs.readdirSync(this.directory)
+      .filter(name => name.endsWith('.json') && ID.test(name.slice(0, -5)))
+      .map(name => this.get(name.slice(0, -5)))
+      .sort((a, b) => a.id.localeCompare(b.id));
+  }
 }
