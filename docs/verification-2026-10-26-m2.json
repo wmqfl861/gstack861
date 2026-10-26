@@ -61,13 +61,13 @@
   "testedFiles": [
     {
       "path": "bin/gstack861.mjs",
-      "gitBlobSha1": "dcf44ede7a2cd0fff4e15d71811ec24cfb1d0724",
-      "sha256": "c569d4d6529b5fb33761676333c60f888210b8eed24bf107abaa0ea30695fdd1"
+      "gitBlobSha1": "7ceea09c69c83f72987ce9beb741df9f1093ed9d",
+      "sha256": "14646b640bb8c1066610e489ade8dc00aa67c718ade610d8147815b5130ae3ad"
     },
     {
       "path": "package.json",
-      "gitBlobSha1": "e854de3c019c9e89404fe6adb82fb05efb3fc386",
-      "sha256": "a275ebf6bcb6a70b6b93e6c37ac91229533fc128a99b1fbbe8503871739f0d93"
+      "gitBlobSha1": "eee9e224a67ee62fc97bd21ca6148958f2b3acf3",
+      "sha256": "b1957c9e1c28ff0382add28e18bf87a21204eb367ca170cef706a78ff27bc4e9"
     },
     {
       "path": "scripts/check.mjs",
@@ -81,23 +81,23 @@
     },
     {
       "path": "src/adapters/zcode.mjs",
-      "gitBlobSha1": "0a251c9fd25b9e4e0809024e5989243536eb6fef",
-      "sha256": "1c1337bedcfbaf6bdf1012a6033ade84e9a1e3307cb29536224f7daade9415f3"
+      "gitBlobSha1": "a7c0db5d277266cadc4e008112d68846e838fa68",
+      "sha256": "e9ee73f2d22a4d67baf51fec11c4e4fc6b22f721b581b25f0c2f2619a9c8a3f5"
     },
     {
       "path": "src/approvals.mjs",
-      "gitBlobSha1": "29ee7a94937f0b5b0da0c633d8c5cfe2fb132836",
-      "sha256": "ee1ca154b87aaadb8d053934462130f5d61c002fb63ddede48a4451bf15f9223"
+      "gitBlobSha1": "cbdd5a55b9513404c123cf262586cf1d1d3d10ac",
+      "sha256": "fd8339d473ae17445295f3f452c2551ddfa2fdf99a4b95d5d9026751b3446e3f"
     },
     {
       "path": "src/generate.mjs",
-      "gitBlobSha1": "9f1d5a0d8bd9b8e684eb64cabd81100044524a21",
-      "sha256": "ada0ea8346ee64d136651a459ab29c9375a2a9d9612d332f447ed58e267aea61"
+      "gitBlobSha1": "34b770a013087bac117cc0fc0fc9e3c25bb03002",
+      "sha256": "c13c2ff23472583e4a3002a8a455033ef2cbeb4de54c878149c34be84f1c791c"
     },
     {
       "path": "src/install.mjs",
-      "gitBlobSha1": "eea8f2e830fac93bceb157ee8d1faacd5e0a8862",
-      "sha256": "a39ba1086efe57894781f80cb80e511f5028f0a8d3f69a81b08177e8e6798b90"
+      "gitBlobSha1": "b25dc39c5a8ad35847438d007055881b724b68c9",
+      "sha256": "3349e8c73b3dcf4dcdc7e8bbe2d3f89820dbe0d87da43340d19638a4b1bf240e"
     },
     {
       "path": "src/inventory.mjs",
@@ -121,8 +121,8 @@
     },
     {
       "path": "test/adapters.test.mjs",
-      "gitBlobSha1": "d745cb2814ef4f24915098223c9615d25f1ca23e",
-      "sha256": "cc9b65ee06f25c4c9964347e08bcd7a52c6a3d41ecce13fe9d70d4cf849c5ede"
+      "gitBlobSha1": "2110849b6efa22113b9db9cd4901dc819632b6bb",
+      "sha256": "fc674372071919473f385c34a146091d901cf395a7d24c7cf34d5141c71809a9"
     },
     {
       "path": "test/approvals.test.mjs",
@@ -131,18 +131,18 @@
     },
     {
       "path": "test/generate.test.mjs",
-      "gitBlobSha1": "4815ff723c28fbddfae8c027f745ad5675199c21",
-      "sha256": "45c70dbb82aeda156e3a9c95325ffa62a72461dc1d1e352fb04e0686ce92fa54"
+      "gitBlobSha1": "6ced3e5530f30673826629a4390a38a4ddfe464d",
+      "sha256": "09f813cb2af3d4906248374c16706840ff05855eab8f2390a784d6ccbfd4b96b"
     },
     {
       "path": "test/helpers.mjs",
-      "gitBlobSha1": "7742917074d1ee18587a156cd551298e6d3b7b69",
-      "sha256": "1705e6663ccbd4b1739daa65f4e4a4452c983ef02c7d6a08f2deef7490431531"
+      "gitBlobSha1": "a9f9eb6a69043bf912e489f559fa70320031e6bc",
+      "sha256": "a1e0661b4bff12311dbe334ca86b03d71523c551d0fc2c7a6fa8e62f1d26aea7"
     },
     {
       "path": "test/install.test.mjs",
-      "gitBlobSha1": "7913244311196de4706a0dfe30ee65d443fa952a",
-      "sha256": "7a45fde3a3bfd149bc373d45c8b993e4492a5a04fb722bfb50b13e7b47f69106"
+      "gitBlobSha1": "8e51511dd95f0bd62fff46163879d254c4ba314d",
+      "sha256": "eff2b861140ccbfaa403b58e98202e756fe86e991c603e11dc3baa7113bd8925"
     },
     {
       "path": "test/inventory.test.mjs",
@@ -170,5 +170,12 @@
       "sha256": "160e2ca165946815dbec63ed39df1cc3be6c756536282012546b97d2fbf483dc"
     }
   ],
-  "digestMethod": "git ls-tree/show at HEAD commit (repository blob bytes, LF); independent of platform autocrlf"
+  "digestMethod": "git ls-tree/show at HEAD commit (repository blob bytes, LF); independent of platform autocrlf",
+  "finalReview": {
+    "verdict": "with-fixes",
+    "criticalFindings": 0,
+    "importantFindings": 5,
+    "resolution": "findings 2-5 fixed in commit 73af5ef (operator-CLI doctrine, manifest commit provenance, matcher claim qualifier, byte-exact generation); finding 1 (stale digests) resolved by regenerating this manifest at final HEAD",
+    "residualMinors": "deferred to next batch per review triage (see ledger)"
+  }
 }
