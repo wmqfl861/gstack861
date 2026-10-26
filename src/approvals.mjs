@@ -6,7 +6,7 @@ import { digest, object } from './json.mjs';
 const ID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 const fail = code => { throw new Error(code); };
 
-function subjectHash(subject) {
+export function subjectDigest(subject) {
   if (!object(subject) || Object.keys(subject).sort().join(',') !== 'action,host,policyHash,runId,sessionId'
     || !['zcode', 'dsh'].includes(subject.host)
     || !['runId', 'sessionId'].every(k => typeof subject[k] === 'string' && subject[k].length > 0 && subject[k].length <= 256)
@@ -37,7 +37,7 @@ export class ApprovalStore {
   issue(subject, { ttlMs = 300000 } = {}) {
     if (!Number.isSafeInteger(ttlMs) || ttlMs < 1 || ttlMs > 86400000) fail('INVALID_TTL');
     const id = randomUUID();
-    const record = { schemaVersion: 1, id, subjectHash: subjectHash(subject), state: 'pending', issuedAt: this.now() };
+    const record = { schemaVersion: 1, id, subjectHash: subjectDigest(subject), state: 'pending', issuedAt: this.now() };
     record.expiresAt = record.issuedAt + ttlMs;
     fs.writeFileSync(this.file(id), JSON.stringify(record) + '\n', { flag: 'wx', mode: 0o600 });
     return id;
@@ -51,7 +51,7 @@ export class ApprovalStore {
       if (process.platform !== 'win32' && (stat.mode & 0o077)) fail('UNSAFE_APPROVAL_PERMISSIONS');
       const record = JSON.parse(fs.readFileSync(filename, 'utf8'));
       if (record.schemaVersion !== 1 || record.id !== id || !Number.isSafeInteger(record.expiresAt)) fail('INVALID_APPROVAL_RECORD');
-      if (record.subjectHash !== subjectHash(subject)) fail('APPROVAL_BINDING_MISMATCH');
+      if (record.subjectHash !== subjectDigest(subject)) fail('APPROVAL_BINDING_MISMATCH');
       if (this.now() >= record.expiresAt) fail('APPROVAL_EXPIRED');
       if (!from.includes(record.state)) fail('APPROVAL_WRONG_STATE');
       const next = { ...record, state: to, changedAt: this.now() };
