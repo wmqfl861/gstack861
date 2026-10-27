@@ -10,10 +10,11 @@
 - [功能与证据矩阵](docs/FEATURE_MATRIX.md)
 - [本轮测试说明及限制](docs/VERIFICATION.md)
 - [精确测试文件摘要](docs/verification-2026-10-26.json)（首轮 Linux）；[Windows 轮](docs/verification-2026-10-26-windows.json)；[M2 基础批次](docs/verification-2026-10-26-m2.json)
-- [后续轮次](docs/verification-2026-10-27-review-fixes.json)：[Windows 验收](docs/verification-2026-10-27-windows-acceptance.json)、[M2 纵向](docs/verification-2026-10-27-m2-vertical.json)、[纵向流程证据](docs/verification-2026-10-27-vertical-zcode.md)、[批次 2](docs/verification-2026-10-27-batch2.json)
+- [后续轮次](docs/verification-2026-10-27-review-fixes.json)：[Windows 验收](docs/verification-2026-10-27-windows-acceptance.json)、[M2 纵向](docs/verification-2026-10-27-m2-vertical.json)、[纵向流程证据](docs/verification-2026-10-27-vertical-zcode.md)、[批次 2](docs/verification-2026-10-27-batch2.json)、[批次 3](docs/verification-2026-10-27-batch3.json)、[批次 4](docs/verification-2026-10-27-batch4.json)
 - [M2 基础批次实施计划](docs/plans/2026-10-26-m2-foundation.md)
 - [本机 DSH 真实加载调研](docs/integration/dsh-local-findings.md)
 - [ZCode 受控接入验收手册](docs/integration/zcode-acceptance.md)
+- [宿主装载 runbook](docs/integration/host-loading.md)
 - [固定上游和宿主提交](upstream.lock.json)
 
 DSH 管线级 guard 验证（真实工具调用拒绝路径）待 `DEEPSEEK_API_KEY` 提供后执行：就绪脚本 `node scripts/verify-dsh-guard.mjs` 已就位，密钥缺失时打印受阻原因并以退出码 2 结束（本仓库不读取 `~/.dsh` 凭据）。
@@ -70,7 +71,7 @@ node bin/gstack861.mjs zcode-config --policy /absolute/private/policy.json
 
 - 执行仅限 `scripts/render-upstream.mjs`，且仅当 `CI=true` **且** `GSTACK861_RENDER=ci` 同时成立（后者是维护者在 CI 同等断言下的受控复现通道）；bun 版本必须恰为 1.4.2。
 - 在 `git archive` 生成的**子模块副本**上执行 overlay（`hosts-overlay/zcode.ts`、`dsh.ts`，注册表字面量拼接），`upstream/gstack` 工作树渲染前后断言 pristine；不运行 `setup`、不安装 Claude Code、不调用模型；渲染路径经审查为零 npm 依赖、零网络。
-- 产物落 `rendered/.zcode` 与 `rendered/.dsh`（每宿主 57 技能 + 根路由 `gstack`），零未解析占位符，附 `render-manifest-<host>.json`；状态为 **rendered-experimental**——不构成上游 conformance/full 认证，安装链接入待后续批次。产物经 CI artifacts（30 天）获取。装载链已接通（0.4.1）：`stage-render --rendered DIR --manifest FILE --host zcode|dsh --staging DIR` 将渲染树转换为 staging（含嵌套 sections/templates 多文件技能，registry 为卸载信任锚），随后走既有 `install`/`uninstall`。本机已用真实 CI 渲染产物实跑全链（57+根 → 安装 58 → 幂等重装 → 卸载清空）。渲染作业仅在 ubuntu 运行——bun 渲染与平台无关，Windows 矩阵只跑离线契约与测试。
+- 产物落 `rendered/.zcode` 与 `rendered/.dsh`（每宿主 57 技能 + 根路由 `gstack`），零未解析占位符，附 `render-manifest-<host>.json`；状态为 **rendered-experimental**——不构成上游 conformance/full 认证，安装链接入待后续批次。产物经 CI artifacts（30 天）获取。装载链已接通（0.4.1）：`stage-render --rendered DIR --manifest FILE --host zcode|dsh --staging DIR` 将渲染树转换为 staging（含嵌套 sections/templates 多文件技能，registry 为卸载信任锚），随后走既有 `install`/`uninstall`。本机已用真实 CI 渲染产物实跑全链（57+根 → 安装 58 → 幂等重装 → 卸载清空）。宿主装载（ZCode 工作区装载与 DSH 边界）见 [docs/integration/host-loading.md](docs/integration/host-loading.md)。渲染作业仅在 ubuntu 运行——bun 渲染与平台无关，Windows 矩阵只跑离线契约与测试。
 
 ## 安全与状态边界
 
