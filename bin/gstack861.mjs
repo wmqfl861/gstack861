@@ -42,7 +42,9 @@ if (args[0] === 'hook') {
     const chunks = []; let bytes = 0;
     for await (const chunk of process.stdin) {
       bytes += chunk.length;
-      if (bytes > 1048576) throw new Error('INPUT_TOO_LARGE');
+      // 4 MiB cap: hosts may embed whole file contents in tool_input, which the old
+      // 1 MiB limit refused; the cap still bounds memory before JSON.parse runs.
+      if (bytes > 4 * 1024 * 1024) throw new Error('INPUT_TOO_LARGE');
       chunks.push(chunk);
     }
     // Decode once: per-chunk decoding splits multi-byte UTF-8 characters at chunk boundaries.

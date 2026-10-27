@@ -54,11 +54,21 @@ test('real hook subprocess accepts a valid request and refuses an out-of-scope r
 });
 test('real hook subprocess denies invalid JSON, missing policy, and oversized payloads', t => {
   const f = fixture(t);
-  for (const [p, input] of [[f.policyPath, '{'], [f.policyPath + '.missing', '{}'], [f.policyPath, 'x'.repeat(1048577)]]) {
-    const child = spawnSync(process.execPath, [cli, 'hook', 'zcode', '--policy', p], { input, encoding: 'utf8', timeout: 5000 });
+  for (const [p, input] of [[f.policyPath, '{'], [f.policyPath + '.missing', '{}'], [f.policyPath, 'x'.repeat(4 * 1024 * 1024 + 1)]]) {
+    const child = spawnSync(process.execPath, [cli, 'hook', 'zcode', '--policy', p], { input, encoding: 'utf8', timeout: 15000 });
     assert.equal(child.status, 2);
     assert.equal(JSON.parse(child.stdout).hookSpecificOutput.permissionDecision, 'deny');
   }
+});
+test('real hook subprocess accepts valid payloads above 1 MiB and below the 4 MiB cap', t => {
+  const f = fixture(t);
+  // Hosts embed file contents in tool_input: a >1 MiB valid request must pass the cap
+  // (the old limit) and be policy-evaluated normally, not refused by size alone.
+  const big = JSON.stringify({ ...event(f), tool_input: { file_path: 'src/new', content: 'x'.repeat(2 * 1024 * 1024) } });
+  assert.ok(big.length > 1024 * 1024 && big.length < 4 * 1024 * 1024);
+  const child = spawnSync(process.execPath, [cli, 'hook', 'zcode', '--policy', f.policyPath], { input: big, encoding: 'utf8', timeout: 15000 });
+  assert.equal(child.status, 0, child.stderr);
+  assert.deepEqual(JSON.parse(child.stdout), {});
 });
 test('CLI config generation does not modify existing files', t => {
   const f = fixture(t), before = fs.readFileSync(f.policyPath, 'utf8');
