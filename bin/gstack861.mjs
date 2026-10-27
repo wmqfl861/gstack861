@@ -111,8 +111,8 @@ if (args[0] === 'hook') {
       const options = flags(args.slice(1), ['--staging', '--target'], ['--dry-run']);
       print(installSkills({ staging: absolute(options['--staging']), target: absolute(options['--target']), dryRun: options['--dry-run'] === true }));
     } else if (args[0] === 'uninstall') {
-      const options = flags(args.slice(1), ['--target'], ['--purge']);
-      print(uninstallSkills({ target: absolute(options['--target']), purge: options['--purge'] === true }));
+      const options = flags(args.slice(1), ['--target'], ['--purge', '--dry-run']);
+      print(uninstallSkills({ target: absolute(options['--target']), purge: options['--purge'] === true, dryRun: options['--dry-run'] === true }));
     } else if (args[0] === 'approvals') {
       const options = flags(args.slice(2), ['--state', '--id', '--host', '--session', '--run', '--policy-hash', '--action-file', '--ttl-ms', '--prompt-file']);
       // Validate before constructing the store: a rejected subcommand or argument
@@ -213,7 +213,7 @@ if (args[0] === 'hook') {
         + '    (env GSTACK861_TEST_COMMIT overrides the upstream lock pin for TESTS only; default = upstream.lock.json)\n'
         + '  stage-render --rendered DIR --manifest FILE --host zcode|dsh --staging DIR\n'
         + '    (converts CI render output + render-manifest into installable staging; GSTACK861_TEST_COMMIT as for generate)\n'
-        + '  install --staging DIR --target DIR [--dry-run] | uninstall --target DIR [--purge]\n'
+        + '  install --staging DIR --target DIR [--dry-run] | uninstall --target DIR [--purge] [--dry-run]\n'
         + '  approvals list --state DIR | show --state DIR --id ID\n'
         + '  approvals issue --state DIR --host H --session S --run R --policy-hash HASH --action-file F [--ttl-ms N]\n'
         + '  approvals approve|reject|consume --state DIR --id ID --host H --session S --run R --policy-hash HASH --action-file F\n'
