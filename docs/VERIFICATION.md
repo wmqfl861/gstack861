@@ -91,3 +91,47 @@
 ## 下一验收
 
 两侧真实宿主离线集成：ZCode 在受控新会话安装 Hook 并验证信任摘要、启动失败与超时行为；DSH 在隔离配置中触发真实工具调用验证 guard 拒绝路径与警告解析；随后把生成/安装接入真实宿主技能目录，并开始 /investigate、/review 纵向流程。
+
+# 第四轮验证记录：外部 Codex 审计修复批次
+
+日期：2026-10-26（同日续开发）。范围：0.2.1，按 `docs/plans/2026-10-26-codex-audit-fixes.md` 修复外部 Codex 审计（gpt-6-astra / 推理等级 max，87,329 tokens）实测发现的 2 Critical + 6 Important 缺陷。
+
+## 审计来源与过程
+
+Codex 以真实探针验证了 12 个场景（探针脚本与输出见其会话日志；报告生成阶段被提供方内容策略中断，探针结果完整保留并经本项目复核采纳）。每个探针场景在本批次中转化为回归测试。每项修复由独立子代理以 TDD 实现，并由独立审查者做规格+质量双裁决。
+
+## 修复映射
+
+| Codex 探针（实测结果） | 修复 | 回归测试 |
+|---|---|---|
+| 卸载删除用户修改/新增文件（Critical） | 卸载所有权改为注册表摘要×manifest×SKILL.md×无多余文件四重内容验证，任一漂移整体拒绝 | install.test：修改拒绝、额外文件拒绝、兄弟目录与注册表字节保全 |
+| 伪造注册表+marker 授权删外来目录（Critical） | 同上——摘要以注册表记录为准，目录自述不可信 | install.test：自洽伪造仍拒绝 |
+| 备份 junction/symlink 逃逸 | 备份路径 lstat 校验 + realpath 必须在 target 内 | install.test：junction（win32 实跑）/symlink（POSIX）|
+| 并发安装丢注册表更新 | 目标级互斥锁，第二进程 `INSTALL_BUSY`；注册表锁内读改写 | install.test：真实双进程竞争 |
+| 注册表被目录/符号链接占用 | 校验阶段前置 lstat，零写入拒绝 | install.test：(f)(g) |
+| 生成器 HEAD 切换竞态（出处破坏） | `git show <commit>:<path>` 固定提交读取 | generate.test：双提交 + now() 钩子切 HEAD，断言固定内容 |
+| matcher 放过非法正则 | `new RegExp(matcher)` 编译检查 | adapters.test：`*`、`\`、`a**b` |
+| 损坏审批记录展示退出码 0 | `get()` 状态白名单 + ENOENT-only NOT_FOUND | approvals/adapters.test |
+| purge 删用户归档 | 只清理 `<name>-<时间戳>` 命名项 | install.test：(j) |
+| 坏 action JSON 原始报错 | `INVALID_ACTION_FILE` | adapters.test |
+| `approvals bogus` 留状态目录 | 子命令先验证后构造 | adapters.test：文件系统断言目录未创建 |
+| tasks null 记录原始 TypeError | `INVALID_TASK_RECORD` | tasks.test |
+
+## 实际运行
+
+环境：真实 Windows 本机（win32 10.0.22624 x64），Node.js v24.21.0。
+
+| 命令 | 结果 |
+|---|---|
+| `npm run check` | 21 模块与 3 固定提交校验通过 |
+| `npm test` | 99 passed，0 failed（新增 8 安装加固 + 5 校验收口） |
+| `npm run doctor` | 成功，版本 0.2.1 |
+
+## 既知边界（未修复，已文档化）
+
+- 完全自洽伪造：对安装目标有任意写权限者仍可伪造全部内容与注册表——部署前提是目标处于模型不可写路径（guard 职责），README 已声明。
+- staging TOCTOU（蓝图第 5 节明文范围外）、`ApprovalStore.transition()` null 记录原始 TypeError、Windows 状态目录路径拼写多态、POSIX 符号链接探针仅在 CI（ubuntu）执行。
+
+## 下一验收
+
+不变：两侧真实宿主离线集成（ZCode 受控会话 Hook 信任链；DSH guard 真实工具调用拒绝路径，需模型预算授权），随后接入真实宿主技能目录与 /investigate、/review 纵向流程。

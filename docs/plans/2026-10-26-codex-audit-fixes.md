@@ -43,11 +43,11 @@
   5. **卸载内容验证所有权**（替代裸 generator 标记）：对注册表每个条目，卸载前必须同时满足——目录内 `manifest.json` 可解析、`generator === 'gstack861'`、`manifest.sha256 === 注册表记录的 sha256`、`SKILL.md` 字节摘要 === 注册表 sha256、目录 `readdir` 恰为 `['SKILL.md','manifest.json']`（无多余文件）。任一不满足 → `USER_FILE_REFUSED`，两阶段整体零删除。用户修改过 SKILL.md（摘要漂移）或放入额外文件 → 拒绝删除（保护用户数据）。
   6. **purge 收窄**：`--purge` 只删除备份目录内匹配 `/^[a-z0-9][a-z0-9-]*-\d+$/` 的目录项（我们的 `<name>-<时间戳>` 命名），其余条目原样保留，`backupsRemoved` 只计删除数。
 
-- [ ] **Step 1: 写失败测试**（新增回归，逐条对应 Codex 探针）：(a) 卸载遇用户修改过的 SKILL.md → `USER_FILE_REFUSED` 且目录原样；(b) 卸载遇目录内额外用户文件 → 同上；(c) 伪造注册表（sha 与目录 manifest 不一致）+ marker manifest → 拒绝且外来目录原样；(d) 备份目录为 junction（win32 包裹）→ `USER_FILE_REFUSED` 且 target 外零写入；(e) 备份目录为 symlink（POSIX 包裹）→ 同上；(f) 注册表路径为目录 → `USER_FILE_REFUSED` 零写入；(g) 注册表路径为 symlink（POSIX 包裹）→ 拒绝且符号链接原样；(h) 两真实进程并发安装 → 恰一个成功、另一个 `INSTALL_BUSY`，注册表与成功方一致、无孤儿；(i) 锁目录残留 → `INSTALL_BUSY` 不自动清；(j) purge 后非 `<name>-<数字>` 命名的用户归档目录保留；(k) 既有全部测试语义不回归（幂等 skip、漂移备份、两阶段卸载等——注意 (a) 改变了「漂移后重装再卸载」路径：漂移走备份替换后 target 为新内容，卸载验证针对注册表新 sha，应通过）。
-- [ ] **Step 2: 确认失败**：`node --test test/install.test.mjs` → 新用例 FAIL
-- [ ] **Step 3: 实现 `src/install.mjs` 加固**
-- [ ] **Step 4: 全量回归**：`npm test` 全绿
-- [ ] **Step 5: 提交并报告**（`fix: harden install/uninstall ownership, backup and registry paths, add install lock`）
+- [x] **Step 1: 写失败测试**（新增回归，逐条对应 Codex 探针）：(a) 卸载遇用户修改过的 SKILL.md → `USER_FILE_REFUSED` 且目录原样；(b) 卸载遇目录内额外用户文件 → 同上；(c) 伪造注册表（sha 与目录 manifest 不一致）+ marker manifest → 拒绝且外来目录原样；(d) 备份目录为 junction（win32 包裹）→ `USER_FILE_REFUSED` 且 target 外零写入；(e) 备份目录为 symlink（POSIX 包裹）→ 同上；(f) 注册表路径为目录 → `USER_FILE_REFUSED` 零写入；(g) 注册表路径为 symlink（POSIX 包裹）→ 拒绝且符号链接原样；(h) 两真实进程并发安装 → 恰一个成功、另一个 `INSTALL_BUSY`，注册表与成功方一致、无孤儿；(i) 锁目录残留 → `INSTALL_BUSY` 不自动清；(j) purge 后非 `<name>-<数字>` 命名的用户归档目录保留；(k) 既有全部测试语义不回归（幂等 skip、漂移备份、两阶段卸载等——注意 (a) 改变了「漂移后重装再卸载」路径：漂移走备份替换后 target 为新内容，卸载验证针对注册表新 sha，应通过）。
+- [x] **Step 2: 确认失败**：`node --test test/install.test.mjs` → 新用例 FAIL
+- [x] **Step 3: 实现 `src/install.mjs` 加固**
+- [x] **Step 4: 全量回归**：`npm test` 全绿
+- [x] **Step 5: 提交并报告**（`fix: harden install/uninstall ownership, backup and registry paths, add install lock`）
 
 ### Task 2: 出处固定与校验收口（三个小缺陷面）
 
@@ -64,11 +64,11 @@
   4. `src/tasks.mjs` 记录解析：非对象（含 `null`）→ `INVALID_TASK_RECORD`。
   5. `bin/gstack861.mjs`：`approvals` 先验证子命令（`list|show|approve|reject`）再构造 `ApprovalStore`（`approvals bogus` 不留状态目录）；`--action-file` 解析失败 → `INVALID_ACTION_FILE`。
 
-- [ ] **Step 1: 写失败测试**：(a) 生成器 HEAD 切换竞态——fixture 提交两次，`now()` 钩子里把 HEAD 切到新提交，断言 staging 内容/摘要仍是固定提交的（Codex 探针 09 回归）；(b) matcher `'*'`、`'\\'` → `INVALID_MATCHER`；(c) `approvals show` 对 `state:'invented-state'` 记录 → CLI 退出 1 且 stderr `INVALID_APPROVAL_RECORD`；(d) `approvals bogus` → 退出 1 且状态目录未创建；(e) 坏 `--action-file` → `gstack861:INVALID_ACTION_FILE`；(f) tasks 目录写入 `null` JSON → `INVALID_TASK_RECORD`；(g) approvals get() 对不存在 id → `NOT_FOUND`（保持）。
-- [ ] **Step 2: 确认失败**
-- [ ] **Step 3: 实现五处修改**
-- [ ] **Step 4: 全量回归**：`npm test` 全绿
-- [ ] **Step 5: 提交并报告**（`fix: pin generator reads to commit, compile-check matcher, validate read views and CLI inputs`）
+- [x] **Step 1: 写失败测试**：(a) 生成器 HEAD 切换竞态——fixture 提交两次，`now()` 钩子里把 HEAD 切到新提交，断言 staging 内容/摘要仍是固定提交的（Codex 探针 09 回归）；(b) matcher `'*'`、`'\\'` → `INVALID_MATCHER`；(c) `approvals show` 对 `state:'invented-state'` 记录 → CLI 退出 1 且 stderr `INVALID_APPROVAL_RECORD`；(d) `approvals bogus` → 退出 1 且状态目录未创建；(e) 坏 `--action-file` → `gstack861:INVALID_ACTION_FILE`；(f) tasks 目录写入 `null` JSON → `INVALID_TASK_RECORD`；(g) approvals get() 对不存在 id → `NOT_FOUND`（保持）。
+- [x] **Step 2: 确认失败**
+- [x] **Step 3: 实现五处修改**
+- [x] **Step 4: 全量回归**：`npm test` 全绿
+- [x] **Step 5: 提交并报告**（`fix: pin generator reads to commit, compile-check matcher, validate read views and CLI inputs`）
 
 ### Task 3: 集成（协调者执行）
 
@@ -78,7 +78,7 @@
 **Interfaces:**
 - 版本 0.2.1；README「安全与状态边界」新增两条：卸载所有权为内容验证，target 目录对模型必须不可写（guard 策略保证），完全自洽伪造是既知边界而非已消除；安装互斥锁残留须人工清除。VERIFICATION 第四轮记录（含 Codex 审计来源、修复映射、复测结果）；`scripts/round-digests.mjs` 重算摘要。
 
-- [ ] **Step 1: 文档与版本**
-- [ ] **Step 2: `npm run check && npm test && npm run doctor` 全绿**
-- [ ] **Step 3: 独立审查子代理审修复 diff → 处理发现**
-- [ ] **Step 4: 提交并推送 GitHub**
+- [x] **Step 1: 文档与版本**
+- [x] **Step 2: `npm run check && npm test && npm run doctor` 全绿**
+- [x] **Step 3: 独立审查子代理审修复 diff → 处理发现**
+- [x] **Step 4: 提交并推送 GitHub**

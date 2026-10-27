@@ -1,0 +1,177 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-26",
+  "round": "codex-audit-fixes",
+  "environment": {
+    "kind": "real-windows-machine",
+    "os": "win32-10.0.22624-x64",
+    "node": "v24.21.0",
+    "shell": "git-bash"
+  },
+  "audit": {
+    "tool": "local Codex CLI (codex exec headless)",
+    "model": "gpt-6-astra",
+    "reasoningEffort": "max",
+    "tokensUsed": 87329,
+    "probesVerified": 12,
+    "note": "report generation phase interrupted by provider cybersecurity content flag; probe outputs preserved verbatim in session log and adopted after controller verification",
+    "findings": {
+      "critical": 2,
+      "important": 6,
+      "minor": 4
+    }
+  },
+  "plan": "docs/plans/2026-10-26-codex-audit-fixes.md",
+  "process": "multi-subagent: fix task 1 (install hardening) and task 2 (provenance/validation) each TDD-implemented and independently reviewed; coordinator integration (task 3)",
+  "commands": [
+    {
+      "command": "npm run check",
+      "result": "passed",
+      "modules": 21
+    },
+    {
+      "command": "npm test",
+      "result": "passed",
+      "tests": 99,
+      "failed": 0,
+      "skipped": 0,
+      "cancelled": 0,
+      "added": "install hardening 8, provenance/validation 5"
+    },
+    {
+      "command": "npm run doctor",
+      "result": "passed",
+      "version": "0.2.1"
+    }
+  ],
+  "taskReviews": {
+    "fix-task1-install-hardening": "spec-compliant, quality approved, 3 minor deferred",
+    "fix-task2-provenance-validation": "spec-compliant, quality approved, 3 minor deferred"
+  },
+  "hostCertification": {
+    "zcode": "not-run",
+    "dsh": "activation-tested-only"
+  },
+  "macOS": "not-run",
+  "ciMatrix": "ubuntu+windows configured; POSIX-guarded symlink probes execute only on ubuntu runners",
+  "paidModelCalls": 0,
+  "knownBoundaries": [
+    "fully self-consistent forgery possible with unrestricted write access to install target; target must be outside model-writable scope (guard's job)",
+    "staging TOCTOU out of scope per blueprint section 5",
+    "ApprovalStore.transition() null-record raw TypeError (deferred minor)",
+    "Windows state-dir path-spelling polymorphism observed, no bypass demonstrated (deferred)"
+  ],
+  "testedFiles": [
+    {
+      "path": "bin/gstack861.mjs",
+      "gitBlobSha1": "05e81a5e4aa5d32e2c98344a58634339a886d716",
+      "sha256": "a85548c68e09831319b6c6f75af0d477912e7fa5b23d8e23dae01e454ca8520d"
+    },
+    {
+      "path": "package.json",
+      "gitBlobSha1": "eee9e224a67ee62fc97bd21ca6148958f2b3acf3",
+      "sha256": "b1957c9e1c28ff0382add28e18bf87a21204eb367ca170cef706a78ff27bc4e9"
+    },
+    {
+      "path": "scripts/check.mjs",
+      "gitBlobSha1": "8f6cdf75483864d8f4fa415bc8c1404aa79f0b8b",
+      "sha256": "ae2569bf33be178d607d49cb9c8dd509494ee50e3272f0d9e7dd0b2776d695f0"
+    },
+    {
+      "path": "src/adapters/dsh.mjs",
+      "gitBlobSha1": "92b2188912f2781ca414fa8e8ba5078597ee907e",
+      "sha256": "44caf2c956880e0a2b9ca18403ddb9c079e5c287801d206a07d8a6a0bc0d8951"
+    },
+    {
+      "path": "src/adapters/zcode.mjs",
+      "gitBlobSha1": "ff41bbf88a39f6bc719c52bb1e85499bff965b9e",
+      "sha256": "75b6074015b117b9fd3fbc4f4c3913e5ef93fd8a3e27a169dbe46af799de3931"
+    },
+    {
+      "path": "src/approvals.mjs",
+      "gitBlobSha1": "dc373ce62dbdcdf5d99b41d28094898a140a1c05",
+      "sha256": "7c5220cb65f93325338ce4ee161c6b0e9e24e7652093965be8ff32db213bc9e3"
+    },
+    {
+      "path": "src/generate.mjs",
+      "gitBlobSha1": "fefcd289986ae1831a45bbf90a9ac8479c77e875",
+      "sha256": "989739e72b6052206e4374e462be7304dcb20a0c0357e52994a1211f57cc9708"
+    },
+    {
+      "path": "src/install.mjs",
+      "gitBlobSha1": "6535b693827a5f65473b71296fbc1beb4429e565",
+      "sha256": "dfbcae5472d4cede3e0ca5af353dc0f9714a5dd3162913263155c69038b0b64d"
+    },
+    {
+      "path": "src/inventory.mjs",
+      "gitBlobSha1": "ae15a9fa5dccf8f0341787ad73a5382288b69a79",
+      "sha256": "520fdfe3e4def01263603c3a875144257bc0668966c2571ea03a322c56f09011"
+    },
+    {
+      "path": "src/json.mjs",
+      "gitBlobSha1": "e8723b9857ef3b044a38d13f225d85e71cce81a6",
+      "sha256": "f1865cee2953f68fe6330544b3f0ce7db8f6b00d5a55327d59de2f348c83bb8e"
+    },
+    {
+      "path": "src/policy.mjs",
+      "gitBlobSha1": "c3dae02b7b49ef9285e879fde012360ae4c6f4bd",
+      "sha256": "0d96bf3c001cc767d7b528d6f24ef41e194581fcb73d199abc8e5a73b77770be"
+    },
+    {
+      "path": "src/tasks.mjs",
+      "gitBlobSha1": "40396d0ef526cb75b91a7ce77d3f9483645e4970",
+      "sha256": "d16aa087ab3897d0f482a992934ff01a4a451c04f11718b6e1515b485dd174c1"
+    },
+    {
+      "path": "test/adapters.test.mjs",
+      "gitBlobSha1": "fe8287785f9312c37231151d196edb80e6b84b5f",
+      "sha256": "ef573a5c55db8a84c6e44484ee0237605571e480a99096836982b461b4a58eb2"
+    },
+    {
+      "path": "test/approvals.test.mjs",
+      "gitBlobSha1": "8155bdfc78945e141cb21e3f3fc45afeb29a57d8",
+      "sha256": "83b4d31b98fa248dbf50694b943f8612bc30c81ececcfdea674b59ccbb0fff94"
+    },
+    {
+      "path": "test/generate.test.mjs",
+      "gitBlobSha1": "57c2b739f2493cfc1b0595348356662d06c540a6",
+      "sha256": "0e1e23f5b20e31d14253168242bec3e1550191abdddea02185bb1762fce70ae5"
+    },
+    {
+      "path": "test/helpers.mjs",
+      "gitBlobSha1": "a9f9eb6a69043bf912e489f559fa70320031e6bc",
+      "sha256": "a1e0661b4bff12311dbe334ca86b03d71523c551d0fc2c7a6fa8e62f1d26aea7"
+    },
+    {
+      "path": "test/install.test.mjs",
+      "gitBlobSha1": "bff3701a0a62514066d67972013bf08e8b9d0238",
+      "sha256": "ee1181fe530631b5daeeeeb5728acbb51210e511385ce55f7174bbcd6f4ce305"
+    },
+    {
+      "path": "test/inventory.test.mjs",
+      "gitBlobSha1": "07797f44357073208c8590d27db2e72d397be025",
+      "sha256": "c2106c006eb24131c738420fc1e9b056efa4fcab906f3cda8cc34d08405e31ab"
+    },
+    {
+      "path": "test/json.test.mjs",
+      "gitBlobSha1": "2cc1b0f2b5b93fd457e017a257db450be7d0cf0f",
+      "sha256": "576fea350051d411e460fb2eb0bd45467c34120ac5b39f072f2060a9af54ac39"
+    },
+    {
+      "path": "test/policy.test.mjs",
+      "gitBlobSha1": "4ebea4dc9f180bde2375691f7f226552012de774",
+      "sha256": "e0a0289830faea20d1fd75fb260cfcfe4f401ef1fcddefacd12847d79c0ecd08"
+    },
+    {
+      "path": "test/tasks.test.mjs",
+      "gitBlobSha1": "24f85691798dc6824c60d3df975b662b24c4d5cb",
+      "sha256": "688632be4d30ef3a0cfbe668a7982d9aa60ed5236e84b3ac6d5b8ed80fa28d6d"
+    },
+    {
+      "path": "upstream.lock.json",
+      "gitBlobSha1": "31332137cf1bf980b25ca044208a9c53adb70edc",
+      "sha256": "160e2ca165946815dbec63ed39df1cc3be6c756536282012546b97d2fbf483dc"
+    }
+  ],
+  "digestMethod": "git ls-tree/show at HEAD commit (repository blob bytes, LF); independent of platform autocrlf"
+}

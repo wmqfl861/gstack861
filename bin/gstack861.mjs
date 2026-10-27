@@ -51,7 +51,7 @@ if (args[0] === 'hook') {
 } else {
   try {
     if (args[0] === 'doctor' && args.length === 1) {
-      print({ version: '0.2.0', node: process.version, platform: process.platform, baseline: lock(),
+      print({ version: '0.2.1', node: process.version, platform: process.platform, baseline: lock(),
         hosts: { zcode: 'not-host-verified', dsh: 'not-host-verified' },
         networkCalls: 0, modelCalls: 0,
         safety: 'guard-protocol foundation; not an OS sandbox; no full-parity certification' });
