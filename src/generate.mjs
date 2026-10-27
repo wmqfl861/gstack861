@@ -1,6 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import { createHash } from 'node:crypto';
 import { inventory } from './inventory.mjs';
 import { textDigest } from './json.mjs';
 
@@ -18,6 +19,17 @@ function git(root, ...args) {
 function contains(parent, child) {
   const rel = path.relative(parent, child);
   return rel === '' || (!rel.startsWith('..') && !path.isAbsolute(rel));
+}
+
+/**
+ * Git blob object id: sha1 over `blob <byteLength>\0<bytes>` — the same id
+ * `git rev-parse <commit>:<path>` reports for a committed file.
+ */
+export function blobHash(buffer) {
+  return createHash('sha1')
+    .update(Buffer.from(`blob ${buffer.length}\0`, 'utf8'))
+    .update(buffer)
+    .digest('hex');
 }
 
 /** Stage verbatim committed skill copies; never execute upstream setup or skill code. */
@@ -43,6 +55,9 @@ export function generateSkills({ upstream, commit, staging, host, now = () => ne
     const dir = path.join(staging, skill.name);
     fs.mkdirSync(dir, { recursive: true, mode: 0o755 });
     fs.writeFileSync(path.join(dir, 'SKILL.md'), bytes, { flag: 'wx', mode: 0o644 });
+    // Post-write self-check: the bytes now on disk must still be exactly the committed
+    // blob the manifest is about to pin; any drift aborts with BLOB_MISMATCH.
+    if (blobHash(fs.readFileSync(path.join(dir, 'SKILL.md'))) !== skill.blob) throw new Error('BLOB_MISMATCH');
     const manifest = {
       schemaVersion: 1, name: skill.name, host, source: skill.source, blob: skill.blob,
       commit: inv.commit, sha256: textDigest(bytes), placeholders, indicators: skill.indicators,
