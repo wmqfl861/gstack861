@@ -70,7 +70,7 @@ node bin/gstack861.mjs zcode-config --policy /absolute/private/policy.json
 
 - 执行仅限 `scripts/render-upstream.mjs`，且仅当 `CI=true` **且** `GSTACK861_RENDER=ci` 同时成立（后者是维护者在 CI 同等断言下的受控复现通道）；bun 版本必须恰为 1.4.2。
 - 在 `git archive` 生成的**子模块副本**上执行 overlay（`hosts-overlay/zcode.ts`、`dsh.ts`，注册表字面量拼接），`upstream/gstack` 工作树渲染前后断言 pristine；不运行 `setup`、不安装 Claude Code、不调用模型；渲染路径经审查为零 npm 依赖、零网络。
-- 产物落 `rendered/.zcode` 与 `rendered/.dsh`（每宿主 57 技能 + 根路由 `gstack`），零未解析占位符，附 `render-manifest-<host>.json`；状态为 **rendered-experimental**——不构成上游 conformance/full 认证，安装链接入待后续批次。产物经 CI artifacts（30 天）获取。
+- 产物落 `rendered/.zcode` 与 `rendered/.dsh`（每宿主 57 技能 + 根路由 `gstack`），零未解析占位符，附 `render-manifest-<host>.json`；状态为 **rendered-experimental**——不构成上游 conformance/full 认证，安装链接入待后续批次。产物经 CI artifacts（30 天）获取。渲染作业仅在 ubuntu 运行——bun 渲染与平台无关，Windows 矩阵只跑离线契约与测试。
 
 ## 安全与状态边界
 

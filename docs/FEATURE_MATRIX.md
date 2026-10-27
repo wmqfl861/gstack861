@@ -1,6 +1,6 @@
 # 功能与证据矩阵
 
-状态：2026-10-27，0.3.0：M2 前置 + 纵向批次（apply-patch/参数 effect、approvals/tasks CLI 全量、ZCode 工作流层纵向流程已实证、DSH 管线就绪脚本待密钥）。两个宿主均未获得 `host_verified` 或 `full`。
+状态：2026-10-27，0.4.0：M2 前置 + 纵向批次 + 批次 2/3（状态目录命名空间、上游渲染 CI 复用 rendered-experimental、原生询问桥 approvals ask、apply-patch/参数 effect、approvals/tasks CLI 全量、ZCode 工作流层纵向流程已实证、DSH 管线就绪脚本待密钥）。两个宿主均未获得 `host_verified` 或 `full`。
 
 | 范围 | ZCode | DSH | 已有证据 / 剩余工作 |
 |---|---|---|---|
@@ -16,6 +16,8 @@
 | 自动安装/升级/卸载（宿主级） | planned | planned | ZCode 仅输出配置，不改用户文件；DSH 安装片段需含 system-prompt+tools 闭包（调研结论） |
 | 不可绕过的全宿主安全 | blocked | blocked | 启动失败、工具替换、PTC、子 Agent、Shell/OS 隔离；DSH apply() 抛错仅警告且退出码 0（实测），验收须解析警告 |
 | 相对路径/Session cwd | contract_tested | blocked | ZCode 用事件 cwd；DSH 暂只接受绝对路径 |
+| 技能渲染（上游管线 CI 复用） | rendered-experimental | rendered-experimental | CI 首跑结果以 Actions 为准；产物零占位符+清单；不宣称 conformance/full；安装链接入待批次 4 |
+| 原生询问桥 | implemented | implemented | `approvals ask` 阻塞式应答（exit 3 不自动同意）；宿主内嵌 UI 未接通 |
 | 纵向流程（spec→ship） | workflow-evidence | planned | ZCode 侧六阶段+审批+交付已真实跑通（见 verification-2026-10-27-vertical-zcode.md，非 host_verified）；DSH 侧待密钥 |
 | 开发/调查/review | planned | planned | 尚未用真实宿主执行纵向任务 |
 | 子 Agent 与工作流恢复 | planned | planned | 核心日志已就绪；执行器、取消、恢复接线未做 |
