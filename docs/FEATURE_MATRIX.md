@@ -23,7 +23,7 @@
 | 纵向流程（spec→ship） | workflow-evidence | planned | ZCode 侧六阶段+审批+交付已真实跑通（见 verification-2026-10-27-vertical-zcode.md，非 host_verified）；DSH 侧待密钥 |
 | 开发/调查/review | planned | planned | 尚未用真实宿主执行纵向任务 |
 | 子 Agent 与工作流恢复 | planned | planned | 核心日志已就绪；执行器、取消、恢复接线未做 |
-| 独立模型复核 | mechanism-ready | mechanism-ready | 配置加载/黑名单/单次封顶/开关红线全部实测（批次 11，五段就绪验证）；runtime 真调用待解锁-⑨（用户手放网关配置+开关+键） | 显式模型配置、隔离上下文、授权 |
+| 独立模型复核 | mechanism-ready | mechanism-ready | 配置加载/黑名单/单次封顶/开关红线全部实测（批次 11，五段就绪验证）；runtime 真调用待解锁-⑨（用户手放网关配置+开关+键） |
 | 浏览器/QA/设计 | planned | planned | 复用上游工具并迁移依赖 |
 | ship/部署/监控 | planned | planned | 审批、测试证据与幂等边界 |
 | 文档/记忆/GBrain | planned | planned | 对应原生工具与会话路径 |

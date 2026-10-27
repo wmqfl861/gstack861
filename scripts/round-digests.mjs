@@ -12,11 +12,11 @@ if (!output || !previous) {
   process.exit(1);
 }
 
-const files = ['hosts-overlay/dsh.ts', 'hosts-overlay/zcode.ts', 'scripts/render-upstream.mjs', 'src/stage.mjs', 'bin/gstack861.mjs', 'package.json', 'scripts/check.mjs', 'src/adapters/dsh.mjs', 'src/adapters/zcode.mjs',
+const files = ['hosts-overlay/dsh.ts', 'hosts-overlay/zcode.ts', 'scripts/render-upstream.mjs', 'src/gateway.mjs', 'src/model-review.mjs', 'src/stage.mjs', 'bin/gstack861.mjs', 'package.json', 'scripts/check.mjs', 'src/adapters/dsh.mjs', 'src/adapters/zcode.mjs',
   'src/approvals.mjs', 'src/generate.mjs', 'src/install.mjs', 'src/inventory.mjs', 'src/json.mjs', 'src/policy.mjs',
   'src/tasks.mjs', 'test/adapters.test.mjs', 'test/approvals.test.mjs', 'test/generate.test.mjs', 'test/helpers.mjs',
   'test/install.test.mjs', 'test/inventory.test.mjs', 'test/json.test.mjs', 'test/policy.test.mjs',
-  'test/render-upstream.test.mjs', 'test/stage.test.mjs',
+  'test/render-upstream.test.mjs', 'test/gateway.test.mjs', 'test/model-review.test.mjs', 'test/stage.test.mjs',
   'test/tasks.test.mjs', 'upstream.lock.json'];
 
 const gitBlobs = {};
