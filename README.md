@@ -12,7 +12,10 @@
 - [精确测试文件摘要](docs/verification-2026-10-26.json)（首轮 Linux）；[Windows 轮](docs/verification-2026-10-26-windows.json)；[M2 基础批次](docs/verification-2026-10-26-m2.json)
 - [M2 基础批次实施计划](docs/plans/2026-10-26-m2-foundation.md)
 - [本机 DSH 真实加载调研](docs/integration/dsh-local-findings.md)
+- [ZCode 受控接入验收手册](docs/integration/zcode-acceptance.md)
 - [固定上游和宿主提交](upstream.lock.json)
+
+DSH 管线级 guard 验证（真实工具调用拒绝路径）待 `DEEPSEEK_API_KEY` 提供后执行：就绪脚本 `node scripts/verify-dsh-guard.mjs` 已就位，密钥缺失时打印受阻原因并以退出码 2 结束（本仓库不读取 `~/.dsh` 凭据）。
 
 ## 已实现
 
