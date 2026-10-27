@@ -14,9 +14,10 @@
     {
       "command": "npm test",
       "result": "passed",
-      "tests": 213,
+      "tests": 212,
       "failed": 0,
-      "added": 2
+      "added": 1,
+      "note": "mid-batch one red commit (bin count 11 vs test 8) repaired in-batch; recorded honestly"
     },
     {
       "command": "doctor",

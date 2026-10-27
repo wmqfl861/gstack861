@@ -343,7 +343,7 @@ Lane A（渲染）：初审 Needs fixes（2 Critical）→ 修复轮 → 复审�
 
 | 项 | 结果 |
 |---|---|
-| `npm test` | 213/213（新增 2：doctor 消费报告） |
+| `npm test` | 212/212（新增 1：doctor 消费报告；中途一次 bin/test 计数失配致红、同批修复——如实记录） |
 | doctor 消费报告 | `renderedSkillsConsumed: 11` + 四份证据文档 + 两项解锁动作（count/evidence 同字面量同步移动） |
 | 产品套件消费 | 见 `docs/verification-2026-10-27-product-suite.md`：office-hours（startup 模板全套+Assignment）、spec（五阶段+Standard Issue+语义审查真实 flagged）、deslop（验证门槛正确→零候选诚实结论）；累计 11 例 |
 | 车道审查 | Lane A 一次通过（字面量逐字核对+路径存在性）；Lane B 单行（终审覆盖） |

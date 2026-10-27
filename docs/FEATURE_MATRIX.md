@@ -1,6 +1,6 @@
 # 功能与证据矩阵
 
-状态：2026-10-27，0.4.5：M2 前置 + 纵向批次 + 批次 2–8（状态目录命名空间、上游渲染 CI 复用 rendered-experimental、原生询问桥 approvals ask、apply-patch/参数 effect、approvals/tasks CLI 全量、ZCode 工作流层纵向流程已实证、渲染产物 stage-render→install→uninstall 装载链全链实测、宿主装载 runbook 实测回填、渲染技能宿主消费 5 例已实证、install --dry-run 零写入预检；DSH 管线就绪脚本待密钥）。两个宿主均未获得 `host_verified` 或 `full`。
+状态：2026-10-27，0.4.5：M2 前置 + 纵向批次 + 批次 2–8（状态目录命名空间、上游渲染 CI 复用 rendered-experimental、原生询问桥 approvals ask、apply-patch/参数 effect、approvals/tasks CLI 全量、ZCode 工作流层纵向流程已实证、渲染产物 stage-render→install→uninstall 装载链全链实测、宿主装载 runbook 实测回填、渲染技能宿主消费 11 例已实证、install --dry-run 零写入预检；DSH 管线就绪脚本待密钥）。两个宿主均未获得 `host_verified` 或 `full`。
 
 | 范围 | ZCode | DSH | 已有证据 / 剩余工作 |
 |---|---|---|---|
