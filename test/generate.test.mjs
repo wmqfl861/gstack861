@@ -58,6 +58,13 @@ test('blobHash computes git blob object ids and separates mismatched buffers', t
   // Length-header semantics: the digest depends on the byte length, not just content words.
   assert.equal(blobHash(Buffer.alloc(0)), git(['hash-object', '--stdin'], Buffer.alloc(0)));
 });
+test('blobHash refuses non-Buffer inputs with INVALID_BUFFER', () => {
+  // A string input previously hashed fine (update accepts strings), silently computing
+  // a content hash where byte semantics are required; other inputs crashed on .length.
+  for (const bad of ['not a buffer', 42, null, undefined, {}, [], new Uint8Array([1, 2, 3])]) {
+    assert.throws(() => blobHash(bad), /INVALID_BUFFER/);
+  }
+});
 test('generateSkills writes verbatim SKILL.md copies and exact manifests', t => {
   const r = repository(t), staging = path.join(r.base, 'staging');
   const result = generateSkills({ upstream: r.root, commit: r.commit, staging, host: 'zcode', now: NOW });
