@@ -60,7 +60,7 @@
   "taskReviews": {
     "task1-8dot3-identity": "needs-fixes (dropped policyHash) -> fix round 1 -> re-review accepted; loadPolicy .native deviation ruled necessary",
     "task2-gitfile-gitdir": "approved with rulings (depth-2 extension necessary, empirically verified; residual deep-pointer gap accept-and-documented) -> fix round 1 (dirent scan, boundary comment, read cap) -> accepted",
-    "task3-minor-batch": "approved, 3 minors deferred (digest-manifest regeneration after the generatorVersion bump; check.mjs success branch proven only via synthetic scratch evidence; no .gitattributes forcing LF — CRLF warnings)"
+    "task3-minor-batch": "approved, 3 minors deferred (bin/gstack861.mjs reads package.json at module load on every invocation incl. the latency-sensitive hook path; missing/corrupt package.json crashes at import with a raw error instead of an UPPER_SNAKE code — fail-loud accepted; purge name-gate runs before the manifest gate, so a user dir named notes-2024 containing a valid gstack861 manifest is kept — conservative by design)"
   },
   "knownBoundaries": [
     "gitfile pointers (file and symlink forms both covered since fix round 2) >=3 levels below every ancestor undiscovered; reparse entries that are neither file, symlink, nor directory are not parsed; model-planted pointers blocked at any depth by the component name check",
@@ -128,8 +128,8 @@
     },
     {
       "path": "src/policy.mjs",
-      "gitBlobSha1": "3139809d183fa09978ad1cecd0edf727241d3558",
-      "sha256": "b689769c1941953f9028b2d5ea6cf75d2fb46aed4b241ce40500baa8e5adc393"
+      "gitBlobSha1": "7f4578307fc1506b60d6877685aba264c6e2d3a3",
+      "sha256": "576d27ef8351650161567a099a711bd85d2ed4c31f1344891be937c0128aebed"
     },
     {
       "path": "src/tasks.mjs",
@@ -138,8 +138,8 @@
     },
     {
       "path": "test/adapters.test.mjs",
-      "gitBlobSha1": "bd4fd5be6312e6be106d11037c05e6583dd17afd",
-      "sha256": "f6ef2f3024aef37af261fde2dfb9d4470b3762647d7a6eb2c6d5c6eee2947106"
+      "gitBlobSha1": "0fec0e3659bc0cd3fe796fdd1bbcd9118ff5ab3c",
+      "sha256": "d612388bbf7e98c35604a09b8af4027076475b6ccc54e47a75b75f75b497ed92"
     },
     {
       "path": "test/approvals.test.mjs",
@@ -173,8 +173,8 @@
     },
     {
       "path": "test/policy.test.mjs",
-      "gitBlobSha1": "06785e5c6b5499558c71b56a2a51f7dad57d8283",
-      "sha256": "ea82b7ebeb49d610ee8b989ac26df9f417c2a36b7c92fbaa059bb042dd78ac5d"
+      "gitBlobSha1": "8d40e6071a87c291ca964d2c2657f3efe1ac1cc2",
+      "sha256": "910f807a9b98c6bb7d8b9f02b285a57a8620fbb36932ba59892a943608b7f3ce"
     },
     {
       "path": "test/tasks.test.mjs",
