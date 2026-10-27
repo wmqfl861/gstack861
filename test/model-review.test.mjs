@@ -191,7 +191,9 @@ test('no error thrown on any path ever contains the key value', async () => {
 test('mid-body abort during response.text() maps to GATEWAY_TIMEOUT', async () => {
   // Headers arrive, the body read stalls; the abort rejects the read mid-body. Uses a
   // minimal Response shape (not WHATWG stream internals) so the abort chain is
-  // deterministic across Node versions — CI pins 22, dev runs 24.
+  // deterministic across Node versions. The keepalive interval is required: Node 22's
+  // AbortSignal.timeout timer is unref'd, so without pending work the loop can exit
+  // before the abort fires (CI pins Node 22; dev runs 24).
   const fetchImpl = (url, init) => ({
     ok: true,
     status: 200,
@@ -200,8 +202,11 @@ test('mid-body abort during response.text() maps to GATEWAY_TIMEOUT', async () =
         reject(new DOMException('The operation was aborted due to timeout', 'TimeoutError')));
     }),
   });
-  await assert.rejects(
-    runModelReview({ gateway: GATEWAY, target: { files: [{ path: 'a', diff: '+a' }] }, fetchImpl, timeoutMs: 80, env: { GSTACK861_MODEL_CALL: '1', [KEY_ENV]: 'k' } }),
-    /GATEWAY_TIMEOUT/,
-  );
+  const keepalive = setInterval(() => {}, 20);
+  try {
+    await assert.rejects(
+      runModelReview({ gateway: GATEWAY, target: { files: [{ path: 'a', diff: '+a' }] }, fetchImpl, timeoutMs: 80, env: { GSTACK861_MODEL_CALL: '1', [KEY_ENV]: 'k' } }),
+      /GATEWAY_TIMEOUT/,
+    );
+  } finally { clearInterval(keepalive); }
 });
