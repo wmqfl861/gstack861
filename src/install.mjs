@@ -109,15 +109,23 @@ function assertRegistryPathSafe(target) {
 }
 
 /**
- * Backups-root safety: an existing entry must be a plain directory (never a symlink
- * or junction), and once created/verified its real path must still resolve inside the
- * target so no rename can be redirected outside it.
+ * Backups-root refusal check, shared by install and its dry-run: an existing entry
+ * must be a plain directory — never a symlink or junction. Creation is not its business.
+ */
+function checkBackupsRoot(target) {
+  const stat = fs.lstatSync(path.join(target, BACKUPS), { throwIfNoEntry: false });
+  if (stat && (!stat.isDirectory() || stat.isSymbolicLink())) fail('USER_FILE_REFUSED');
+  return stat;
+}
+
+/**
+ * Backups-root safety: the refusal check above, creation when absent (0755), and a
+ * final containment proof — once created/verified its real path must still resolve
+ * inside the target so no rename can be redirected outside it.
  */
 function prepareBackups(target) {
   const backupsRoot = path.join(target, BACKUPS);
-  const stat = fs.lstatSync(backupsRoot, { throwIfNoEntry: false });
-  if (stat && (!stat.isDirectory() || stat.isSymbolicLink())) fail('USER_FILE_REFUSED');
-  if (!stat) fs.mkdirSync(backupsRoot, { mode: 0o755 });
+  if (!checkBackupsRoot(target)) fs.mkdirSync(backupsRoot, { mode: 0o755 });
   const realTarget = fs.realpathSync(target);
   const realBackups = fs.realpathSync(backupsRoot);
   if (realBackups !== realTarget && !realBackups.startsWith(`${realTarget}${path.sep}`)) fail('USER_FILE_REFUSED');
@@ -198,15 +206,17 @@ function stagingPlan(staging) {
   return plan;
 }
 
-/** Create the target when absent (0755); an existing target must be a plain directory. */
-function prepareTarget(target) {
+/** Target-path validation shared by install and its dry-run: an existing target must be a plain directory (never a symlink or junction). Returns null when absent. */
+function validateTarget(target) {
   if (typeof target !== 'string' || !path.isAbsolute(target)) fail('INVALID_TARGET');
   const stat = fs.lstatSync(target, { throwIfNoEntry: false });
-  if (!stat) {
-    fs.mkdirSync(target, { recursive: true, mode: 0o755 });
-    return;
-  }
-  if (!stat.isDirectory() || stat.isSymbolicLink()) fail('INVALID_TARGET');
+  if (stat && (!stat.isDirectory() || stat.isSymbolicLink())) fail('INVALID_TARGET');
+  return stat ?? null;
+}
+
+/** Create the target when absent (0755); an existing target must be a plain directory. */
+function prepareTarget(target) {
+  if (!validateTarget(target)) fs.mkdirSync(target, { recursive: true, mode: 0o755 });
 }
 
 /**
@@ -238,8 +248,35 @@ function classify(plan, target, previous) {
   }
 }
 
-export function installSkills({ staging, target, now = () => new Date().toISOString() }) {
+/**
+ * The dry-run report: the read-only half of installSkills' validation chain. stagingPlan
+ * has already run; here the target is validated without being created, the registry path
+ * and registry are read, conflicts are classified, and a pending backup re-runs the
+ * backups-root refusal check without creating the root. Every refusal still throws — a
+ * dry-run never swallows them — and structurally nothing is written at all. The report
+ * takes no install lock, so it never fails with INSTALL_BUSY and may read a registry
+ * that a concurrent install is about to change (the report can be stale by design).
+ */
+function dryRunReport(plan, target) {
+  validateTarget(target);
+  assertRegistryPathSafe(target);
+  const previous = loadRegistry(target);
+  classify(plan, target, previous);
+  if (plan.some(item => item.action === 'backup')) checkBackupsRoot(target);
+  const wouldInstall = [], wouldSkip = [], wouldBackUp = [];
+  for (const item of plan) {
+    if (item.action === 'skip') wouldSkip.push(item.name);
+    else {
+      wouldInstall.push(item.name);
+      if (item.action === 'backup') wouldBackUp.push(item.name);
+    }
+  }
+  return { dryRun: true, wouldInstall, wouldSkip, wouldBackUp };
+}
+
+export function installSkills({ staging, target, now = () => new Date().toISOString(), dryRun = false }) {
   const plan = stagingPlan(staging);
+  if (dryRun) return dryRunReport(plan, target);
   prepareTarget(target);
   return withInstallLock(target, () => {
     // Inside the lock only: clear temp entries a previously crashed run may have left

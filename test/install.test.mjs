@@ -5,6 +5,7 @@ import path from 'node:path';
 import os from 'node:os';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
+import { fileURLToPath } from 'node:url';
 import { installSkills, uninstallSkills } from '../src/install.mjs';
 import { textDigest } from '../src/json.mjs';
 
@@ -882,4 +883,151 @@ test('an I/O failure mid-install leaves every skill whole and the target recover
   assert.equal(fs.readFileSync(path.join(target, 'beta', 'SKILL.md'), 'utf8'), BETA_V1);
   assert.deepEqual(installSkills({ staging: s2, target, now: NOW }).installed, ['beta']);
   assert.deepEqual(uninstallSkills({ target, now: NOW }).uninstalled.sort(), ['alpha', 'beta']);
+});
+
+// --- install --dry-run (read-only report) ---------------------------------------
+
+const CLI = fileURLToPath(new URL('../bin/gstack861.mjs', import.meta.url));
+
+test('installSkills dry-run reports a fresh install (multi-file skill included) and writes nothing', t => {
+  const root = base(t), staging = path.join(root, 'staging'), target = path.join(root, 'target');
+  fs.mkdirSync(staging);
+  stageMulti(staging, 'alpha', ALPHA_V1, { 'sections/scope.md': SCOPE_V1, 'templates/report.md': TEMPLATE_V1 });
+  stage(staging, 'beta', BETA_V1);
+  const result = installSkills({ staging, target, now: NOW, dryRun: true });
+  assert.deepEqual(result, { dryRun: true, wouldInstall: ['alpha', 'beta'], wouldSkip: [], wouldBackUp: [] });
+  assert.ok(!fs.existsSync(target), 'dry-run must not create the target');
+  assert.ok(!fs.existsSync(path.join(target, LOCK)), 'dry-run must not take the install lock');
+  assert.ok(!fs.existsSync(registryFile(target)), 'dry-run must not write a registry');
+  // the prediction stays actionable: a real install right after works unchanged
+  assert.deepEqual(installSkills({ staging, target, now: NOW }), { installed: ['alpha', 'beta'], skipped: [], backedUp: [] });
+});
+
+test('installSkills dry-run over an installed target reports wouldSkip and writes nothing', t => {
+  const root = base(t), staging = path.join(root, 'staging'), target = path.join(root, 'target');
+  fs.mkdirSync(staging);
+  stage(staging, 'alpha', ALPHA_V1);
+  stageMulti(staging, 'beta', BETA_V1, { 'sections/scope.md': SCOPE_V1 });
+  installSkills({ staging, target, now: NOW });
+  const registryBefore = fs.readFileSync(registryFile(target), 'utf8');
+  const result = installSkills({ staging, target, now: NOW, dryRun: true });
+  assert.deepEqual(result, { dryRun: true, wouldInstall: [], wouldSkip: ['alpha', 'beta'], wouldBackUp: [] });
+  assert.equal(fs.readFileSync(registryFile(target), 'utf8'), registryBefore, 'the registry must not be rewritten');
+  assert.ok(!fs.existsSync(path.join(target, LOCK)), 'no lock may be taken');
+  assert.ok(!fs.existsSync(path.join(target, BACKUPS)), 'identical content must not create backups');
+});
+
+test('installSkills dry-run reports drift as wouldBackUp plus wouldInstall without writing', t => {
+  const root = base(t), target = path.join(root, 'target');
+  const v1 = path.join(root, 'v1'), v2 = path.join(root, 'v2');
+  fs.mkdirSync(v1); fs.mkdirSync(v2);
+  stage(v1, 'alpha', ALPHA_V1);
+  stage(v1, 'beta', BETA_V1);
+  stage(v2, 'alpha', ALPHA_V2); // same batch, one drifted skill
+  stage(v2, 'beta', BETA_V1);
+  installSkills({ staging: v1, target, now: NOW });
+  const registryBefore = fs.readFileSync(registryFile(target), 'utf8');
+  const result = installSkills({ staging: v2, target, now: NOW, dryRun: true });
+  assert.deepEqual(result, { dryRun: true, wouldInstall: ['alpha'], wouldSkip: ['beta'], wouldBackUp: ['alpha'] });
+  assert.equal(fs.readFileSync(path.join(target, 'alpha', 'SKILL.md'), 'utf8'), ALPHA_V1, 'the drift skill must stay v1');
+  assert.equal(fs.readFileSync(registryFile(target), 'utf8'), registryBefore, 'the registry must not be rewritten');
+  assert.ok(!fs.existsSync(path.join(target, BACKUPS)), 'no backups root may be created');
+});
+
+test('installSkills dry-run still throws TAMPERED_STAGING and writes nothing', t => {
+  const root = base(t), staging = path.join(root, 'staging'), target = path.join(root, 'target');
+  fs.mkdirSync(staging);
+  stageMulti(staging, 'alpha', ALPHA_V1, { 'sections/scope.md': SCOPE_V1 });
+  fs.writeFileSync(path.join(staging, 'alpha', 'sections', 'scope.md'), `${SCOPE_V1}tampered`);
+  assert.throws(() => installSkills({ staging, target, now: NOW, dryRun: true }), /TAMPERED_STAGING/, 'a dry-run never swallows refusals');
+  assert.ok(!fs.existsSync(target), 'a refused dry-run must not create the target');
+});
+
+test('installSkills dry-run takes no lock, so a held one never reports INSTALL_BUSY', t => {
+  const root = base(t), staging = path.join(root, 'staging'), target = path.join(root, 'target');
+  fs.mkdirSync(staging);
+  stage(staging, 'alpha', ALPHA_V1);
+  fs.mkdirSync(target);
+  const lock = path.join(target, LOCK);
+  fs.mkdirSync(lock);
+  const result = installSkills({ staging, target, now: NOW, dryRun: true });
+  assert.deepEqual(result, { dryRun: true, wouldInstall: ['alpha'], wouldSkip: [], wouldBackUp: [] });
+  assert.ok(fs.existsSync(lock), 'the foreign lock must be left untouched');
+  assert.ok(!fs.existsSync(path.join(target, 'alpha')), 'no skill may be written');
+  assert.ok(!fs.existsSync(registryFile(target)), 'no registry may be written');
+});
+
+if (process.platform === 'win32') {
+  test('installSkills dry-run refuses a junction target with INVALID_TARGET and writes nothing through it', t => {
+    const root = base(t), staging = path.join(root, 'staging');
+    fs.mkdirSync(staging);
+    stage(staging, 'alpha', ALPHA_V1);
+    const realTarget = path.join(root, 'real-target');
+    fs.mkdirSync(realTarget);
+    const junction = path.join(root, 'target-link');
+    fs.symlinkSync(realTarget, junction, 'junction');
+    assert.throws(() => installSkills({ staging, target: junction, now: NOW, dryRun: true }), /INVALID_TARGET/);
+    assert.deepEqual(fs.readdirSync(realTarget), [], 'nothing may be written through the junction');
+  });
+
+  test('installSkills dry-run refuses a junction at the backups root without creating anything', t => {
+    const root = base(t), target = path.join(root, 'target');
+    const v1 = path.join(root, 'v1'), v2 = path.join(root, 'v2');
+    fs.mkdirSync(v1); fs.mkdirSync(v2);
+    stage(v1, 'alpha', ALPHA_V1);
+    stage(v2, 'alpha', ALPHA_V2);
+    installSkills({ staging: v1, target, now: NOW });
+    const outside = path.join(root, 'outside');
+    fs.mkdirSync(outside);
+    fs.symlinkSync(outside, path.join(target, BACKUPS), 'junction');
+    assert.throws(() => installSkills({ staging: v2, target, now: NOW, dryRun: true }), /USER_FILE_REFUSED/);
+    assert.deepEqual(fs.readdirSync(outside), [], 'nothing may be written outside the target through the junction');
+    assert.equal(fs.readFileSync(path.join(target, 'alpha', 'SKILL.md'), 'utf8'), ALPHA_V1, 'the drift skill must stay v1');
+  });
+}
+
+if (process.platform !== 'win32') {
+  test('installSkills dry-run refuses a symlinked target with INVALID_TARGET and writes nothing through it', t => {
+    const root = base(t), staging = path.join(root, 'staging');
+    fs.mkdirSync(staging);
+    stage(staging, 'alpha', ALPHA_V1);
+    const realTarget = path.join(root, 'real-target');
+    fs.mkdirSync(realTarget);
+    const linkedTarget = path.join(root, 'target-link');
+    fs.symlinkSync(realTarget, linkedTarget);
+    assert.throws(() => installSkills({ staging, target: linkedTarget, now: NOW, dryRun: true }), /INVALID_TARGET/);
+    assert.deepEqual(fs.readdirSync(realTarget), [], 'nothing may be written through the symlink');
+  });
+
+  test('installSkills dry-run refuses a symlink at the backups root without creating anything', t => {
+    const root = base(t), target = path.join(root, 'target');
+    const v1 = path.join(root, 'v1'), v2 = path.join(root, 'v2');
+    fs.mkdirSync(v1); fs.mkdirSync(v2);
+    stage(v1, 'alpha', ALPHA_V1);
+    stage(v2, 'alpha', ALPHA_V2);
+    installSkills({ staging: v1, target, now: NOW });
+    const outside = path.join(root, 'outside');
+    fs.mkdirSync(outside);
+    fs.symlinkSync(outside, path.join(target, BACKUPS));
+    assert.throws(() => installSkills({ staging: v2, target, now: NOW, dryRun: true }), /USER_FILE_REFUSED/);
+    assert.deepEqual(fs.readdirSync(outside), [], 'nothing may be written outside the target through the symlink');
+    assert.equal(fs.readFileSync(path.join(target, 'alpha', 'SKILL.md'), 'utf8'), ALPHA_V1, 'the drift skill must stay v1');
+  });
+}
+
+test('install --dry-run prints the report and creates nothing', async t => {
+  const root = base(t), staging = path.join(root, 'staging'), target = path.join(root, 'target');
+  fs.mkdirSync(staging);
+  stage(staging, 'alpha', ALPHA_V1);
+  const run = await execute(process.execPath, [CLI, 'install', '--staging', staging, '--target', target, '--dry-run']);
+  assert.deepEqual(JSON.parse(run.stdout), { dryRun: true, wouldInstall: ['alpha'], wouldSkip: [], wouldBackUp: [] });
+  assert.ok(!fs.existsSync(target), 'the CLI dry-run must not create the target');
+});
+
+test('install --dry-run keeps ABSOLUTE_PATH_REQUIRED for a relative target', async t => {
+  const root = base(t), staging = path.join(root, 'staging');
+  fs.mkdirSync(staging);
+  stage(staging, 'alpha', ALPHA_V1);
+  await assert.rejects(execute(process.execPath, [CLI, 'install', '--staging', staging, '--target', 'relative-target', '--dry-run']),
+    error => error.code === 1 && /ABSOLUTE_PATH_REQUIRED/.test(error.stderr));
 });
