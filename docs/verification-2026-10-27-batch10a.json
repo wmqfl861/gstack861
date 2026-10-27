@@ -20,11 +20,15 @@
     },
     {
       "command": "acceptance-pack smoke (real CLI)",
-      "result": "pack generated; three baked probes ran verbatim: allow exit 0, OUTSIDE_SCOPE deny exit 2, deny exit 2; §6 A-H and §2.4 A/B quoting byte-compared to manuals"
+      "result": "pack generated; three baked probes ran verbatim: allow exit 0, OUTSIDE_SCOPE deny exit 2, deny exit 2; §6 A-H and §2.4 A/B quoting byte-compared to manuals (generator re-synced after the manual defect fix, drift test added)"
     },
     {
       "command": "manual defect fix",
       "result": "zcode-acceptance probe-3/row-D corrected: writeRoots=[src] yields OUTSIDE_SCOPE (repo semantics); PROTECTED_PATH documented for whole-workspace writeRoots"
+    },
+    {
+      "command": "drift guard test",
+      "result": "STEPS row D quote compared verbatim against the corrected manual file (test/acceptance-pack.test.mjs)"
     }
   ],
   "paidModelCalls": 0,
