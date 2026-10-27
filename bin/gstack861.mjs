@@ -7,7 +7,7 @@ import { handleZcode, denyZcode, zcodeHookConfig } from '../src/adapters/zcode.m
 import { inventory } from '../src/inventory.mjs';
 import { generateSkills } from '../src/generate.mjs';
 import { installSkills, uninstallSkills } from '../src/install.mjs';
-import { ApprovalStore } from '../src/approvals.mjs';
+import { ApprovalStore, subjectDigest } from '../src/approvals.mjs';
 import { TaskStore } from '../src/tasks.mjs';
 
 const args = process.argv.slice(2);
@@ -103,10 +103,18 @@ if (args[0] === 'hook') {
       const options = flags(args.slice(1), ['--target'], ['--purge']);
       print(uninstallSkills({ target: absolute(options['--target']), purge: options['--purge'] === true }));
     } else if (args[0] === 'approvals') {
-      const options = flags(args.slice(2), ['--state', '--id', '--host', '--session', '--run', '--policy-hash', '--action-file', '--ttl-ms']);
+      const options = flags(args.slice(2), ['--state', '--id', '--host', '--session', '--run', '--policy-hash', '--action-file', '--ttl-ms', '--prompt-file']);
       // Validate before constructing the store: a rejected subcommand or argument
       // must not leave a state directory behind.
-      if (!['list', 'show', 'issue', 'approve', 'reject', 'consume', 'verify'].includes(args[1])) throw new Error('UNKNOWN_SUBCOMMAND');
+      if (!['list', 'show', 'issue', 'approve', 'reject', 'consume', 'verify', 'ask'].includes(args[1])) throw new Error('UNKNOWN_SUBCOMMAND');
+      // --prompt-file only carries meaning for ask; other subcommands keep refusing it.
+      if (options['--prompt-file'] !== undefined && args[1] !== 'ask') throw new Error('INVALID_ARGUMENTS');
+      // ask blocks on an operator answer, so every binding flag is required up front —
+      // a malformed invocation must fail before the store creates a state directory.
+      if (args[1] === 'ask') {
+        for (const key of ['--id', '--host', '--session', '--run', '--policy-hash', '--action-file'])
+          if (options[key] === undefined) throw new Error('INVALID_ARGUMENTS');
+      }
       const ttlRaw = options['--ttl-ms'];
       const ttlMs = ttlRaw === undefined ? undefined : Number(ttlRaw);
       // Same bounds as ApprovalStore.issue, checked here so a refused value cannot
@@ -117,6 +125,38 @@ if (args[0] === 'hook') {
       else if (args[1] === 'show') print(store.get(options['--id']));
       else if (args[1] === 'issue') {
         print(store.issue(subjectFrom(options), ttlMs === undefined ? {} : { ttlMs }));
+      } else if (args[1] === 'ask') {
+        const subject = subjectFrom(options);
+        const record = store.get(options['--id']);
+        const promptFile = options['--prompt-file'];
+        // Step 1: the structured question — everything the operator needs to decide,
+        // never the action payload itself, only its digest prefix.
+        print({ id: record.id, state: record.state,
+          subject: { host: subject.host, sessionId: subject.sessionId, runId: subject.runId,
+            policyHashPrefix16: subject.policyHash.slice(0, 16) },
+          actionDigest: subjectDigest(subject).slice(0, 16),
+          expiresInMillisRemaining: record.expiresAt - Date.now(),
+          prompt: promptFile === undefined ? '' : fs.readFileSync(absolute(promptFile), 'utf8') });
+        // Step 2: block on the operator's stdin answer. No piped answer means no
+        // approval — the bridge never auto-agrees.
+        const chunks = []; let bytes = 0;
+        for await (const chunk of process.stdin) {
+          bytes += chunk.length;
+          if (bytes > 4 * 1024 * 1024) throw new Error('INPUT_TOO_LARGE');
+          chunks.push(chunk);
+        }
+        // Tolerate CRLF consoles; only the first line decides, one optional reason line echoes.
+        const lines = Buffer.concat(chunks).toString('utf8').split('\n').map(l => l.endsWith('\r') ? l.slice(0, -1) : l);
+        const answer = lines[0].trim();
+        const reasonLine = lines.length > 1 ? lines[1] : '';
+        if (answer !== 'approve' && answer !== 'reject') {
+          process.stderr.write('gstack861: ASK_UNANSWERED\n');
+          process.exitCode = 3; // pending stays pending; the host executor must re-ask
+        } else {
+          const decided = answer === 'approve' ? store.approve(options['--id'], subject) : store.reject(options['--id'], subject);
+          // The reason echoes to stdout only; records stay digest-only, so it never persists.
+          print(reasonLine.trim() === '' ? decided : { ...decided, reason: reasonLine });
+        }
       } else if (args[1] === 'verify') print(store.verify(options['--id'], subjectFrom(options)));
       else {
         const subject = subjectFrom(options);
@@ -149,6 +189,7 @@ if (args[0] === 'hook') {
         + '  approvals issue --state DIR --host H --session S --run R --policy-hash HASH --action-file F [--ttl-ms N]\n'
         + '  approvals approve|reject|consume --state DIR --id ID --host H --session S --run R --policy-hash HASH --action-file F\n'
         + '  approvals verify --state DIR --id ID --host H --session S --run R --policy-hash HASH --action-file F\n'
+        + '  approvals ask --state DIR --id ID --host H --session S --run R --policy-hash HASH --action-file F [--prompt-file ABS]\n'
         + '  tasks create --state DIR --host H --session S --run R --policy-hash HASH --action-file F [--owner O]\n'
         + '  tasks start --state DIR --id ID --host H --session S --run R --policy-hash HASH --action-file F [--owner O]\n'
         + '  tasks resume|complete|fail|cancel|interrupt --state DIR --id ID --host H --session S --run R --policy-hash HASH --action-file F\n'
