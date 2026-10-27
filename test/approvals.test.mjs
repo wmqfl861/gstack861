@@ -105,6 +105,21 @@ test('task records disguised into the approval namespace fail closed and stray n
   fs.writeFileSync(path.join(dir, 'task-x.json'), 'garbage');
   assert.deepEqual(approvals.list().map(r => r.id), [approvalId]);
 });
+test('corrupt and non-object approval records fail closed in transitions and reads', t => {
+  const f = fixture(t), store = new ApprovalStore(path.join(f.base, 'approvals')), s = subject(f);
+  const id = store.issue(s);
+  // Corrupt JSON previously surfaced as a raw SyntaxError from transition.
+  fs.writeFileSync(store.file(id), '{');
+  assert.throws(() => store.approve(id, s), /INVALID_APPROVAL_RECORD/);
+  assert.throws(() => store.get(id), /INVALID_APPROVAL_RECORD/);
+  // A null record previously crashed transition with a raw TypeError; get already failed closed.
+  fs.writeFileSync(store.file(id), 'null\n');
+  assert.throws(() => store.approve(id, s), /INVALID_APPROVAL_RECORD/);
+  assert.throws(() => store.get(id), /INVALID_APPROVAL_RECORD/);
+  fs.writeFileSync(store.file(id), '[]\n');
+  assert.throws(() => store.approve(id, s), /INVALID_APPROVAL_RECORD/);
+  assert.throws(() => store.get(id), /INVALID_APPROVAL_RECORD/);
+});
 test('two real processes cannot both consume one approval', async t => {
   const f = fixture(t), dir = path.join(f.base, 'approvals'), store = new ApprovalStore(dir), s = subject(f);
   const id = store.issue(s); store.approve(id, s);

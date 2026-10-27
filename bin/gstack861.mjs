@@ -33,9 +33,18 @@ const absolute = value => {
 };
 /** Rebuild a subject from operator flags plus the action file; only its digest is ever persisted. */
 const subjectFrom = options => {
+  // Path semantics stay outside the scoped catch: a relative --action-file must keep
+  // its own ABSOLUTE_PATH_REQUIRED code, not be masked as INVALID_ACTION_FILE.
+  const file = absolute(options['--action-file']);
   let action;
-  try { action = JSON.parse(fs.readFileSync(absolute(options['--action-file']), 'utf8')); }
-  catch (error) { if (error instanceof SyntaxError) throw new Error('INVALID_ACTION_FILE'); throw error; }
+  try { action = JSON.parse(fs.readFileSync(file, 'utf8')); }
+  catch (error) {
+    // Scoped by error type: read errors carry a filesystem code (ENOENT, EACCES, EISDIR...);
+    // JSON failures surface as SyntaxError, or RangeError when nesting overflows the stack.
+    // Anything else is unexpected and rethrown unchanged.
+    if (error instanceof SyntaxError || error instanceof RangeError || typeof error.code === 'string') throw new Error('INVALID_ACTION_FILE');
+    throw error;
+  }
   return { host: options['--host'], sessionId: options['--session'], runId: options['--run'],
     policyHash: options['--policy-hash'], action };
 };

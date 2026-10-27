@@ -193,6 +193,20 @@ test('approvals CLI rejects unknown subcommands, invented states and malformed a
   assert.equal(approve.status, 1);
   assert.match(approve.stderr, /gstack861: INVALID_ACTION_FILE/);
 });
+test('approvals CLI action-file failures are scoped: missing files INVALID_ACTION_FILE, relative paths ABSOLUTE_PATH_REQUIRED', t => {
+  const f = fixture(t), state = path.join(f.base, 'approvals');
+  const base = [cli, 'approvals', 'approve', '--state', state, '--id', '00000000-0000-4000-8000-000000000000',
+    '--host', 'zcode', '--session', 's1', '--run', 'r1', '--policy-hash', f.policy.policyHash];
+  // A missing action file previously leaked the raw ENOENT message.
+  const missing = spawnSync(process.execPath, [...base, '--action-file', path.join(f.base, 'absent-action.json')], { encoding: 'utf8', timeout: 10000 });
+  assert.equal(missing.status, 1);
+  assert.match(missing.stderr, /gstack861: INVALID_ACTION_FILE/);
+  // A relative --action-file keeps its own path-semantics code; it must not be masked as INVALID_ACTION_FILE.
+  const relative = spawnSync(process.execPath, [...base, '--action-file', 'relative-action.json'], { encoding: 'utf8', timeout: 10000 });
+  assert.equal(relative.status, 1);
+  assert.match(relative.stderr, /gstack861: ABSOLUTE_PATH_REQUIRED/);
+  assert.equal(relative.stderr.includes('INVALID_ACTION_FILE'), false);
+});
 test('approvals CLI issue→verify→approve→consume chain; verify mismatch stays read-only; replay refused', t => {
   const f = fixture(t), state = path.join(f.base, 'approvals');
   const action = { tool: 'Write', input: { file_path: 'src/a' } };
