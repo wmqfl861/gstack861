@@ -54,14 +54,19 @@
       "sha256": "aafd00a2e082195201042dad6efb9d07a956fb86db6147e43d00aeefa4028722"
     },
     {
+      "path": "src/stage.mjs",
+      "gitBlobSha1": "7f2cf73759b0885c652b89e28d3e3da59689080a",
+      "sha256": "58036e95958ee0d3798fcc8f441d22d7a76425298493e2c58e9b1480c2c46b63"
+    },
+    {
       "path": "bin/gstack861.mjs",
       "gitBlobSha1": "c6506ffed53b490cca7b0409a9956c604b8f4f3d",
       "sha256": "f8c92c11170b291bb98e735768aad8d509044fb191293e01d57c3905fd5d7ec5"
     },
     {
       "path": "package.json",
-      "gitBlobSha1": "8497dafcae0ec9198e817aca77aaee8a3b0af803",
-      "sha256": "59001403aa0460b44cedad79a92312abefbbe21d73e8404988c357ae244fe2c6"
+      "gitBlobSha1": "cb9314ba2d1bd1ef7dd293bc8d3eda6186ee461f",
+      "sha256": "ac907842410d9882097a8879e9f1dfaafea6ef75aaa81f93d307cebeb69b172c"
     },
     {
       "path": "scripts/check.mjs",
@@ -157,6 +162,11 @@
       "path": "test/render-upstream.test.mjs",
       "gitBlobSha1": "f063b784d2079424fe8df2de4c98656444ea8a6f",
       "sha256": "5f7c08f6a85f6bf60835d225031ffe5b533fa74e119deb4d3227385f4ab40256"
+    },
+    {
+      "path": "test/stage.test.mjs",
+      "gitBlobSha1": "eef209f6399ab5b9d1cec252b011b9cb622036d3",
+      "sha256": "9a1a349ad3d7791f9c584ccadb1674543eb523a21afb0b3e768a4d0c08b5b7c4"
     },
     {
       "path": "test/tasks.test.mjs",
