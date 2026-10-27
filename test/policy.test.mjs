@@ -147,3 +147,11 @@ test('writes through 8.3 short-name aliases of protected roots are blocked (win3
   assert.equal(evaluate(policy, call(f, path.join(f.workspace, short, 'secret.txt'))).code, 'PROTECTED_PATH');
   assert.equal(evaluate(policy, call(f, 'src/new.txt')).decision, 'abstain');
 });
+
+test('scoped deny decisions carry the policy hash for audit attribution', t => {
+  const f = fixture(t), policy = compilePolicy({ ...f.raw, writeRoots: [f.workspace] });
+  fs.linkSync(path.join(f.outside, 'secret.txt'), path.join(f.src, 'linked')); // nlink > 1 -> UNSAFE_WRITE_TARGET
+  assert.equal(evaluate(f.policy, call(f, 'src/linked')).policyHash, f.policy.policyHash);
+  assert.equal(evaluate(policy, call(f, '.git/config')).policyHash, policy.policyHash); // PROTECTED_PATH
+  assert.equal(evaluate(f.policy, call(f, path.join(f.outside, 'x'))).policyHash, f.policy.policyHash); // OUTSIDE_SCOPE
+});

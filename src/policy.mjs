@@ -150,7 +150,7 @@ export function evaluate(policy, call) {
         if (identity !== null && protectedIdentities.has(identity)) return deny('PROTECTED_PATH', hash);
         if (current === policy.workspace || current === path.dirname(current)) break;
       }
-      if (target.exists && (!target.stat.isFile() || target.stat.nlink !== 1)) return deny('UNSAFE_WRITE_TARGET');
+      if (target.exists && (!target.stat.isFile() || target.stat.nlink !== 1)) return deny('UNSAFE_WRITE_TARGET', hash);
     }
     return { decision: 'abstain', code: 'IN_SCOPE', policyHash: hash };
   } catch { return deny('INVALID_PATH_OR_CALL', policy?.policyHash); }
