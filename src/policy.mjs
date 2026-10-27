@@ -65,6 +65,10 @@ function existingIdentity(p) {
   }
 }
 
+const BINDING_KEYS = ['effect', 'pathKey', 'parser', 'effectKey', 'readWhen'];
+const PARAM_NAME = /^[A-Za-z_][A-Za-z0-9_]*$/;
+const FORBIDDEN_NAMES = ['__proto__', 'constructor', 'prototype'];
+
 export function compilePolicy(raw) {
   if (!object(raw) || raw.schemaVersion !== 1) throw new Error('INVALID_POLICY_VERSION');
   const keys = ['schemaVersion', 'workspace', ...ROOT_KEYS, 'bindings'];
@@ -86,12 +90,32 @@ export function compilePolicy(raw) {
     if (!object(bindings)) throw new Error('INVALID_TOOL_BINDINGS');
     normalized.bindings[host] = Object.create(null);
     for (const [name, binding] of Object.entries(bindings)) {
-      if (!/^[A-Za-z][A-Za-z0-9_.:-]{0,127}$/.test(name) || !object(binding)
-        || Object.keys(binding).some(k => !['effect', 'pathKey'].includes(k))
-        || !['read', 'write'].includes(binding.effect)
-        || !/^[A-Za-z_][A-Za-z0-9_]*$/.test(binding.pathKey)
-        || ['__proto__', 'constructor', 'prototype'].includes(binding.pathKey)) throw new Error('INVALID_TOOL_BINDING');
-      normalized.bindings[host][name] = { effect: binding.effect, pathKey: binding.pathKey };
+      if (!/^[A-Za-z][A-Za-z0-9_.:-]{0,127}$/.test(name) || !object(binding)) throw new Error('INVALID_TOOL_BINDING');
+      // Optional binding extensions, all fail-closed at compile time: `parser` is only the
+      // pinned 'apply-patch' V4A format and only on write bindings; `effectKey`+`readWhen`
+      // (always as a pair) replace `effect` and key the read/write split off a call parameter.
+      // `parser` and `effectKey` never combine. Absent fields must stay OUT of the normalized
+      // binding so legacy policies keep compiling to byte-identical canonical form.
+      const hasEffect = Object.hasOwn(binding, 'effect');
+      const hasParser = Object.hasOwn(binding, 'parser');
+      const hasEffectKey = Object.hasOwn(binding, 'effectKey');
+      const hasReadWhen = Object.hasOwn(binding, 'readWhen');
+      if (Object.keys(binding).some(k => !BINDING_KEYS.includes(k))
+        || !PARAM_NAME.test(binding.pathKey) || FORBIDDEN_NAMES.includes(binding.pathKey)
+        || (hasEffect && !['read', 'write'].includes(binding.effect))
+        || (hasEffect && hasEffectKey) // mutually exclusive effect sources
+        || (!hasEffect && !hasEffectKey) // exactly one of effect / effectKey+readWhen
+        || (hasParser && (!hasEffect || binding.effect !== 'write')) // patch parsing only writes
+        || (hasParser && binding.parser !== 'apply-patch') // single pinned upstream format
+        || (hasParser && hasEffectKey) // a parsed patch is always a whole-call write
+        || hasEffectKey !== hasReadWhen // the pair appears together or not at all
+        || (hasEffectKey && (!PARAM_NAME.test(binding.effectKey) || FORBIDDEN_NAMES.includes(binding.effectKey)))
+        || (hasReadWhen && (!Array.isArray(binding.readWhen) || binding.readWhen.length === 0
+          || binding.readWhen.some(v => typeof v !== 'string' || !v)))) throw new Error('INVALID_TOOL_BINDING');
+      normalized.bindings[host][name] = hasEffectKey
+        ? { effectKey: binding.effectKey, readWhen: [...binding.readWhen], pathKey: binding.pathKey }
+        : { effect: binding.effect, pathKey: binding.pathKey };
+      if (hasParser) normalized.bindings[host][name].parser = binding.parser;
     }
   }
   normalized.policyHash = digest(normalized);
@@ -122,6 +146,116 @@ function vcsComponent(component) {
   return name === '.git' || /^git~\d+$/.test(name);
 }
 
+/**
+ * Paths touched by a ZCode-host ApplyPatch payload (V4A envelope at the pinned upstream
+ * commit). Every `*** Add File:` / `*** Update File:` / `*** Move to:` / `*** Delete File:`
+ * header path is extracted; `*** End of File` is a section marker, never a path. GNU diff
+ * `+++ b/x` / `--- a/x` lines are tolerated as supplement (`/dev/null` skipped, the `a/`/`b/`
+ * artifact prefix stripped, a trailing tab-separated timestamp cut). A payload without the
+ * `*** Begin Patch` ... `*** End Patch` envelope, or with zero extracted paths, is not a
+ * patch and fails closed. Extraction is deliberately broad: a false-positive line can only
+ * add paths to be checked, which denies more, never less.
+ */
+const V4A_HEADER = /^\*\*\* (?:Add File|Update File|Move to|Delete File): (.*)$/;
+const GNU_HEADER = /^(?:\+{3}|-{3}) (.*)$/;
+function applyPatchPaths(text) {
+  if (typeof text !== 'string' || !text.includes('*** Begin Patch') || !text.includes('*** End Patch')) throw new Error('INVALID_PATCH');
+  const paths = new Set();
+  for (const line of text.split(/\r?\n/)) {
+    const header = V4A_HEADER.exec(line);
+    if (header) {
+      const extracted = header[1].trim();
+      if (extracted) paths.add(extracted);
+      continue;
+    }
+    const gnu = GNU_HEADER.exec(line);
+    if (gnu) {
+      const extracted = gnu[1].split('\t')[0].trim();
+      if (extracted && extracted !== '/dev/null') paths.add(extracted.replace(/^(?:a|b)\//, ''));
+    }
+  }
+  if (paths.size === 0) throw new Error('INVALID_PATCH');
+  return [...paths];
+}
+
+/** Write-branch protections, shared by single-path bindings and every extracted patch path. Returns the denial code or null. */
+function writeDenial(policy, target) {
+  if (path.relative(policy.workspace, target.path).split(path.sep).some(vcsComponent)) return 'PROTECTED_PATH';
+  const gitRoot = targetPath(path.join(policy.workspace, '.git')).path;
+  // Identity comparison as defense in depth: spellings the string checks below cannot see
+  // (8.3 short names, case aliases) must not make a protected directory writable. The union
+  // with workspace/.git is deliberately redundant with compilePolicy's protectedRoots push.
+  const protectedIdentities = new Set(
+    [...policy.protectedRoots, gitRoot].map(existingIdentity).filter(id => id !== null),
+  );
+  const protectedPaths = [...policy.protectedRoots, gitRoot];
+  // A `.git` FILE (worktree / separate-git-dir pointer) redirects git to a gitdir whose
+  // hooks would run at the next git operation. Such pointers sit BESIDE the write path
+  // (`wt/.git` pointing at sibling `real-git-data/`), never on it, so every existing
+  // ancestor directory is scanned — its own entries and one directory level down — for
+  // VCS-named pointer files and symlinks. Directory-form `.git` needs no parsing: the name
+  // and identity checks already cover it. No caching: this runs per write evaluation.
+  // Discovery boundary: pointers three or more directory levels below every ancestor of
+  // the target (`ancestor/x/y/.git` and deeper, FILE or SYMLINK form) are NOT discovered,
+  // and neither are reparse entries that are neither file, symlink, nor directory — a
+  // gitdir redirected only from such a pointer stays writable. The model cannot widen
+  // this gap: creating or modifying a pointer (file or symlink) at ANY depth is already
+  // denied by the component name check above, so the boundary only exposes pointers that
+  // predate the guarded session.
+  const protectRedirect = (pointer) => {
+    if (fs.statSync(pointer).size > 65536) return; // same cap as loadPolicy; oversized entries are not parsed
+    const match = fs.readFileSync(pointer, 'utf8').match(/^gitdir:\s*(\S+)\s*$/m);
+    if (!match) return; // content without a gitdir: line is not a pointer — ignore
+    const dir = path.resolve(path.dirname(pointer), match[1]);
+    protectedPaths.push(dir); // unresolved form, so future children of a missing gitdir stay denied
+    try {
+      const identity = existingIdentity(fs.realpathSync.native(dir));
+      if (identity !== null) protectedIdentities.add(identity); // catches alias spellings of the gitdir
+    } catch (error) {
+      if (error.code !== 'ENOENT') throw error; // missing gitdir: skip; anything else fails closed
+    }
+  };
+  // A `.git` SYMLINK redirects to its target directly (no gitdir: indirection): protect
+  // the resolved target the same two ways. Dangling links skip silently.
+  const protectLink = (link) => {
+    let target;
+    try { target = fs.realpathSync.native(link); }
+    catch (error) {
+      if (error.code === 'ENOENT') return; // dangling pointer link: skip silently
+      throw error; // anything else fails closed
+    }
+    protectedPaths.push(target);
+    const identity = existingIdentity(target);
+    if (identity !== null) protectedIdentities.add(identity);
+  };
+  const scanPointers = (dir, depth) => {
+    let entries;
+    try { entries = fs.readdirSync(dir, { withFileTypes: true }); }
+    catch (error) {
+      if (error.code === 'ENOENT' || error.code === 'ENOTDIR') return; // vanished or non-directory level
+      throw error;
+    }
+    for (const entry of entries) {
+      const entryPath = path.join(dir, entry.name);
+      if (entry.isFile()) { if (vcsComponent(entry.name)) protectRedirect(entryPath); }
+      else if (entry.isSymbolicLink()) { if (vcsComponent(entry.name)) protectLink(entryPath); }
+      else if (depth > 0 && entry.isDirectory()) scanPointers(entryPath, depth - 1);
+    }
+  };
+  for (let current = target.path; ; current = path.dirname(current)) {
+    scanPointers(current, 1);
+    if (current === policy.workspace || current === path.dirname(current)) break;
+  }
+  if (protectedPaths.some(root => inside(root, target.path))) return 'PROTECTED_PATH';
+  for (let current = target.path; ; current = path.dirname(current)) {
+    const identity = existingIdentity(current);
+    if (identity !== null && protectedIdentities.has(identity)) return 'PROTECTED_PATH';
+    if (current === policy.workspace || current === path.dirname(current)) break;
+  }
+  if (target.exists && (!target.stat.isFile() || target.stat.nlink !== 1)) return 'UNSAFE_WRITE_TARGET';
+  return null;
+}
+
 /** Admission only. This does not execute tools or provide an OS sandbox. */
 export function evaluate(policy, call) {
   try {
@@ -132,83 +266,31 @@ export function evaluate(policy, call) {
     const binding = policy.bindings[call.host][call.tool];
     if (!binding) return deny('UNMAPPED_TOOL', hash);
     if (!Object.hasOwn(call.input, binding.pathKey)) return deny('MISSING_PATH', hash);
+    // Param-keyed effect: a string parameter value listed in readWhen reads; missing,
+    // unknown or non-string values are always writes (the stricter branch).
+    const effect = binding.effectKey
+      ? (typeof call.input[binding.effectKey] === 'string' && binding.readWhen.includes(call.input[binding.effectKey]) ? 'read' : 'write')
+      : binding.effect;
+    if (binding.parser === 'apply-patch') {
+      // The pathKey field is the whole patch text; its envelope is pinned V4A. Every
+      // extracted path resolves against the session cwd and walks the full write
+      // admission path — write roots plus all protections — before the call may abstain.
+      const paths = applyPatchPaths(call.input[binding.pathKey]);
+      if (!call.cwd) return deny('CWD_REQUIRED', hash); // patch paths are session-relative
+      for (const extracted of paths) {
+        const target = targetPath(extracted, call.cwd);
+        if (!policy.writeRoots.some(root => inside(root, target.path))) return deny('OUTSIDE_SCOPE', hash);
+        const denial = writeDenial(policy, target);
+        if (denial) return deny(denial, hash);
+      }
+      return { decision: 'abstain', code: 'IN_SCOPE', policyHash: hash };
+    }
     const target = targetPath(call.input[binding.pathKey], call.cwd);
-    const roots = policy[binding.effect === 'read' ? 'readRoots' : 'writeRoots'];
+    const roots = policy[effect === 'read' ? 'readRoots' : 'writeRoots'];
     if (!roots.some(root => inside(root, target.path))) return deny('OUTSIDE_SCOPE', hash);
-    if (binding.effect === 'write') {
-      if (path.relative(policy.workspace, target.path).split(path.sep).some(vcsComponent)) return deny('PROTECTED_PATH', hash);
-      const gitRoot = targetPath(path.join(policy.workspace, '.git')).path;
-      // Identity comparison as defense in depth: spellings the string checks below cannot see
-      // (8.3 short names, case aliases) must not make a protected directory writable. The union
-      // with workspace/.git is deliberately redundant with compilePolicy's protectedRoots push.
-      const protectedIdentities = new Set(
-        [...policy.protectedRoots, gitRoot].map(existingIdentity).filter(id => id !== null),
-      );
-      const protectedPaths = [...policy.protectedRoots, gitRoot];
-      // A `.git` FILE (worktree / separate-git-dir pointer) redirects git to a gitdir whose
-      // hooks would run at the next git operation. Such pointers sit BESIDE the write path
-      // (`wt/.git` pointing at sibling `real-git-data/`), never on it, so every existing
-      // ancestor directory is scanned — its own entries and one directory level down — for
-      // VCS-named pointer files and symlinks. Directory-form `.git` needs no parsing: the name
-      // and identity checks already cover it. No caching: this runs per write evaluation.
-      // Discovery boundary: pointers three or more directory levels below every ancestor of
-      // the target (`ancestor/x/y/.git` and deeper, FILE or SYMLINK form) are NOT discovered,
-      // and neither are reparse entries that are neither file, symlink, nor directory — a
-      // gitdir redirected only from such a pointer stays writable. The model cannot widen
-      // this gap: creating or modifying a pointer (file or symlink) at ANY depth is already
-      // denied by the component name check above, so the boundary only exposes pointers that
-      // predate the guarded session.
-      const protectRedirect = (pointer) => {
-        if (fs.statSync(pointer).size > 65536) return; // same cap as loadPolicy; oversized entries are not parsed
-        const match = fs.readFileSync(pointer, 'utf8').match(/^gitdir:\s*(\S+)\s*$/m);
-        if (!match) return; // content without a gitdir: line is not a pointer — ignore
-        const dir = path.resolve(path.dirname(pointer), match[1]);
-        protectedPaths.push(dir); // unresolved form, so future children of a missing gitdir stay denied
-        try {
-          const identity = existingIdentity(fs.realpathSync.native(dir));
-          if (identity !== null) protectedIdentities.add(identity); // catches alias spellings of the gitdir
-        } catch (error) {
-          if (error.code !== 'ENOENT') throw error; // missing gitdir: skip; anything else fails closed
-        }
-      };
-      // A `.git` SYMLINK redirects to its target directly (no gitdir: indirection): protect
-      // the resolved target the same two ways. Dangling links skip silently.
-      const protectLink = (link) => {
-        let target;
-        try { target = fs.realpathSync.native(link); }
-        catch (error) {
-          if (error.code === 'ENOENT') return; // dangling pointer link: skip silently
-          throw error; // anything else fails closed
-        }
-        protectedPaths.push(target);
-        const identity = existingIdentity(target);
-        if (identity !== null) protectedIdentities.add(identity);
-      };
-      const scanPointers = (dir, depth) => {
-        let entries;
-        try { entries = fs.readdirSync(dir, { withFileTypes: true }); }
-        catch (error) {
-          if (error.code === 'ENOENT' || error.code === 'ENOTDIR') return; // vanished or non-directory level
-          throw error;
-        }
-        for (const entry of entries) {
-          const entryPath = path.join(dir, entry.name);
-          if (entry.isFile()) { if (vcsComponent(entry.name)) protectRedirect(entryPath); }
-          else if (entry.isSymbolicLink()) { if (vcsComponent(entry.name)) protectLink(entryPath); }
-          else if (depth > 0 && entry.isDirectory()) scanPointers(entryPath, depth - 1);
-        }
-      };
-      for (let current = target.path; ; current = path.dirname(current)) {
-        scanPointers(current, 1);
-        if (current === policy.workspace || current === path.dirname(current)) break;
-      }
-      if (protectedPaths.some(root => inside(root, target.path))) return deny('PROTECTED_PATH', hash);
-      for (let current = target.path; ; current = path.dirname(current)) {
-        const identity = existingIdentity(current);
-        if (identity !== null && protectedIdentities.has(identity)) return deny('PROTECTED_PATH', hash);
-        if (current === policy.workspace || current === path.dirname(current)) break;
-      }
-      if (target.exists && (!target.stat.isFile() || target.stat.nlink !== 1)) return deny('UNSAFE_WRITE_TARGET', hash);
+    if (effect === 'write') {
+      const denial = writeDenial(policy, target);
+      if (denial) return deny(denial, hash);
     }
     return { decision: 'abstain', code: 'IN_SCOPE', policyHash: hash };
   } catch { return deny('INVALID_PATH_OR_CALL', policy?.policyHash); }
