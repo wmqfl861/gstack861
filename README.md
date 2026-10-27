@@ -63,6 +63,7 @@ node bin/gstack861.mjs zcode-config --policy /absolute/private/policy.json
 ## 安全与状态边界
 
 - Hook/guard 不是操作系统沙箱。TOCTOU 路径竞态、恶意同用户进程、宿主绕过标准管线的执行器均不在本阶段保障内。staging 目录在校验与写入之间同样存在 TOCTOU 窗口，蓝图第 5 节边界适用。
+- ZCode PreToolUse Hook 看到的是宿主分发的**原始输入**：任何其他 Hook/插件返回 `updatedInput` 的改写都会在守卫判定之后按最后写入者胜出合并，使本守卫的弃权或拒绝作用于过期路径。因此本守卫**不得与任何返回 `updatedInput` 的 Hook/插件共存**，该约束属于宿主接入验收项，而非代码可强制。
 - 安装/卸载的所有权判定是内容验证（注册表记录摘要 × 目录 manifest × SKILL.md 字节 × 无多余文件），不是密码学证明：对目标目录拥有任意写权限者仍可构造完全自洽的伪造。因此**安装目标必须处于模型不可写路径**（由宿主侧 guard 策略保证），这是部署前提而非代码强制。
 - 卸载遇到用户修改过的技能文件或目录内多余文件会整体拒绝（`USER_FILE_REFUSED`），不删除用户数据；`--purge` 只清理符合本项目备份命名（`<name>-<时间戳>`）的目录，用户放入备份目录的其他内容保留。
 - `install`/`uninstall` 通过目标内锁目录互斥；崩溃残留的锁以 `INSTALL_BUSY` 拒绝后续操作，须人工确认后清除，不自动解锁。
