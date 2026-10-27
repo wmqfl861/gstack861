@@ -73,9 +73,11 @@ test('ZCode hook config can scope the matcher to bound file tools only', t => {
   assert.equal(scoped.hooks.events.PreToolUse[0].matcher, 'Read|Write|Edit');
   assert.throws(() => zcodeHookConfig({ nodePath: process.execPath, cliPath: cli, policyPath: f.policyPath, matcher: '((' }), /INVALID_MATCHER/);
 });
-test('ZCode hook config refuses matchers that are not compilable regexes', t => {
+test('ZCode hook config matcher refusals are a conservative emission choice', t => {
   const f = fixture(t);
-  // These pass the character allowlist but the host would fail to compile them.
+  // The host actually treats '*' as match-all (not a regex-compile failure); a trailing '\'
+  // and 'a**b' are not compilable regexes. Refusing all three is this generator's
+  // conservative choice about what it emits, not a host limit (src/adapters/zcode.mjs).
   for (const matcher of ['*', '\\', 'a**b']) {
     assert.throws(() => zcodeHookConfig({ nodePath: process.execPath, cliPath: cli, policyPath: f.policyPath, matcher }), /INVALID_MATCHER/);
   }

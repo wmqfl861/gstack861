@@ -182,6 +182,22 @@ test('pointer-free ancestor chains keep ordinary writes abstaining', t => {
   assert.equal(evaluate(policy, call(f, 'src/new.txt')).decision, 'abstain');
 });
 
+test('symlinked VCS pointers protect their redirect targets', t => {
+  const f = fixture(t), policy = compilePolicy({ ...f.raw, writeRoots: [f.workspace] });
+  fs.mkdirSync(path.join(f.workspace, 'wt'));
+  fs.mkdirSync(path.join(f.workspace, 'vcs-data', 'hooks'), { recursive: true });
+  fs.symlinkSync('../vcs-data', path.join(f.workspace, 'wt', '.git'), 'dir');
+  assert.equal(evaluate(policy, call(f, 'vcs-data/hooks/pre-commit')).code, 'PROTECTED_PATH');
+  assert.equal(evaluate(policy, call(f, 'src/new.txt')).decision, 'abstain');
+});
+
+test('dangling symlinked VCS pointers neither crash nor block ordinary writes', t => {
+  const f = fixture(t), policy = compilePolicy({ ...f.raw, writeRoots: [f.workspace] });
+  fs.mkdirSync(path.join(f.workspace, 'wt'));
+  fs.symlinkSync('../missing-vcs-data', path.join(f.workspace, 'wt', '.git'), 'dir');
+  assert.equal(evaluate(policy, call(f, 'src/new.txt')).decision, 'abstain');
+});
+
 test('scoped deny decisions carry the policy hash for audit attribution', t => {
   const f = fixture(t), policy = compilePolicy({ ...f.raw, writeRoots: [f.workspace] });
   fs.linkSync(path.join(f.outside, 'secret.txt'), path.join(f.src, 'linked')); // nlink > 1 -> UNSAFE_WRITE_TARGET

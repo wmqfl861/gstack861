@@ -60,10 +60,10 @@
   "taskReviews": {
     "task1-8dot3-identity": "needs-fixes (dropped policyHash) -> fix round 1 -> re-review accepted; loadPolicy .native deviation ruled necessary",
     "task2-gitfile-gitdir": "approved with rulings (depth-2 extension necessary, empirically verified; residual deep-pointer gap accept-and-documented) -> fix round 1 (dirent scan, boundary comment, read cap) -> accepted",
-    "task3-minor-batch": "approved, 3 minors deferred"
+    "task3-minor-batch": "approved, 3 minors deferred (digest-manifest regeneration after the generatorVersion bump; check.mjs success branch proven only via synthetic scratch evidence; no .gitattributes forcing LF — CRLF warnings)"
   },
   "knownBoundaries": [
-    "gitfile pointers >=3 levels below every ancestor undiscovered; model-planted pointers blocked at any depth by the component name check",
+    "gitfile pointers (file and symlink forms both covered since fix round 2) >=3 levels below every ancestor undiscovered; reparse entries that are neither file, symlink, nor directory are not parsed; model-planted pointers blocked at any depth by the component name check",
     "subst/network volumes: identity comparison degrades to over-protection only",
     "huge flat directories: per-write scan IO grows with breadth (dirent scan halves it)",
     "win32 8.3 test skips on CI volumes with 8dot3 disabled"

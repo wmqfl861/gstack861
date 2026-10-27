@@ -149,13 +149,15 @@ export function evaluate(policy, call) {
       // hooks would run at the next git operation. Such pointers sit BESIDE the write path
       // (`wt/.git` pointing at sibling `real-git-data/`), never on it, so every existing
       // ancestor directory is scanned — its own entries and one directory level down — for
-      // VCS-named pointer files. Directory-form `.git` needs no parsing: the name and identity
-      // checks already cover it. No caching: this runs per write evaluation.
-      // Discovery boundary: a pointer three or more directory levels below every ancestor of
-      // the target (`ancestor/x/y/.git` and deeper) is NOT discovered, so a gitdir redirected
-      // from such a pointer stays writable. The model cannot widen this gap: creating or
-      // modifying a pointer file at ANY depth is already denied by the component name check
-      // above, so the boundary only exposes pointers that predate the guarded session.
+      // VCS-named pointer files and symlinks. Directory-form `.git` needs no parsing: the name
+      // and identity checks already cover it. No caching: this runs per write evaluation.
+      // Discovery boundary: pointers three or more directory levels below every ancestor of
+      // the target (`ancestor/x/y/.git` and deeper, FILE or SYMLINK form) are NOT discovered,
+      // and neither are reparse entries that are neither file, symlink, nor directory — a
+      // gitdir redirected only from such a pointer stays writable. The model cannot widen
+      // this gap: creating or modifying a pointer (file or symlink) at ANY depth is already
+      // denied by the component name check above, so the boundary only exposes pointers that
+      // predate the guarded session.
       const protectRedirect = (pointer) => {
         if (fs.statSync(pointer).size > 65536) return; // same cap as loadPolicy; oversized entries are not parsed
         const match = fs.readFileSync(pointer, 'utf8').match(/^gitdir:\s*(\S+)\s*$/m);
@@ -169,6 +171,19 @@ export function evaluate(policy, call) {
           if (error.code !== 'ENOENT') throw error; // missing gitdir: skip; anything else fails closed
         }
       };
+      // A `.git` SYMLINK redirects to its target directly (no gitdir: indirection): protect
+      // the resolved target the same two ways. Dangling links skip silently.
+      const protectLink = (link) => {
+        let target;
+        try { target = fs.realpathSync.native(link); }
+        catch (error) {
+          if (error.code === 'ENOENT') return; // dangling pointer link: skip silently
+          throw error; // anything else fails closed
+        }
+        protectedPaths.push(target);
+        const identity = existingIdentity(target);
+        if (identity !== null) protectedIdentities.add(identity);
+      };
       const scanPointers = (dir, depth) => {
         let entries;
         try { entries = fs.readdirSync(dir, { withFileTypes: true }); }
@@ -179,6 +194,7 @@ export function evaluate(policy, call) {
         for (const entry of entries) {
           const entryPath = path.join(dir, entry.name);
           if (entry.isFile()) { if (vcsComponent(entry.name)) protectRedirect(entryPath); }
+          else if (entry.isSymbolicLink()) { if (vcsComponent(entry.name)) protectLink(entryPath); }
           else if (depth > 0 && entry.isDirectory()) scanPointers(entryPath, depth - 1);
         }
       };
