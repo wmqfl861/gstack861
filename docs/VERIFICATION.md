@@ -285,3 +285,20 @@ Lane A（渲染）：初审 Needs fixes（2 Critical）→ 修复轮 → 复审�
 ## 下一验收
 
 宿主技能目录真实装载验收（ZCode/DSH 侧）与 DSH 管线级验证仍待用户解锁项；批次 5 候选：DSH toolRewrites、宿主装载 runbook 实测版。
+
+# 第十轮验证记录：批次 5（宿主装载 runbook + 加固 + 渲染技能消费流程，2026-10-27）
+
+范围：0.4.2。按 `docs/plans/2026-10-27-batch5-host-loading.md`（计划审查修正 DSH 引用节次、钉死逐段前缀冲突规则、消费技能定为 review——其含明文降级模式条款而 careful 会在缺失 bin/ 时硬失败）。
+
+## 实际运行
+
+| 命令/流程 | 结果 |
+|---|---|
+| `npm test` | 191/191（新增 4：冲突预校验 3 + prompt-file 1） |
+| 装载实测 | 真实渲染产物 → stage-render → `install --target <fixture>/.zcode/skills` 58 目录；runbook §2.2/2.3/2.5 回填已实测 |
+| **渲染技能消费** | 见 `docs/verification-2026-10-27-render-consumption.md`：ZCode 执行器按装载的 review 技能（降级模式条款+方法论）完成真实审查（SQL 注入 Critical，附证据），任务记账+审批经 ask 桥闭环；边界如实（自动拾取未验证） |
+| 车道审查 | Lane A 两处事实错误（相对路径错误码归属、§3 证据链越级）经修复轮更正并复审语义；Lane B 一次通过（非冲突正例测试证明非裸 startsWith） |
+
+## 下一验收
+
+不变：两项用户解锁（DEEPSEEK_API_KEY → DSH 管线+纵向；ZCode 受控新会话 → guard 层+自动拾取+容忍度）。批次 6 候选：解锁后项优先；否则 M3 非设备工作流逐项。

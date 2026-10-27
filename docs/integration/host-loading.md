@@ -41,7 +41,7 @@ rendered/.zcode/skills/<dir>  ──►  staging/<盘点名>/             ──
 3. `--rendered`/`--staging`/`--target` 必须是绝对路径，相对值由 CLI 的路径包装层以 `gstack861:ABSOLUTE_PATH_REQUIRED` 拒绝（`bin/gstack861.mjs` 的 `absolute()`，退出码 1；同一包装层在 approvals 路径上有测试覆盖，`test/adapters.test.mjs`）。**[仓库已验证]** 库层的 `INVALID_RENDERED`/`INVALID_STAGING`/`INVALID_TARGET` 只出现在**绝对但非法**的值上（不存在、非目录、符号链接等，`src/stage.mjs`/`src/install.mjs`）。（`--manifest` 例外：允许相对，按 cwd 解析，`bin/gstack861.mjs`。）
 4. （操作建议，非断言）Windows（Git Bash）下路径参数建议直接写 `C:/...` 形式（Node 正斜杠合法）；避免 `/c/...` 形式——按 Node 的 win32 路径语义（`path.win32` 把无盘符的 `/...` 视为「当前盘符根下」），它会解析为当前盘符根下的 `\c\...`，不是 Git Bash 的挂载点含义。
 
-### 2.2 第一步：stage-render（渲染树 → staging）「待实测」
+### 2.2 第一步：stage-render（渲染树 → staging）「已实测 2026-10-27，证据：docs/verification-2026-10-27-render-consumption.md」
 
 ```sh
 node bin/gstack861.mjs stage-render \
@@ -71,7 +71,7 @@ node bin/gstack861.mjs stage-render \
 - staging 下每技能一个目录，**目录名 = 盘点名**（根路由为 `gstack`）；目录内为 `SKILL.md` + 辅助文件（多文件技能的 `sections/` 等，按渲染树原样逐字节复制）+ `manifest.json`。
 - 任何校验失败——摘要不符、占位符残留、缺 AUTO-GENERATED 横幅、树与清单集合不一致、staging 非空、路径重叠——**零写入整体拒绝**，退出码 1，错误码 `gstack861:RENDER_TREE_INVALID` / `gstack861:RENDER_MANIFEST_INVALID` / `gstack861:STAGING_NOT_EMPTY` / `gstack861:OVERLAPPING_PATHS`（路径重叠）等。
 
-### 2.3 第二步：install（staging → 工作区技能目录）「待实测」
+### 2.3 第二步：install（staging → 工作区技能目录）「已实测 2026-10-27，证据：docs/verification-2026-10-27-render-consumption.md」
 
 ```sh
 node bin/gstack861.mjs install \
@@ -119,7 +119,7 @@ node bin/gstack861.mjs install \
 
 结果（无论通过与否）回填 `docs/verification-*.json` 对应轮次；在此之前宿主认证状态不升级。
 
-### 2.5 回滚（uninstall）「待实测」
+### 2.5 回滚（uninstall）「已实测 2026-10-27，证据：docs/verification-2026-10-27-render-consumption.md」
 
 ```sh
 node bin/gstack861.mjs uninstall --target <workspace>/.zcode/skills
@@ -147,6 +147,6 @@ DSH **没有 gstack 式技能目录**：无目录自动扫描，技能/能力装
 
 ## 5. 证据与回填
 
-- 本手册 ZCode 命令节（2.2/2.3/2.5）的「待实测」由批次 5 Task 3 在 fixture 工作区实跑后回填为「已实测」，证据落当轮 `docs/verification-*.json` 与渲染技能消费流程文档。
+- 本手册 ZCode 命令节（2.2/2.3/2.5）已由批次 5 Task 3 于 2026-10-27 在 fixture 工作区实跑并回填「已实测」；证据见 `docs/verification-*.json` 与渲染技能消费流程文档。
 - DSH 节保持「待 DSH 侧验证」，不随批次 5 回填。
 - 宿主认证状态不因本手册合并而改变：在 2.4 观察项全部实测回填前，ZCode/DSH 保持 `not-host-verified`（`npm run doctor`）。
