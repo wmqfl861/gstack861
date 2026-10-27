@@ -302,3 +302,18 @@ Lane A（渲染）：初审 Needs fixes（2 Critical）→ 修复轮 → 复审�
 ## 下一验收
 
 不变：两项用户解锁（DEEPSEEK_API_KEY → DSH 管线+纵向；ZCode 受控新会话 → guard 层+自动拾取+容忍度）。批次 6 候选：解锁后项优先；否则 M3 非设备工作流逐项。
+
+# 第十一轮验证记录：批次 6（安全组消费套件 + install dry-run + 矩阵刷新，2026-10-27）
+
+范围：0.4.3。按 `docs/plans/2026-10-27-batch6-safety-suite.md`（计划审查四组修正：dry-run 显式只读校验集、冻结演示改边界双侧、document-generate 换 Diataxis 产出、Lane A 三处事实纠正）。
+
+| 项 | 结果 |
+|---|---|
+| `npm test` | 200/200（新增 9：dry-run 全景） |
+| install --dry-run | 结构性零写入（审查者通读 dry 调用图核实无 mkdir/write/rename）；拒绝照常抛错 |
+| 安全组消费套件 | 见 `docs/verification-2026-10-27-safety-suite.md`：careful（前置失败如实+HIGH 硬拒+MEDIUM 经 ask 桥 reject）、freeze/unfreeze（机制差距如实+边界双侧真实策略评估）、document-generate（Diataxis 两象限产物+审批全闭环）；三任务全程记账 |
+| 车道审查 | A/B 均一次通过（B 的 dry 调用图由审查者逐一核对只读性） |
+
+## 下一验收
+
+两项用户解锁不变（DSH 密钥 / ZCode 受控会话）。渲染技能消费累计 5 例；下一批候选：解锁后项优先，否则 M3 非设备组继续（/learn /retro /test-audit 等纯工作流技能同模式消费）。
