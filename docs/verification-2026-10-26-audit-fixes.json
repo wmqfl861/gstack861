@@ -74,8 +74,8 @@
     },
     {
       "path": "scripts/check.mjs",
-      "gitBlobSha1": "8f6cdf75483864d8f4fa415bc8c1404aa79f0b8b",
-      "sha256": "ae2569bf33be178d607d49cb9c8dd509494ee50e3272f0d9e7dd0b2776d695f0"
+      "gitBlobSha1": "ea659ab5cec1f2aaaf74e564c8fcb3999bb27569",
+      "sha256": "476c371abf9fbb60f6b66910a6838f86c1fa2a9c1297fb375012168f72ffa363"
     },
     {
       "path": "src/adapters/dsh.mjs",
