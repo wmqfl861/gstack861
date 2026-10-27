@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { compilePolicy, evaluate, loadPolicy, inside } from '../src/policy.mjs';
+import { digest } from '../src/json.mjs';
 import { fixture } from './helpers.mjs';
 
 const call = (f, file, tool = 'Write') => ({ host: 'zcode', tool, input: { file_path: file }, cwd: f.workspace });
@@ -204,4 +205,144 @@ test('scoped deny decisions carry the policy hash for audit attribution', t => {
   assert.equal(evaluate(f.policy, call(f, 'src/linked')).policyHash, f.policy.policyHash);
   assert.equal(evaluate(policy, call(f, '.git/config')).policyHash, policy.policyHash); // PROTECTED_PATH
   assert.equal(evaluate(f.policy, call(f, path.join(f.outside, 'x'))).policyHash, f.policy.policyHash); // OUTSIDE_SCOPE
+});
+
+// --- apply-patch (V4A envelope) parser bindings ---
+
+const patchPolicy = (f, binding = {}) => compilePolicy({
+  ...f.raw,
+  bindings: {
+    zcode: { ...f.raw.bindings.zcode, ApplyPatch: { effect: 'write', parser: 'apply-patch', pathKey: 'patch_text', ...binding } },
+    dsh: f.raw.bindings.dsh,
+  },
+});
+const patchCall = (f, patch, cwd = f.workspace) => ({ host: 'zcode', tool: 'ApplyPatch', input: { patch_text: patch }, cwd });
+const THREE_FILE_PATCH = [
+  '*** Begin Patch',
+  '*** Update File: src/a.txt',
+  '@@',
+  ' original',
+  '-old',
+  '+new',
+  '*** Add File: src/added.txt',
+  '+fresh content',
+  '*** Update File: src/moved-from.txt',
+  '*** Move to: src/moved-to.txt',
+  '*** End Patch',
+].join('\n');
+
+test('V4A patches abstain only when every extracted path is a writable in-scope target', t => {
+  const f = fixture(t), policy = patchPolicy(f);
+  fs.writeFileSync(path.join(f.src, 'moved-from.txt'), 'renamed by the patch');
+  assert.equal(evaluate(policy, patchCall(f, THREE_FILE_PATCH)).decision, 'abstain');
+});
+test('one out-of-scope path in a V4A patch rejects the whole call', t => {
+  const f = fixture(t), policy = patchPolicy(f);
+  const escape = THREE_FILE_PATCH.replace('*** Add File: src/added.txt', '*** Add File: locked/added.txt');
+  assert.equal(evaluate(policy, patchCall(f, escape)).code, 'OUTSIDE_SCOPE');
+});
+test('a Delete File path inside a protected root rejects the whole patch', t => {
+  const f = fixture(t);
+  const deletion = ['*** Begin Patch', '*** Delete File: locked/victim.txt', '*** End Patch'].join('\n');
+  // With writeRoots narrowed to src the deletion is already out of scope...
+  assert.equal(evaluate(patchPolicy(f), patchCall(f, deletion)).code, 'OUTSIDE_SCOPE');
+  // ...and with the whole workspace writable it still hits the protected root.
+  const wide = compilePolicy({
+    ...f.raw, writeRoots: [f.workspace],
+    bindings: { zcode: { ...f.raw.bindings.zcode, ApplyPatch: { effect: 'write', parser: 'apply-patch', pathKey: 'patch_text' } }, dsh: f.raw.bindings.dsh },
+  });
+  assert.equal(evaluate(wide, patchCall(f, deletion)).code, 'PROTECTED_PATH');
+});
+test('missing V4A envelope or zero extracted paths denies as INVALID_PATH_OR_CALL', t => {
+  const f = fixture(t), policy = patchPolicy(f);
+  // No envelope markers at all.
+  assert.equal(evaluate(policy, patchCall(f, '*** Update File: src/a.txt\n+changed')).code, 'INVALID_PATH_OR_CALL');
+  // Envelope present, but *** End of File is a section marker, not a path -> zero paths.
+  assert.equal(evaluate(policy, patchCall(f, '*** Begin Patch\n*** End of File\n*** End Patch')).code, 'INVALID_PATH_OR_CALL');
+  // Non-string patch text is not a patch.
+  assert.equal(evaluate(policy, { host: 'zcode', tool: 'ApplyPatch', input: { patch_text: 3 }, cwd: f.workspace }).code, 'INVALID_PATH_OR_CALL');
+});
+test('V4A patches without a session cwd are denied CWD_REQUIRED', t => {
+  const f = fixture(t), policy = patchPolicy(f);
+  assert.equal(evaluate(policy, { ...patchCall(f, THREE_FILE_PATCH), cwd: undefined }).code, 'CWD_REQUIRED');
+});
+test('GNU diff header lines are tolerated as supplement and /dev/null is skipped', t => {
+  const f = fixture(t), policy = patchPolicy(f);
+  const gnu = ['*** Begin Patch', '--- /dev/null', '+++ b/src/from-gnu.txt', '@@', '+content', '*** End Patch'].join('\n');
+  assert.equal(evaluate(policy, patchCall(f, gnu)).decision, 'abstain');
+  const escape = ['*** Begin Patch', '+++ b/locked/from-gnu.txt', '*** End Patch'].join('\n');
+  assert.equal(evaluate(policy, patchCall(f, escape)).code, 'OUTSIDE_SCOPE');
+  // A timestamp after a tab is part of the GNU header line, not of the path.
+  const stamped = ['*** Begin Patch', `+++ b/src/stamped.txt\t2026-10-27 12:00:00 +0000`, '*** End Patch'].join('\n');
+  assert.equal(evaluate(policy, patchCall(f, stamped)).decision, 'abstain');
+});
+
+// --- param-keyed effects (effectKey + readWhen) ---
+
+test('param-keyed effects read only on explicit values and default to write', t => {
+  const f = fixture(t), policy = compilePolicy({
+    ...f.raw,
+    bindings: {
+      zcode: f.raw.bindings.zcode,
+      dsh: { ...f.raw.bindings.dsh, str_replace_editor: { effectKey: 'command', readWhen: ['view'], pathKey: 'path' } },
+    },
+  });
+  const file = path.join(f.locked, 'read.txt'); // readable root only: locked is outside writeRoots
+  const editor = input => ({ host: 'dsh', tool: 'str_replace_editor', input: { path: file, ...input }, cwd: f.workspace });
+  assert.equal(evaluate(policy, editor({ command: 'view' })).decision, 'abstain'); // listed value -> read
+  assert.equal(evaluate(policy, editor({ command: 'create' })).code, 'OUTSIDE_SCOPE'); // unlisted -> write
+  assert.equal(evaluate(policy, editor({ command: 'unknown' })).code, 'OUTSIDE_SCOPE'); // unknown -> write
+  assert.equal(evaluate(policy, editor({})).code, 'OUTSIDE_SCOPE'); // missing -> write
+  assert.equal(evaluate(policy, editor({ command: 3 })).code, 'OUTSIDE_SCOPE'); // non-string -> write
+});
+
+// --- compile-time validation and hash compatibility ---
+
+test('new binding fields are validated at compile time', t => {
+  const f = fixture(t);
+  const cases = [
+    { effect: 'read', parser: 'apply-patch', pathKey: 'patch_text' }, // parser requires effect write
+    { effect: 'write', parser: 'gnu-diff', pathKey: 'patch_text' }, // only legal parser value is apply-patch
+    { effect: 'write', parser: 'apply-patch', pathKey: 'patch_text', effectKey: 'command', readWhen: ['view'] }, // parser + effectKey
+    { effect: 'write', effectKey: 'command', readWhen: ['view'], pathKey: 'path' }, // effect + effectKey are mutually exclusive
+    { effectKey: 'command', pathKey: 'path' }, // effectKey without readWhen
+    { readWhen: ['view'], pathKey: 'path' }, // readWhen without effectKey (and without effect)
+    { effectKey: 'command', readWhen: [], pathKey: 'path' }, // readWhen must be non-empty
+    { effectKey: 'command', readWhen: 'view', pathKey: 'path' }, // readWhen must be an array
+    { effectKey: 'command', readWhen: ['view', 3], pathKey: 'path' }, // readWhen entries must be strings
+    { effectKey: 'constructor', readWhen: ['view'], pathKey: 'path' }, // effectKey is a plain parameter name
+  ];
+  for (const binding of cases) {
+    assert.throws(() => compilePolicy({ ...f.raw, bindings: { zcode: { ApplyPatch: binding }, dsh: {} } }), /INVALID_TOOL_BINDING/,
+      JSON.stringify(binding));
+  }
+});
+test('policies without the new fields compile byte-identically (policyHash unchanged)', t => {
+  const f = fixture(t), real = p => fs.realpathSync.native(p);
+  // Independently constructed pre-feature normalization: same canonical bytes must hash identically.
+  const expected = {
+    schemaVersion: 1,
+    workspace: real(f.workspace),
+    readRoots: [real(f.workspace)],
+    writeRoots: [real(f.src)],
+    // Raw roots sort first, then the pushed VCS root lands at the end (compilePolicy order).
+    protectedRoots: [real(f.locked), real(path.join(f.workspace, '.git'))],
+    bindings: {
+      dsh: { read_file: { effect: 'read', pathKey: 'path' }, write_file: { effect: 'write', pathKey: 'path' } },
+      zcode: {
+        Edit: { effect: 'write', pathKey: 'file_path' },
+        Read: { effect: 'read', pathKey: 'file_path' },
+        Write: { effect: 'write', pathKey: 'file_path' },
+      },
+    },
+  };
+  assert.equal(digest(expected), f.policy.policyHash);
+  // Old-style bindings normalize to exactly the two legacy fields - no leaked keys.
+  assert.deepEqual(f.policy.bindings.zcode.Write, { effect: 'write', pathKey: 'file_path' });
+  // When a new field IS present it enters the normalized policy and changes the hash.
+  const withParser = compilePolicy({
+    ...f.raw,
+    bindings: { ...f.raw.bindings, zcode: { ...f.raw.bindings.zcode, ApplyPatch: { effect: 'write', parser: 'apply-patch', pathKey: 'patch_text' } } },
+  });
+  assert.notEqual(withParser.policyHash, f.policy.policyHash);
 });
