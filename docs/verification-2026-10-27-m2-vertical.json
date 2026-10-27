@@ -56,8 +56,8 @@
   "testedFiles": [
     {
       "path": "bin/gstack861.mjs",
-      "gitBlobSha1": "5730295aa636b1bb0672f072864802f2c0d3a88d",
-      "sha256": "1d5988e473725aa15c7b3d4a9b30f97752cbe02b6e1c817c97385280746a1b2d"
+      "gitBlobSha1": "d9c1dac5872cb63dfa9800ecbeac9fa60c5fc4e0",
+      "sha256": "9672ed966b5985a52c2a4ae09957ffb498597fd1f6e433fe53f13d828607a5a6"
     },
     {
       "path": "package.json",
@@ -116,8 +116,8 @@
     },
     {
       "path": "test/adapters.test.mjs",
-      "gitBlobSha1": "d153f65bb1c1101f34393cab3a79b5f7c5cf78d5",
-      "sha256": "7ffce953bdfa99d3693dd6c6172caef2fa6d008ffc696e8e1ccc599a142abe5a"
+      "gitBlobSha1": "0cfeae3658a33a60b0a39281f45904879c4b5256",
+      "sha256": "8486beccfc09d7ec1872bdf1f2675c8b5a9aa2409a062e45ed008de7bece7b71"
     },
     {
       "path": "test/approvals.test.mjs",
