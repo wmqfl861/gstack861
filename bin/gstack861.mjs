@@ -8,6 +8,7 @@ import { inventory } from '../src/inventory.mjs';
 import { generateSkills } from '../src/generate.mjs';
 import { installSkills, uninstallSkills } from '../src/install.mjs';
 import { ApprovalStore } from '../src/approvals.mjs';
+import { TaskStore } from '../src/tasks.mjs';
 
 const args = process.argv.slice(2);
 const print = value => process.stdout.write(JSON.stringify(value, null, 2) + '\n');
@@ -112,6 +113,28 @@ if (args[0] === 'hook') {
           : args[1] === 'consume' ? store.consume(options['--id'], subject)
           : store.reject(options['--id'], subject));
       }
+    } else if (args[0] === 'tasks') {
+      const options = flags(args.slice(2), ['--state', '--id', '--host', '--session', '--run', '--policy-hash', '--action-file', '--owner']);
+      // Validate before constructing the store: a rejected subcommand or argument
+      // must not leave a state directory behind.
+      if (!['create', 'start', 'resume', 'complete', 'fail', 'cancel', 'interrupt', 'show', 'list'].includes(args[1])) throw new Error('UNKNOWN_SUBCOMMAND');
+      const owner = options['--owner'];
+      if (owner !== undefined && !['create', 'start'].includes(args[1])) throw new Error('INVALID_ARGUMENTS');
+      // Same shape as TaskStore.create/start, checked before any directory is created.
+      if (owner !== undefined && (owner.length < 1 || owner.length > 256)) throw new Error('INVALID_OWNER');
+      const store = new TaskStore(absolute(options['--state']));
+      const readSubject = () => {
+        let action;
+        try { action = JSON.parse(fs.readFileSync(absolute(options['--action-file']), 'utf8')); }
+        catch (error) { if (error instanceof SyntaxError) throw new Error('INVALID_ACTION_FILE'); throw error; }
+        return { host: options['--host'], sessionId: options['--session'], runId: options['--run'],
+          policyHash: options['--policy-hash'], action };
+      };
+      if (args[1] === 'list') print(store.list());
+      else if (args[1] === 'show') print(store.get(options['--id']));
+      else if (args[1] === 'create') print(store.create(readSubject(), owner === undefined ? {} : { owner }));
+      else if (args[1] === 'start') print(store.start(options['--id'], readSubject(), owner === undefined ? {} : { owner }));
+      else print(store[args[1]](options['--id'], readSubject()));
     } else {
       process.stderr.write('Usage: gstack861 doctor | inventory --upstream PATH | zcode-config --policy ABS_PATH\n'
         + '  generate --upstream PATH --staging DIR --host zcode|dsh [--commit 40-HEX]\n'
@@ -120,7 +143,10 @@ if (args[0] === 'hook') {
         + '  approvals list --state DIR | show --state DIR --id ID\n'
         + '  approvals issue --state DIR --host H --session S --run R --policy-hash HASH --action-file F [--ttl-ms N]\n'
         + '  approvals approve|reject|consume --state DIR --id ID --host H --session S --run R --policy-hash HASH --action-file F\n'
-        + '  approvals verify --state DIR --id ID --host H --session S --run R --policy-hash HASH --action-file F\n');
+        + '  approvals verify --state DIR --id ID --host H --session S --run R --policy-hash HASH --action-file F\n'
+        + '  tasks create|start --state DIR [--id ID] --host H --session S --run R --policy-hash HASH --action-file F [--owner O]\n'
+        + '  tasks resume|complete|fail|cancel|interrupt --state DIR --id ID --host H --session S --run R --policy-hash HASH --action-file F\n'
+        + '  tasks show --state DIR --id ID | tasks list --state DIR\n');
       process.exitCode = 1;
     }
   } catch (error) {

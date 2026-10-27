@@ -219,6 +219,60 @@ test('approvals CLI issue validates ttl-ms and refuses unknown subcommands befor
   assert.equal(badNumber.status, 1);
   assert.match(badNumber.stderr, /INVALID_TTL/);
 });
+test('tasks CLI create→start→interrupt→resume→complete smoke records owner and states', t => {
+  const f = fixture(t), state = path.join(f.base, 'tasks');
+  const actionFile = path.join(f.base, 'action.json');
+  fs.writeFileSync(actionFile, JSON.stringify({ tool: 'Write', input: { file_path: 'src/a' } }));
+  const run = (...a) => spawnSync(process.execPath, [cli, 'tasks', ...a], { encoding: 'utf8', timeout: 10000 });
+  const subject = ['--host', 'zcode', '--session', 's1', '--run', 'r1', '--policy-hash', f.policy.policyHash, '--action-file', actionFile];
+  const create = run('create', '--state', state, ...subject, '--owner', 'operator-a');
+  assert.equal(create.status, 0, create.stderr);
+  const id = JSON.parse(create.stdout);
+  assert.match(id, /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+  const shown = () => JSON.parse(run('show', '--state', state, '--id', id).stdout);
+  assert.equal(shown().state, 'planned');
+  assert.equal(shown().owner, 'operator-a');
+  const step = sub => {
+    const child = run(sub, '--state', state, '--id', id, ...subject);
+    assert.equal(child.status, 0, `${sub}: ${child.stderr}`);
+    return JSON.parse(child.stdout);
+  };
+  assert.equal(step('start').state, 'running');
+  assert.equal(step('interrupt').state, 'interrupted');
+  assert.equal(step('resume').state, 'running');
+  assert.equal(step('complete').state, 'completed');
+  const final = shown();
+  assert.equal(final.state, 'completed');
+  assert.equal(final.owner, 'operator-a');
+  assert.equal(final.attempts, 2);
+  const list = JSON.parse(run('list', '--state', state).stdout);
+  assert.deepEqual(list.map(r => r.id), [id]);
+  assert.equal(list[0].state, 'completed');
+});
+test('tasks CLI cancels interrupted tasks and refuses unknown subcommands without creating state', t => {
+  const f = fixture(t), state = path.join(f.base, 'tasks');
+  const actionFile = path.join(f.base, 'action.json');
+  fs.writeFileSync(actionFile, JSON.stringify({ tool: 'Write', input: { file_path: 'src/a' } }));
+  const run = (...a) => spawnSync(process.execPath, [cli, 'tasks', ...a], { encoding: 'utf8', timeout: 10000 });
+  const subject = ['--host', 'zcode', '--session', 's1', '--run', 'r1', '--policy-hash', f.policy.policyHash, '--action-file', actionFile];
+  const absent = path.join(f.base, 'never-created');
+  const bogus = run('bogus', '--state', absent);
+  assert.equal(bogus.status, 1);
+  assert.match(bogus.stderr, /UNKNOWN_SUBCOMMAND/);
+  assert.equal(fs.existsSync(absent), false, 'unknown subcommand must not leave a state directory behind');
+  const id = JSON.parse(run('create', '--state', state, ...subject).stdout);
+  const step = sub => {
+    const child = run(sub, '--state', state, '--id', id, ...subject);
+    assert.equal(child.status, 0, `${sub}: ${child.stderr}`);
+    return JSON.parse(child.stdout);
+  };
+  step('start'); step('interrupt');
+  assert.equal(step('cancel').state, 'cancelled');
+  const tooLongOwner = run('create', '--state', path.join(f.base, 'also-never'), ...subject, '--owner', 'x'.repeat(257));
+  assert.equal(tooLongOwner.status, 1);
+  assert.match(tooLongOwner.stderr, /INVALID_OWNER/);
+  assert.equal(fs.existsSync(path.join(f.base, 'also-never')), false);
+});
 test('DSH registers a monotonic guard, not a permissive waterfall', t => {
   const f = fixture(t);
   let guard;

@@ -7,6 +7,8 @@ import { object } from './json.mjs';
 const ID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 const STATES = ['planned', 'running', 'completed', 'failed', 'cancelled', 'interrupted'];
 const fail = code => { throw new Error(code); };
+/** Optional operator label: a non-empty string of at most 256 characters. */
+const validOwner = owner => typeof owner === 'string' && owner.length >= 1 && owner.length <= 256;
 
 /** Durable task journal for trusted controllers. Mirrors ApprovalStore's on-disk security discipline. */
 export class TaskStore {
@@ -28,10 +30,12 @@ export class TaskStore {
     if (typeof id !== 'string' || !ID.test(id)) fail('INVALID_TASK_ID');
     return path.join(this.directory, `${id}.json`);
   }
-  create(subject) {
+  create(subject, { owner } = {}) {
+    if (owner !== undefined && !validOwner(owner)) fail('INVALID_OWNER');
     const id = randomUUID();
     const time = this.now();
     const record = { schemaVersion: 1, id, subjectHash: subjectDigest(subject), state: 'planned', attempts: 0, createdAt: time, updatedAt: time };
+    if (owner !== undefined) record.owner = owner;
     fs.writeFileSync(this.file(id), JSON.stringify(record) + '\n', { flag: 'wx', mode: 0o600 });
     return id;
   }
@@ -43,7 +47,8 @@ export class TaskStore {
     if (!object(record) || record.schemaVersion !== 1 || record.id !== id || !STATES.includes(record.state)
       || !Number.isSafeInteger(record.attempts) || record.attempts < 0
       || !Number.isSafeInteger(record.createdAt) || !Number.isSafeInteger(record.updatedAt)
-      || typeof record.subjectHash !== 'string' || !/^[a-f0-9]{64}$/.test(record.subjectHash)) fail('INVALID_TASK_RECORD');
+      || typeof record.subjectHash !== 'string' || !/^[a-f0-9]{64}$/.test(record.subjectHash)
+      || (record.owner !== undefined && !validOwner(record.owner))) fail('INVALID_TASK_RECORD');
     return record;
   }
   get(id) {
@@ -63,7 +68,8 @@ export class TaskStore {
     }
     return records;
   }
-  transition(id, subject, from, to, { bumpAttempts = false } = {}) {
+  transition(id, subject, from, to, { bumpAttempts = false, owner } = {}) {
+    if (owner !== undefined && !validOwner(owner)) fail('INVALID_OWNER');
     const filename = this.file(id), lock = `${filename}.lock`;
     try { fs.mkdirSync(lock, { mode: 0o700 }); } catch { fail('TASK_BUSY'); }
     try {
@@ -74,6 +80,7 @@ export class TaskStore {
       if (!from.includes(record.state)) fail('TASK_WRONG_STATE');
       const next = { ...record, state: to, updatedAt: this.now() };
       if (bumpAttempts) next.attempts = record.attempts + 1;
+      if (owner !== undefined) next.owner = owner;
       const temp = `${filename}.${randomUUID()}.tmp`;
       try {
         fs.writeFileSync(temp, JSON.stringify(next) + '\n', { flag: 'wx', mode: 0o600 });
@@ -82,10 +89,10 @@ export class TaskStore {
       return Object.freeze(next);
     } finally { fs.rmdirSync(lock); }
   }
-  start(id, subject) { return this.transition(id, subject, ['planned', 'interrupted'], 'running', { bumpAttempts: true }); }
+  start(id, subject, { owner } = {}) { return this.transition(id, subject, ['planned', 'interrupted'], 'running', { bumpAttempts: true, owner }); }
   resume(id, subject) { return this.transition(id, subject, ['interrupted'], 'running', { bumpAttempts: true }); }
   complete(id, subject) { return this.transition(id, subject, ['running'], 'completed'); }
   fail(id, subject) { return this.transition(id, subject, ['running'], 'failed'); }
-  cancel(id, subject) { return this.transition(id, subject, ['planned', 'running'], 'cancelled'); }
+  cancel(id, subject) { return this.transition(id, subject, ['planned', 'running', 'interrupted'], 'cancelled'); }
   interrupt(id, subject) { return this.transition(id, subject, ['running'], 'interrupted'); }
 }
