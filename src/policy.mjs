@@ -93,6 +93,17 @@ export function loadPolicy(filename) {
   return policy;
 }
 
+/**
+ * Name-based VCS check for every path component, so nested repositories and submodules are
+ * covered too. Case-insensitive, and on Windows also the alias spellings the filesystem maps
+ * back to `.git` (8.3 `git~1`, trailing dots/spaces, `::$INDEX_ALLOCATION` streams).
+ */
+function vcsComponent(component) {
+  let name = component.toLowerCase();
+  if (process.platform === 'win32') name = name.split(':')[0].replace(/[. ]+$/, '');
+  return name === '.git' || /^git~\d+$/.test(name);
+}
+
 /** Admission only. This does not execute tools or provide an OS sandbox. */
 export function evaluate(policy, call) {
   try {
@@ -107,6 +118,7 @@ export function evaluate(policy, call) {
     const roots = policy[binding.effect === 'read' ? 'readRoots' : 'writeRoots'];
     if (!roots.some(root => inside(root, target.path))) return deny('OUTSIDE_SCOPE', hash);
     if (binding.effect === 'write') {
+      if (path.relative(policy.workspace, target.path).split(path.sep).some(vcsComponent)) return deny('PROTECTED_PATH', hash);
       const gitRoot = targetPath(path.join(policy.workspace, '.git')).path;
       if ([...policy.protectedRoots, gitRoot].some(root => inside(root, target.path))) return deny('PROTECTED_PATH', hash);
       if (target.exists && (!target.stat.isFile() || target.stat.nlink !== 1)) return deny('UNSAFE_WRITE_TARGET', hash);

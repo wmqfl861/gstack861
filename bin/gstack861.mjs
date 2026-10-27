@@ -38,14 +38,15 @@ if (args[0] === 'hook') {
     if (args[1] !== 'zcode') throw new Error('UNKNOWN_HOST');
     const options = flags(args.slice(2), ['--policy']);
     const policy = loadPolicy(options['--policy']);
-    let input = '', bytes = 0;
+    const chunks = []; let bytes = 0;
     for await (const chunk of process.stdin) {
-      bytes += Buffer.byteLength(chunk);
+      bytes += chunk.length;
       if (bytes > 1048576) throw new Error('INPUT_TOO_LARGE');
-      input += chunk;
+      chunks.push(chunk);
     }
-    result = handleZcode(JSON.parse(input), policy);
-  } catch { result = denyZcode('HOOK_INPUT_OR_POLICY_ERROR'); }
+    // Decode once: per-chunk decoding splits multi-byte UTF-8 characters at chunk boundaries.
+    result = handleZcode(JSON.parse(Buffer.concat(chunks).toString('utf8')), policy);
+  } catch (error) { result = denyZcode(/^[A-Z][A-Z0-9_]*$/.test(error?.message) ? error.message : 'HOOK_INPUT_OR_POLICY_ERROR'); }
   print(result.output);
   process.exitCode = result.exitCode;
 } else {
@@ -58,7 +59,7 @@ if (args[0] === 'hook') {
     } else if (args[0] === 'inventory') {
       const options = flags(args.slice(1), ['--upstream']);
       if (!options['--upstream']) throw new Error('UPSTREAM_PATH_REQUIRED');
-      print(inventory(absolute(options['--upstream']), lock().gstack.commit));
+      print(inventory(path.resolve(options['--upstream']), lock().gstack.commit));
     } else if (args[0] === 'zcode-config') {
       const options = flags(args.slice(1), ['--policy', '--matcher']);
       loadPolicy(absolute(options['--policy']));

@@ -125,3 +125,10 @@ test('VCS symlink targets remain protected even after policy compilation', t => 
   assert.equal(evaluate(policy, call(f, '.git/config')).code, 'PROTECTED_PATH');
   assert.equal(evaluate(policy, call(f, 'vcs-data/config')).code, 'PROTECTED_PATH');
 });
+
+test('nested repositories keep their VCS metadata protected', t => {
+  const f = fixture(t), policy = compilePolicy({ ...f.raw, writeRoots: [f.workspace] });
+  fs.mkdirSync(path.join(f.workspace, 'vendor', 'lib', '.git', 'hooks'), { recursive: true });
+  assert.equal(evaluate(policy, call(f, 'vendor/lib/.git/hooks/pre-commit')).code, 'PROTECTED_PATH');
+  assert.equal(evaluate(policy, call(f, 'vendor/lib/.git')).code, 'PROTECTED_PATH');
+});
