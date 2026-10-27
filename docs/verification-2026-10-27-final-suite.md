@@ -4,12 +4,12 @@
 
 ## context-save
 
-- **按其规定文件布局**真实保存：frontmatter（status/branch/timestamp/session_duration_s/files_modified + remote/project_root/worktree/head）+ `## Working on`/`### Summary`/`### Decisions Made`/`### Remaining Work`/`### Notes`；**Remaining Work 逐项 `Open.` 开头 + 溯源词尾逐字保留**（`(path read)`×2、`(path assumed)`、`(target state checked)`——restore 按其排序）；追加式 checkpoint 落 fixture `.context/checkpoints/20261027-183000-audit-safe-cleanup.md`。
+- **按其规定文件布局**真实保存：frontmatter（status/branch/timestamp/session_duration_s/files_modified + remote/project_root/worktree/head）+ `## Working on`/`### Summary`/`### Decisions Made`/`### Remaining Work`/`### Notes`；**Remaining Work 逐项 `Open.` 开头 + 溯源词尾逐字保留**（`(path read)`、`(code read)`、`(path assumed)`、`(target state checked)` 各一——restore 按其排序；初稿误记 path read ×2）；追加式 checkpoint 落 fixture `.context/checkpoints/20261027-183000-audit-safe-cleanup.md`。
 - **差距如实**：stamp 步骤（`gstack-slug --stamp-checkpoint`）宿主二进制缺失——frontmatter 中的 head 以真实 `git rev-parse`（fe83def）手工戳记替代并注明。
 
 ## context-restore
 
-- **真实恢复**：读取刚保存的 checkpoint；其检查单输出留证——head 对比判定 **HEAD_MATCHES**（保存后无新提交，fe83def 一致，无 HEAD_MOVED/DIVERGED/UNKNOWN）；按溯源词排序：Verify first = `(path assumed)` 项（ask exit-3 未在 sh 中复验）+ `(code read)` 项（断言未写）；Next steps = `(path read)`×2 + `(target state checked)`；**RESUMING CONTEXT 呈现**：工作主题=clean.sh 安全化，先做 Verify first 两项再进 Next steps；恢复期硬门遵守（零代码改动——本批恢复仅为读取与呈现）。
+- **真实恢复**：读取刚保存的 checkpoint；其检查单输出留证——head 对比判定 **HEAD_UNCHANGED**（checkpoint 戳记与恢复时 HEAD 逐字相等——初次留证误写为技能词表外的 HEAD_MATCHES 且戳记用了 7 位短 sha（其脚本会把短戳记判为 HEAD_UNKNOWN），已按其真实判定词与 40 位全 sha 更正 checkpoint 与本记录）；按溯源词排序：Verify first = `(path assumed)` 项（ask exit-3 未在 sh 中复验）+ `(code read)` 项（断言未写）；Next steps = `(path read)`×2 + `(target state checked)`；**RESUMING CONTEXT 呈现**：工作主题=clean.sh 安全化，先做 Verify first 两项再进 Next steps；恢复期硬门遵守（零代码改动——本批恢复仅为读取与呈现）。
 
 ## diagram
 
@@ -19,7 +19,7 @@
 ## make-pdf
 
 - **链路检查**：`"$P"`（构建产物 make-pdf/dist/pdf CLI）不存在——gstack 未安装、`./setup` 未跑；按其 exit-4 路径声明 **BLOCKED**（no browser available + CLI 缺失），补救按其原文（open Aside / `./setup`）。
-- **交付其自带降级产物 `--to html`**：design 文档转为单文件自包含 HTML（内联样式、1in @page 边距、无外部依赖——其原文「`--to html` and `--to docx` need no browser at all」），落 `docs/designs/audit-safe-cleanup.html`（2668 字节）并内嵌 BLOCKED 声明；不发明 ASCII 预览。
+- **交付其自带降级产物 `--to html`**：design 文档转为单文件自包含 HTML（内联样式、1in @page 边距、无外部依赖——其原文「`--to html` and `--to docx` need no browser at all」），落 `docs/designs/audit-safe-cleanup.html`（2668 字符/3974 UTF-8 字节）并内嵌 BLOCKED 声明；不发明 ASCII 预览。
 
 ## 结论
 
