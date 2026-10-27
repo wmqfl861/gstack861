@@ -79,10 +79,10 @@ if (args[0] === 'hook') {
         networkCalls: 0, modelCalls: 0,
         safety: 'guard-protocol foundation; not an OS sandbox; no full-parity certification',
         // count and evidence update together per batch
-        consumption: { renderedSkillsConsumed: 8,
+        consumption: { renderedSkillsConsumed: 11,
           evidence: ['docs/verification-2026-10-27-render-consumption.md',
             'docs/verification-2026-10-27-safety-suite.md',
-            'docs/verification-2026-10-27-workflow-suite.md'],
+            'docs/verification-2026-10-27-workflow-suite.md', 'docs/verification-2026-10-27-product-suite.md'],
           note: 'context-injection; auto-pickup unverified' },
         unlocks: { dsh: 'set DEEPSEEK_API_KEY then run node scripts/verify-dsh-guard.mjs',
           zcode: 'follow docs/integration/zcode-acceptance.md + host-loading.md section 2.4 in a controlled new session' } });

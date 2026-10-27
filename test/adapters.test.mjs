@@ -361,7 +361,7 @@ test('doctor reports the rendered-skill consumption count and user unlock action
   const info = JSON.parse(child.stdout);
   assert.equal(info.consumption.renderedSkillsConsumed, 8);
   assert.deepEqual(info.consumption.evidence, ['docs/verification-2026-10-27-render-consumption.md',
-    'docs/verification-2026-10-27-safety-suite.md', 'docs/verification-2026-10-27-workflow-suite.md']);
+    'docs/verification-2026-10-27-safety-suite.md', 'docs/verification-2026-10-27-workflow-suite.md', 'docs/verification-2026-10-27-product-suite.md']);
   assert.equal(typeof info.consumption.note, 'string');
   assert.match(info.consumption.note, /context-injection; auto-pickup unverified/);
   assert.equal(info.unlocks.dsh, 'set DEEPSEEK_API_KEY then run node scripts/verify-dsh-guard.mjs');

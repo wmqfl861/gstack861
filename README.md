@@ -2,7 +2,7 @@
 
 将 gstack 原生适配到 **ZCode** 与 **DeepSeek Harness（DSH）**。一套核心，两套独立宿主适配，不隐藏调用 Claude Code，不把提示词复制当作功能对等。
 
-**当前版本：0.4.4 / foundation。不是完整可用的 gstack 双宿主发行版。**
+**当前版本：0.4.5 / foundation。不是完整可用的 gstack 双宿主发行版。**
 
 ## 开发文档
 

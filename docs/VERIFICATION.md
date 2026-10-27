@@ -336,3 +336,18 @@ Lane A（渲染）：初审 Needs fixes（2 Critical）→ 修复轮 → 复审�
 ## 下一验收
 
 两项用户解锁不变（首尾重申）。剩余 M3 非设备纯工作流技能渐次消费；设备依赖组与 M4 待环境。
+
+# 第十三轮验证记录：批次 8（产品套件消费 III + doctor 消费报告，2026-10-27）
+
+范围：0.4.5。按 `docs/plans/2026-10-27-batch8-product-suite.md`（计划审查四组修正：spec 真实五阶段+Standard Issue 模板、deslop 两处依赖、doctor evidence 数组定名、矩阵状态行归属）。
+
+| 项 | 结果 |
+|---|---|
+| `npm test` | 213/213（新增 2：doctor 消费报告） |
+| doctor 消费报告 | `renderedSkillsConsumed: 11` + 四份证据文档 + 两项解锁动作（count/evidence 同字面量同步移动） |
+| 产品套件消费 | 见 `docs/verification-2026-10-27-product-suite.md`：office-hours（startup 模板全套+Assignment）、spec（五阶段+Standard Issue+语义审查真实 flagged）、deslop（验证门槛正确→零候选诚实结论）；累计 11 例 |
+| 车道审查 | Lane A 一次通过（字面量逐字核对+路径存在性）；Lane B 单行（终审覆盖） |
+
+## 下一验收
+
+两项用户解锁不变（首尾重申）。M3 非设备纯工作流消费已覆盖 11 技能；剩余非设备项（diagram/make-pdf 的生成类、context-save/restore 等）可继续；设备依赖组与 M4 待环境。
