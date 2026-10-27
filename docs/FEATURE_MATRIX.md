@@ -16,7 +16,7 @@
 | 自动安装/升级/卸载（宿主级） | planned | planned | ZCode 仅输出配置，不改用户文件；DSH 安装片段需含 system-prompt+tools 闭包（调研结论） |
 | 不可绕过的全宿主安全 | blocked | blocked | 启动失败、工具替换、PTC、子 Agent、Shell/OS 隔离；DSH apply() 抛错仅警告且退出码 0（实测），验收须解析警告 |
 | 相对路径/Session cwd | contract_tested | blocked | ZCode 用事件 cwd；DSH 暂只接受绝对路径 |
-| 技能渲染（上游管线 CI 复用） | rendered-experimental | rendered-experimental | CI 首跑结果以 Actions 为准；产物零占位符+清单；不宣称 conformance/full；安装链接入待批次 4 |
+| 技能渲染（上游管线 CI 复用） | rendered-experimental | rendered-experimental | CI 渲染成功（run 40464085183）；0.4.1 起装载链接通：stage-render→install→uninstall 全链实测（多文件技能含 registry 锚定摘要）；不宣称 conformance/full；宿主技能目录真实装载待用户解锁项 |
 | 原生询问桥 | implemented | implemented | `approvals ask` 阻塞式应答（exit 3 不自动同意）；宿主内嵌 UI 未接通 |
 | 纵向流程（spec→ship） | workflow-evidence | planned | ZCode 侧六阶段+审批+交付已真实跑通（见 verification-2026-10-27-vertical-zcode.md，非 host_verified）；DSH 侧待密钥 |
 | 开发/调查/review | planned | planned | 尚未用真实宿主执行纵向任务 |

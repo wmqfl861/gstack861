@@ -260,3 +260,28 @@ Lane A（渲染）：初审 Needs fixes（2 Critical）→ 修复轮 → 复审�
 ## 下一验收
 
 渲染 CI 首跑结果回填与（若绿）产物接入 install 链（批次 4）；DSH 待密钥；ZCode guard 层待受控会话。
+
+# 第九轮验证记录：批次 4（渲染产物接入装载链，2026-10-27）
+
+范围：0.4.1。按 `docs/plans/2026-10-27-batch4-render-install.md`（计划审查否决「辅助文件平铺」错误前提——实测 30 个辅助文件全部嵌套于 6 个子目录——并据此重设计为相对子路径 files 映射）交付。
+
+## 实际运行
+
+环境：真实 Windows 本机（win32 10.0.22624 x64），Node.js v24.21.0。
+
+| 命令 | 结果 |
+|---|---|
+| `npm test` | 187/187（新增 25：install 多文件 11、stage-render 13、端到端 1） |
+| **真实产物全链**（本机 CI 渲染产物 `rendered-final`） | `stage-render`：57 技能+根、30 辅助文件 → staging；`install`：58 装载（含 ship/qa 等 sections 多文件技能）；重装幂等 skip 58；`uninstall`：58 清空、目标归零；篡改列出文件 → `USER_FILE_REFUSED`（e2e 测试覆盖） |
+| `npm run check` / `doctor` | 通过；版本 0.4.1 |
+
+## 设计要点（计划审查裁定）
+
+- registry 为卸载唯一信任锚：files 摘要对 registry 记录校验，forged 目标 manifest 不得提名删除文件。
+- classify 的 skip 判定 files 感知：仅 section 变化的重渲染走备份替换，不残留陈旧文件。
+- verifyOwned 服务两个调用点（卸载验证 + classify 漂移判定）。
+- 双车道审查均一次通过（Lane A 三项披露裁定无害并经审查者实测探针验证；Lane B 直通规则与上游渲染器逐字核对）。
+
+## 下一验收
+
+宿主技能目录真实装载验收（ZCode/DSH 侧）与 DSH 管线级验证仍待用户解锁项；批次 5 候选：DSH toolRewrites、宿主装载 runbook 实测版。

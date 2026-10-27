@@ -2,7 +2,7 @@
 
 将 gstack 原生适配到 **ZCode** 与 **DeepSeek Harness（DSH）**。一套核心，两套独立宿主适配，不隐藏调用 Claude Code，不把提示词复制当作功能对等。
 
-**当前版本：0.4.0 / foundation。不是完整可用的 gstack 双宿主发行版。**
+**当前版本：0.4.1 / foundation。不是完整可用的 gstack 双宿主发行版。**
 
 ## 开发文档
 
@@ -70,7 +70,7 @@ node bin/gstack861.mjs zcode-config --policy /absolute/private/policy.json
 
 - 执行仅限 `scripts/render-upstream.mjs`，且仅当 `CI=true` **且** `GSTACK861_RENDER=ci` 同时成立（后者是维护者在 CI 同等断言下的受控复现通道）；bun 版本必须恰为 1.4.2。
 - 在 `git archive` 生成的**子模块副本**上执行 overlay（`hosts-overlay/zcode.ts`、`dsh.ts`，注册表字面量拼接），`upstream/gstack` 工作树渲染前后断言 pristine；不运行 `setup`、不安装 Claude Code、不调用模型；渲染路径经审查为零 npm 依赖、零网络。
-- 产物落 `rendered/.zcode` 与 `rendered/.dsh`（每宿主 57 技能 + 根路由 `gstack`），零未解析占位符，附 `render-manifest-<host>.json`；状态为 **rendered-experimental**——不构成上游 conformance/full 认证，安装链接入待后续批次。产物经 CI artifacts（30 天）获取。渲染作业仅在 ubuntu 运行——bun 渲染与平台无关，Windows 矩阵只跑离线契约与测试。
+- 产物落 `rendered/.zcode` 与 `rendered/.dsh`（每宿主 57 技能 + 根路由 `gstack`），零未解析占位符，附 `render-manifest-<host>.json`；状态为 **rendered-experimental**——不构成上游 conformance/full 认证，安装链接入待后续批次。产物经 CI artifacts（30 天）获取。装载链已接通（0.4.1）：`stage-render --rendered DIR --manifest FILE --host zcode|dsh --staging DIR` 将渲染树转换为 staging（含嵌套 sections/templates 多文件技能，registry 为卸载信任锚），随后走既有 `install`/`uninstall`。本机已用真实 CI 渲染产物实跑全链（57+根 → 安装 58 → 幂等重装 → 卸载清空）。渲染作业仅在 ubuntu 运行——bun 渲染与平台无关，Windows 矩阵只跑离线契约与测试。
 
 ## 安全与状态边界
 

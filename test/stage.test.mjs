@@ -281,3 +281,39 @@ test('CLI stage-render converts a render tree end to end via subprocess', t => {
   assert.match(bad.stderr, /INVALID_ARGUMENTS/);
   assert.match(spawnSync(process.execPath, [cli], { encoding: 'utf8' }).stderr, /stage-render --rendered DIR --manifest FILE --host zcode\|dsh --staging DIR/);
 });
+
+test('rendered skills load end to end: stage-render CLI -> install -> multi-file verify -> uninstall', async t => {
+  const f = renderOutput(t, {
+    skills: {
+      ship: { files: { 'sections/scope.md': `${BANNER}\nscope\n`, 'sections/qa-patterns.md': `${BANNER}\nqa\n` } },
+      'gstack-upgrade': {},
+    },
+  });
+  const commit = 'd'.repeat(40);
+  process.env.GSTACK861_TEST_COMMIT = commit;
+  const staging = path.join(f.dir, 'staging-e2e'), target = path.join(f.dir, 'target');
+  try {
+    const stage = spawnSync(process.execPath, [cli, 'stage-render', '--rendered', f.rendered, '--manifest', f.manifestFile,
+      '--host', 'zcode', '--staging', staging], { encoding: 'utf8', timeout: 10000 });
+    assert.equal(stage.status, 0, stage.stderr);
+    const staged = JSON.parse(stage.stdout);
+    assert.equal(staged.staged, 2); // 2 skills; the root router is reported separately
+    assert.equal(staged.root.name, 'gstack');
+    const { installSkills, uninstallSkills } = await import('../src/install.mjs');
+    const installed = installSkills({ staging, target });
+    assert.deepEqual(installed.installed.sort(), ['gstack', 'gstack-upgrade', 'ship']);
+    const shipDir = path.join(target, 'ship');
+    assert.ok(fs.existsSync(path.join(shipDir, 'SKILL.md')));
+    assert.ok(fs.existsSync(path.join(shipDir, 'sections', 'scope.md')));
+    assert.ok(fs.existsSync(path.join(shipDir, 'sections', 'qa-patterns.md')));
+    // Tampering with a listed section file must make uninstall refuse (registry-anchored digests).
+    fs.writeFileSync(path.join(shipDir, 'sections', 'scope.md'), 'tampered\n');
+    assert.throws(() => uninstallSkills({ target }), /USER_FILE_REFUSED/);
+    fs.writeFileSync(path.join(shipDir, 'sections', 'scope.md'), `${BANNER}\nscope\n`);
+    const removed = uninstallSkills({ target });
+    assert.deepEqual(removed.uninstalled.sort(), ['gstack', 'gstack-upgrade', 'ship']);
+    assert.equal(fs.existsSync(shipDir), false);
+  } finally {
+    delete process.env.GSTACK861_TEST_COMMIT;
+  }
+});
