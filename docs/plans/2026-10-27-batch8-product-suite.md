@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development. 计划按本地规则先经独立子代理审核。复用已验证消费模式（累计 8 例）。office-hours（1312 行，55 处 GSTACK_ROOT/gstack-paths 依赖）与 spec（1356 行，31 处）有重度宿主二进制依赖；deslop-shared-libs（201 行，0 处）纯方法论可全量遵循。
 
-**Goal:** (1) 消费 `office-hours`（YC 办公时间六问——对 fixture 项目跑 startup 模式的问题框架与产出结论 memo）、`spec`（五阶段把模糊意图变成可执行规格——对 fixture 的模糊需求产出真规格文档；其 worktree/spawn 依赖如实跳过）、`deslop-shared-libs`（纯方法论：在 fixture 真实代码中找值得共享的抽取——产出其规定的候选清单）；(2) `doctor` 增消费计数与解锁提示（把累计消费例数与两项用户解锁动作打进 doctor 输出，让任何会话一眼看到项目真实状态）；(3) 文档滞后清偿。版本 0.4.5。
+**Goal:** (1) 消费 `office-hours`（startup 模式：真实读 `sections/phase-2a-startup-diagnostic.md` 六问（Q1 需求现实/Q2 现状/Q3 迫切具体性/Q4 最窄楔/Q5 观察与意外/Q6 未来适配——其 STOP-gate 禁止凭记忆跑）+ `sections/design-and-handoff.md`（+713 行）的 startup 模板，产出**设计文档**（含强制的 The Assignment 节），落 fixture `docs/designs/<slug>.md`（$GSTACK_STATE_ROOT 路径替代披露）；声明 fixture 产品阶段以定问题路由）、`spec`（真实五阶段：Phase1 五个 why 问题→Phase2 范围/边界（显式 out-of-scope+MVP 切分）→Phase3 代码接地审问（引用 path:line）→Phase4 草稿评审→4.5 语义标记（SEMANTIC_REVIEW: clean|flagged）+ 失闭 redaction（4.5b 宿主依赖如实跳过）+ 质量门→Phase5 归档（本地归档**始终**执行：fixture 根替代 $GSTACK_STATE_ROOT；spawn 属 Phase5 可选 --execute 路径，按其自带 file-only 路径跳过）。**产物=其 Standard Issue 模板**（Context/Current State/Proposed Change/Acceptance Criteria（每测试附 protects/fails_when/no_claim 卡）/Testing Plan 表/Rules/Rollback/Effort/Files Reference/Out of Scope/Related）、`deslop-shared-libs`（方法论+两处依赖如实：① `gstack-safe-git` 为其强制的 git 包装（裸 git 被禁）——按其自带降级（披露覆盖缺口+标注原始来源）；② 其**只读边界**（不写任何文件、不执行项目代码或测试、清单以会话产出交付）——本批证据文档为事后簿记；审计期间不执行 fixture 的含缺口测试）。按其规定产出：头部（日期窗/审查提交/来源/语言/缺口）+ ≤5 新候选表（函数/行链接、估行数、可靠性收益、top-3 标记）+ ≤3 排序建议（双调用者链接、最小助手+目标位置、迁移/兼容测试草案、why-now、主风险——禁写 none）；(2) `doctor` 增消费计数与解锁提示（把累计消费例数与两项用户解锁动作打进 doctor 输出，让任何会话一眼看到项目真实状态）；(3) 文档滞后清偿。版本 0.4.5。
 
 **Architecture:** Lane A（代码：doctor 增强+测试）与 Lane B（文档：README/矩阵滞后）不相交；Task 3 消费+证据+终审推送。
 
@@ -30,7 +30,7 @@
 **Files:** `bin/gstack861.mjs`、`test/adapters.test.mjs`
 
 **Interfaces:**
-- doctor 输出新增 `consumption: { renderedSkillsConsumed: 8, evidence: [四个证据文档相对路径], note: 'context-injection; auto-pickup unverified' }` 与 `unlocks: { dsh: 'set DEEPSEEK_API_KEY then run node scripts/verify-dsh-guard.mjs', zcode: 'follow docs/integration/zcode-acceptance.md + host-loading.md section 2.4 in a controlled new session' }`（Task 3 后计数为 11——Lane A 写 8，Task 3 升 11）。
+- doctor 输出新增 `consumption: { renderedSkillsConsumed: 8, evidence: ['docs/verification-2026-10-27-render-consumption.md', 'docs/verification-2026-10-27-safety-suite.md', 'docs/verification-2026-10-27-workflow-suite.md'], note: 'context-injection; auto-pickup unverified' }`（count 与 evidence 同一字面量、注释注明每批同步更新；Task 3 升 11 时同步 append product-suite 文档） 与 `unlocks: { dsh: 'set DEEPSEEK_API_KEY then run node scripts/verify-dsh-guard.mjs', zcode: 'follow docs/integration/zcode-acceptance.md + host-loading.md section 2.4 in a controlled new session' }`（Task 3 后计数为 11——Lane A 写 8，Task 3 升 11）。
 - 测试：doctor JSON 断言两字段形状与计数。
 
 - [ ] 失败测试 → 确认失败 → 实现 → 全绿 → 提交（分支 `b8-lane-a`）：`feat: doctor reports consumption count and user unlock actions`
@@ -48,7 +48,7 @@
 - [ ] **office-hours 消费**：startup 模式六问（需求现实/现状/迫切窄楔/观察/…）对 fixture 项目（数学库+危险脚本清理的虚构产品语境）真实作答并产出其结论 memo；宿主依赖跳过逐项留档
 - [ ] **spec 消费**：五阶段对模糊需求「让清理安全且可审计」产出完整规格（问题/目标/非目标/验收标准/开放问题）；spawn 步骤以本会话执行替代并标注
 - [ ] **deslop-shared-libs 消费**：纯方法论在 fixture 真实代码（math.mjs 与 test 断言模式）中识别共享抽取候选，产出其规定清单
-- [ ] doctor 计数 8→11（含测试断言同步）
+- [ ] doctor 计数 8→11 + evidence 数组 append product-suite 文档（同步移动）；FEATURE_MATRIX 状态行「消费 5 例」→11（该行归 Task 3；Lane B 不动）
 - [ ] 全程 tasks 记账；证据 `docs/verification-2026-10-27-product-suite.md`；VERIFICATION 第十三轮 + 0.4.5 + 摘要 → 终审 → 推送 → CI 绿
 
 ## Deferred
