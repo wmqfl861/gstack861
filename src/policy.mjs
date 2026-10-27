@@ -18,7 +18,8 @@ function absolute(value) {
 }
 
 function directory(value) {
-  const resolved = fs.realpathSync(absolute(value));
+  // native realpath: on Windows it expands 8.3 short names and canonicalizes case; on POSIX it is equivalent.
+  const resolved = fs.realpathSync.native(absolute(value));
   if (!fs.statSync(resolved).isDirectory()) throw new Error('DIRECTORY_REQUIRED');
   return resolved;
 }
@@ -42,9 +43,25 @@ function targetPath(value, cwd) {
       current = parent;
       continue;
     }
-    const real = fs.realpathSync(current); // throws on a dangling symlink
+    // native realpath throws on a dangling symlink and also expands 8.3/case aliases of the existing prefix.
+    const real = fs.realpathSync.native(current);
     if (suffix.length && !fs.statSync(real).isDirectory()) throw new Error('NOT_A_DIRECTORY');
     return { path: path.join(real, ...suffix), exists: suffix.length === 0, stat: suffix.length ? null : fs.statSync(real) };
+  }
+}
+
+/**
+ * Filesystem identity (device/inode pair) of an existing path; null when the path is missing.
+ * Stable across 8.3 short names, case spellings and symlinks on NTFS, which is what makes
+ * alias-proof comparisons with protected roots possible. Other errors propagate (fail closed).
+ */
+function existingIdentity(p) {
+  try {
+    const { dev, ino } = fs.statSync(p, { bigint: true });
+    return `${dev}/${ino}`;
+  } catch (error) {
+    if (error.code === 'ENOENT' || error.code === 'ENOTDIR') return null;
+    throw error;
   }
 }
 
@@ -89,8 +106,20 @@ export function loadPolicy(filename) {
   if (!stat.isFile() || stat.isSymbolicLink() || stat.nlink !== 1 || stat.size > 65536) throw new Error('UNSAFE_POLICY_FILE');
   if (process.platform !== 'win32' && ((stat.mode & 0o022) || (process.getuid && stat.uid !== process.getuid()))) throw new Error('UNSAFE_POLICY_PERMISSIONS');
   const policy = compilePolicy(JSON.parse(fs.readFileSync(filename, 'utf8')));
-  if (inside(policy.workspace, fs.realpathSync(filename))) throw new Error('POLICY_MUST_BE_OUTSIDE_WORKSPACE');
+  // Same native normalization as directory(), so workspace and policy file compare in one canonical form.
+  if (inside(policy.workspace, fs.realpathSync.native(filename))) throw new Error('POLICY_MUST_BE_OUTSIDE_WORKSPACE');
   return policy;
+}
+
+/**
+ * Name-based VCS check for every path component, so nested repositories and submodules are
+ * covered too. Case-insensitive, and on Windows also the alias spellings the filesystem maps
+ * back to `.git` (8.3 `git~1`, trailing dots/spaces, `::$INDEX_ALLOCATION` streams).
+ */
+function vcsComponent(component) {
+  let name = component.toLowerCase();
+  if (process.platform === 'win32') name = name.split(':')[0].replace(/[. ]+$/, '');
+  return name === '.git' || /^git~\d+$/.test(name);
 }
 
 /** Admission only. This does not execute tools or provide an OS sandbox. */
@@ -107,8 +136,78 @@ export function evaluate(policy, call) {
     const roots = policy[binding.effect === 'read' ? 'readRoots' : 'writeRoots'];
     if (!roots.some(root => inside(root, target.path))) return deny('OUTSIDE_SCOPE', hash);
     if (binding.effect === 'write') {
+      if (path.relative(policy.workspace, target.path).split(path.sep).some(vcsComponent)) return deny('PROTECTED_PATH', hash);
       const gitRoot = targetPath(path.join(policy.workspace, '.git')).path;
-      if ([...policy.protectedRoots, gitRoot].some(root => inside(root, target.path))) return deny('PROTECTED_PATH', hash);
+      // Identity comparison as defense in depth: spellings the string checks below cannot see
+      // (8.3 short names, case aliases) must not make a protected directory writable. The union
+      // with workspace/.git is deliberately redundant with compilePolicy's protectedRoots push.
+      const protectedIdentities = new Set(
+        [...policy.protectedRoots, gitRoot].map(existingIdentity).filter(id => id !== null),
+      );
+      const protectedPaths = [...policy.protectedRoots, gitRoot];
+      // A `.git` FILE (worktree / separate-git-dir pointer) redirects git to a gitdir whose
+      // hooks would run at the next git operation. Such pointers sit BESIDE the write path
+      // (`wt/.git` pointing at sibling `real-git-data/`), never on it, so every existing
+      // ancestor directory is scanned — its own entries and one directory level down — for
+      // VCS-named pointer files and symlinks. Directory-form `.git` needs no parsing: the name
+      // and identity checks already cover it. No caching: this runs per write evaluation.
+      // Discovery boundary: pointers three or more directory levels below every ancestor of
+      // the target (`ancestor/x/y/.git` and deeper, FILE or SYMLINK form) are NOT discovered,
+      // and neither are reparse entries that are neither file, symlink, nor directory — a
+      // gitdir redirected only from such a pointer stays writable. The model cannot widen
+      // this gap: creating or modifying a pointer (file or symlink) at ANY depth is already
+      // denied by the component name check above, so the boundary only exposes pointers that
+      // predate the guarded session.
+      const protectRedirect = (pointer) => {
+        if (fs.statSync(pointer).size > 65536) return; // same cap as loadPolicy; oversized entries are not parsed
+        const match = fs.readFileSync(pointer, 'utf8').match(/^gitdir:\s*(\S+)\s*$/m);
+        if (!match) return; // content without a gitdir: line is not a pointer — ignore
+        const dir = path.resolve(path.dirname(pointer), match[1]);
+        protectedPaths.push(dir); // unresolved form, so future children of a missing gitdir stay denied
+        try {
+          const identity = existingIdentity(fs.realpathSync.native(dir));
+          if (identity !== null) protectedIdentities.add(identity); // catches alias spellings of the gitdir
+        } catch (error) {
+          if (error.code !== 'ENOENT') throw error; // missing gitdir: skip; anything else fails closed
+        }
+      };
+      // A `.git` SYMLINK redirects to its target directly (no gitdir: indirection): protect
+      // the resolved target the same two ways. Dangling links skip silently.
+      const protectLink = (link) => {
+        let target;
+        try { target = fs.realpathSync.native(link); }
+        catch (error) {
+          if (error.code === 'ENOENT') return; // dangling pointer link: skip silently
+          throw error; // anything else fails closed
+        }
+        protectedPaths.push(target);
+        const identity = existingIdentity(target);
+        if (identity !== null) protectedIdentities.add(identity);
+      };
+      const scanPointers = (dir, depth) => {
+        let entries;
+        try { entries = fs.readdirSync(dir, { withFileTypes: true }); }
+        catch (error) {
+          if (error.code === 'ENOENT' || error.code === 'ENOTDIR') return; // vanished or non-directory level
+          throw error;
+        }
+        for (const entry of entries) {
+          const entryPath = path.join(dir, entry.name);
+          if (entry.isFile()) { if (vcsComponent(entry.name)) protectRedirect(entryPath); }
+          else if (entry.isSymbolicLink()) { if (vcsComponent(entry.name)) protectLink(entryPath); }
+          else if (depth > 0 && entry.isDirectory()) scanPointers(entryPath, depth - 1);
+        }
+      };
+      for (let current = target.path; ; current = path.dirname(current)) {
+        scanPointers(current, 1);
+        if (current === policy.workspace || current === path.dirname(current)) break;
+      }
+      if (protectedPaths.some(root => inside(root, target.path))) return deny('PROTECTED_PATH', hash);
+      for (let current = target.path; ; current = path.dirname(current)) {
+        const identity = existingIdentity(current);
+        if (identity !== null && protectedIdentities.has(identity)) return deny('PROTECTED_PATH', hash);
+        if (current === policy.workspace || current === path.dirname(current)) break;
+      }
       if (target.exists && (!target.stat.isFile() || target.stat.nlink !== 1)) return deny('UNSAFE_WRITE_TARGET', hash);
     }
     return { decision: 'abstain', code: 'IN_SCOPE', policyHash: hash };

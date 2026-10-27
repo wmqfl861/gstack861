@@ -135,3 +135,41 @@ Codex 以真实探针验证了 12 个场景（探针脚本与输出见其会话�
 ## 下一验收
 
 不变：两侧真实宿主离线集成（ZCode 受控会话 Hook 信任链；DSH guard 真实工具调用拒绝路径，需模型预算授权），随后接入真实宿主技能目录与 /investigate、/review 纵向流程。
+
+# 第五轮验证记录：PR #1 Windows 验收（2026-10-27）
+
+范围：分支 `claude/review-2026-10-27` 的 Windows 本机验收。审查报告 `docs/reviews/2026-10-27-claude-review.md` 中 `968e8de` 已在 Linux 修复的条目（第 1–4、8 错误码、第 5 条 `.git` 名称检查，105/105，见 `docs/verification-2026-10-27-review-fixes.json`）本轮在真实 Windows 复验；剩余项按 `docs/plans/2026-10-27-windows-acceptance.md`（计划经独立子代理审核）以多子代理流程完成：每任务 TDD 实现 + 独立审查（含修复轮与范围化复审）。
+
+环境：真实 Windows 本机（win32 10.0.22624 x64），Node.js v24.21.0，Git Bash。
+
+## 基线（修复前，输出留档于本机临时目录）
+
+| 命令 | 结果 |
+|---|---|
+| `npm run check` | 通过（22 模块；当时 HEAD 证据门禁仍为硬失败前的清单状态） |
+| `npm test` | 104/104 通过（Linux 105，差异为平台包裹用例） |
+| `npm run doctor` | 成功，版本 0.2.1 |
+| `node bin/gstack861.mjs inventory --upstream upstream/gstack` | 57 个技能，固定提交 5755601 一致 |
+| `node scripts/verify-8dot3.mjs`（系统临时卷 + 工作区卷） | **两卷均 `RESULT: alias bypass reproduced`，exit 1**：`PROTEC~1\secret.txt → IN_SCOPE`（自定义受保护目录的 8.3 短名绕过，与审查预测一致；`GIT~1` 已被名称检查拒绝） |
+
+## 修复与验证（修复后）
+
+| 命令 | 结果 |
+|---|---|
+| `npm test` | 115/115 通过（新增：win32 8.3 用例、gitfile gitdir 4 用例、符号链接指针 2 用例、betweenSteps 出处用例、purge 收紧 2 用例、policyHash 契约用例；平台包裹：win32 8.3 用例在 GitHub Windows runner 8.3 关闭的卷上按设计 skip） |
+| `node scripts/verify-8dot3.mjs`（两卷） | **两卷均 `RESULT: no alias bypass on this volume`，exit 0** |
+| `npm run check` | exit 0；HEAD 证据门禁按审查第 11 条降级为警告输出 |
+
+探针偶发误报事故（本轮验证期间出现一次）根因：bash 中管道/链式命令后的 `$?` 取到的是管道末命令（如 `tail`）的退出码而非探针进程（当时探针实际未运行）；修正命令写法后复跑确认。所有记录在案的探针运行结果均来自真实运行的探针。
+
+交付映射：8.3/身份比较保护（`dcc0709`+`4811208`）、gitfile 重定向 gitdir 保护与深度2扫描，含符号链接指针形式（`be48f01`+`0637982`+fix round 2；剩余盲区见 `src/policy.mjs` 机制注释与 `docs/verification-2026-10-27-windows-acceptance.json` 的 `knownBoundaries`）、inventory 提交固定读取与 betweenSteps 测试钩子（`de18ec8`）、purge 13 位+manifest 门控（`873221b`）、版本单一来源（`aec6569`）、README updatedInput 共存约束与 matcher 注释更正（`91f8eb8`）、证据门禁降级（`98de530`）、忽略本地草稿目录（`fa24589`）。
+
+## 既知边界（本轮新增/维持）
+
+- gitfile 指针（文件与符号链接两种形式均已覆盖）在目标各级祖先两层以下（如 `ancestor/x/y/.git`）不被发现；既非文件、符号链接也非目录的重解析条目同样不解析；模型经守卫工具种植指针（任意深度的 vcs 命名分量写入，含符号链接）被全深度阻断，盲区仅暴露预先存在的深嵌套指针（`src/policy.mjs` 机制注释；`docs/verification-2026-10-27-windows-acceptance.json` `knownBoundaries`）。
+- subst/网络卷 dev/ino 退化时身份比较只会过度保护；巨大扁平目录使每写评估 IO 随广度增长（dirent 扫描已减半）。
+- CI（ubuntu+windows）以实际运行结果为准；合并门槛为 CI 绿灯（审查第 11 条）。
+
+## 下一验收
+
+不变：真实宿主离线集成与纵向流程；审查第 6、7、9、10 条设计项待用户决策（见计划 Deferred 节）。

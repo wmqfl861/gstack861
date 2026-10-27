@@ -488,3 +488,86 @@ test('uninstallSkills purge keeps user entries that do not match the backup nami
   assert.equal(fs.readFileSync(path.join(backupsRoot, 'user-archive', 'SKILL.md'), 'utf8'), 'user archive');
   assert.deepEqual(readRegistry(target).skills, []);
 });
+
+test('uninstallSkills purge keeps user directories whose suffix is not a 13-digit timestamp', t => {
+  const root = base(t), target = path.join(root, 'target');
+  const v1 = path.join(root, 'v1'), v2 = path.join(root, 'v2');
+  fs.mkdirSync(v1); fs.mkdirSync(v2);
+  stage(v1, 'alpha', ALPHA_V1);
+  stage(v2, 'alpha', ALPHA_V2);
+  installSkills({ staging: v1, target, now: NOW });
+  installSkills({ staging: v2, target, now: NOW });
+  const backupsRoot = path.join(target, BACKUPS);
+  fs.mkdirSync(path.join(backupsRoot, 'notes-2024'));
+  fs.writeFileSync(path.join(backupsRoot, 'notes-2024', 'SKILL.md'), 'user notes');
+  const result = uninstallSkills({ target, purge: true, now: NOW });
+  assert.deepEqual(result, { uninstalled: ['alpha'], backupsRemoved: 1 }, 'only the real drift backup may be counted');
+  assert.equal(fs.readFileSync(path.join(backupsRoot, 'notes-2024', 'SKILL.md'), 'utf8'), 'user notes', 'user directory with a short numeric suffix must survive purge');
+});
+
+test('uninstallSkills purge keeps timestamp-named backups whose manifest is not verifiably ours', t => {
+  const root = base(t), target = path.join(root, 'target');
+  const v1 = path.join(root, 'v1'), v2 = path.join(root, 'v2');
+  fs.mkdirSync(v1); fs.mkdirSync(v2);
+  stage(v1, 'alpha', ALPHA_V1);
+  stage(v2, 'alpha', ALPHA_V2);
+  installSkills({ staging: v1, target, now: NOW });
+  installSkills({ staging: v2, target, now: NOW });
+  const backupsRoot = path.join(target, BACKUPS);
+  const corrupt = path.join(backupsRoot, 'alpha-1761453400000');
+  fs.mkdirSync(corrupt);
+  fs.writeFileSync(path.join(corrupt, 'SKILL.md'), 'body');
+  fs.writeFileSync(path.join(corrupt, 'manifest.json'), '{ not json');
+  const foreign = path.join(backupsRoot, 'beta-1761453400001');
+  fs.mkdirSync(foreign);
+  fs.writeFileSync(path.join(foreign, 'SKILL.md'), 'body');
+  fs.writeFileSync(path.join(foreign, 'manifest.json'), `${JSON.stringify({ schemaVersion: 1, generator: 'not-us' }, null, 2)}\n`);
+  const result = uninstallSkills({ target, purge: true, now: NOW });
+  assert.deepEqual(result, { uninstalled: ['alpha'], backupsRemoved: 1 }, 'unverifiable backups must not be counted');
+  assert.equal(fs.readFileSync(path.join(corrupt, 'manifest.json'), 'utf8'), '{ not json', 'corrupt-manifest backup must survive verbatim');
+  assert.equal(fs.readFileSync(path.join(foreign, 'manifest.json'), 'utf8'), `${JSON.stringify({ schemaVersion: 1, generator: 'not-us' }, null, 2)}\n`, 'foreign-generator backup must survive verbatim');
+});
+
+test('uninstallSkills tolerates a registered skill the user already deleted', t => {
+  const root = base(t), staging = path.join(root, 'staging'), target = path.join(root, 'target');
+  fs.mkdirSync(staging);
+  stage(staging, 'alpha', ALPHA_V1);
+  stage(staging, 'beta', BETA_V1);
+  installSkills({ staging, target, now: NOW });
+  fs.rmSync(path.join(target, 'beta'), { recursive: true });
+  const result = uninstallSkills({ target, now: NOW });
+  assert.ok(result.uninstalled.includes('alpha'));
+  assert.ok(!fs.existsSync(path.join(target, 'alpha')));
+  assert.deepEqual(readRegistry(target).skills, []);
+});
+
+test('installSkills refuses to move a user-edited skill into purgeable backups', t => {
+  const root = base(t), s1 = path.join(root, 's1'), s2 = path.join(root, 's2'), target = path.join(root, 'target');
+  fs.mkdirSync(s1); fs.mkdirSync(s2);
+  stage(s1, 'alpha', ALPHA_V1);
+  installSkills({ staging: s1, target, now: NOW });
+  fs.writeFileSync(path.join(target, 'alpha', 'SKILL.md'), `${ALPHA_V1}\nmy local rules`);
+  stage(s2, 'alpha', ALPHA_V2);
+  assert.throws(() => installSkills({ staging: s2, target, now: NOW }), /USER_FILE_REFUSED/);
+  assert.equal(fs.readFileSync(path.join(target, 'alpha', 'SKILL.md'), 'utf8'), `${ALPHA_V1}\nmy local rules`);
+  assert.ok(!fs.existsSync(path.join(target, BACKUPS)));
+});
+
+test('an I/O failure mid-install leaves every skill whole and the target recoverable', t => {
+  const root = base(t), s1 = path.join(root, 's1'), s2 = path.join(root, 's2'), target = path.join(root, 'target');
+  fs.mkdirSync(s1); fs.mkdirSync(s2);
+  stage(s1, 'alpha', ALPHA_V1); stage(s1, 'beta', BETA_V1);
+  installSkills({ staging: s1, target, now: NOW });
+  stage(s2, 'alpha', ALPHA_V2); stage(s2, 'beta', 'beta skill body v2');
+  const real = fs.writeFileSync; let writes = 0;
+  fs.writeFileSync = function (file, ...rest) {
+    if (String(file).endsWith(`${path.sep}SKILL.md`) && ++writes === 2) throw Object.assign(new Error('EIO'), { code: 'EIO' });
+    return real.call(this, file, ...rest);
+  };
+  try { assert.throws(() => installSkills({ staging: s2, target, now: NOW }), /EIO/); } finally { fs.writeFileSync = real; }
+  // beta is still the complete v1 skill (never half-written), and both directions recover.
+  assert.deepEqual(fs.readdirSync(path.join(target, 'beta')).sort(), ['SKILL.md', 'manifest.json']);
+  assert.equal(fs.readFileSync(path.join(target, 'beta', 'SKILL.md'), 'utf8'), BETA_V1);
+  assert.deepEqual(installSkills({ staging: s2, target, now: NOW }).installed, ['beta']);
+  assert.deepEqual(uninstallSkills({ target, now: NOW }).uninstalled.sort(), ['alpha', 'beta']);
+});

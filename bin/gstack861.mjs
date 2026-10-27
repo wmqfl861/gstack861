@@ -30,6 +30,7 @@ const absolute = value => {
   if (typeof value !== 'string' || !path.isAbsolute(value)) throw new Error('ABSOLUTE_PATH_REQUIRED');
   return value;
 };
+const version = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version;
 const lock = () => JSON.parse(fs.readFileSync(new URL('../upstream.lock.json', import.meta.url), 'utf8'));
 
 if (args[0] === 'hook') {
@@ -38,27 +39,28 @@ if (args[0] === 'hook') {
     if (args[1] !== 'zcode') throw new Error('UNKNOWN_HOST');
     const options = flags(args.slice(2), ['--policy']);
     const policy = loadPolicy(options['--policy']);
-    let input = '', bytes = 0;
+    const chunks = []; let bytes = 0;
     for await (const chunk of process.stdin) {
-      bytes += Buffer.byteLength(chunk);
+      bytes += chunk.length;
       if (bytes > 1048576) throw new Error('INPUT_TOO_LARGE');
-      input += chunk;
+      chunks.push(chunk);
     }
-    result = handleZcode(JSON.parse(input), policy);
-  } catch { result = denyZcode('HOOK_INPUT_OR_POLICY_ERROR'); }
+    // Decode once: per-chunk decoding splits multi-byte UTF-8 characters at chunk boundaries.
+    result = handleZcode(JSON.parse(Buffer.concat(chunks).toString('utf8')), policy);
+  } catch (error) { result = denyZcode(/^[A-Z][A-Z0-9_]*$/.test(error?.message) ? error.message : 'HOOK_INPUT_OR_POLICY_ERROR'); }
   print(result.output);
   process.exitCode = result.exitCode;
 } else {
   try {
     if (args[0] === 'doctor' && args.length === 1) {
-      print({ version: '0.2.1', node: process.version, platform: process.platform, baseline: lock(),
+      print({ version, node: process.version, platform: process.platform, baseline: lock(),
         hosts: { zcode: 'not-host-verified', dsh: 'not-host-verified' },
         networkCalls: 0, modelCalls: 0,
         safety: 'guard-protocol foundation; not an OS sandbox; no full-parity certification' });
     } else if (args[0] === 'inventory') {
       const options = flags(args.slice(1), ['--upstream']);
       if (!options['--upstream']) throw new Error('UPSTREAM_PATH_REQUIRED');
-      print(inventory(absolute(options['--upstream']), lock().gstack.commit));
+      print(inventory(path.resolve(options['--upstream']), lock().gstack.commit));
     } else if (args[0] === 'zcode-config') {
       const options = flags(args.slice(1), ['--policy', '--matcher']);
       loadPolicy(absolute(options['--policy']));

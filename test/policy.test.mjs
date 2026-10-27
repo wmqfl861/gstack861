@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import { execFileSync } from 'node:child_process';
 import { compilePolicy, evaluate, loadPolicy, inside } from '../src/policy.mjs';
 import { fixture } from './helpers.mjs';
 
@@ -124,4 +125,83 @@ test('VCS symlink targets remain protected even after policy compilation', t => 
   fs.symlinkSync(actual, path.join(f.workspace, '.git'));
   assert.equal(evaluate(policy, call(f, '.git/config')).code, 'PROTECTED_PATH');
   assert.equal(evaluate(policy, call(f, 'vcs-data/config')).code, 'PROTECTED_PATH');
+});
+
+test('nested repositories keep their VCS metadata protected', t => {
+  const f = fixture(t), policy = compilePolicy({ ...f.raw, writeRoots: [f.workspace] });
+  fs.mkdirSync(path.join(f.workspace, 'vendor', 'lib', '.git', 'hooks'), { recursive: true });
+  assert.equal(evaluate(policy, call(f, 'vendor/lib/.git/hooks/pre-commit')).code, 'PROTECTED_PATH');
+  assert.equal(evaluate(policy, call(f, 'vendor/lib/.git')).code, 'PROTECTED_PATH');
+});
+
+test('writes through 8.3 short-name aliases of protected roots are blocked (win32)', t => {
+  if (process.platform !== 'win32') return t.skip('win32 only');
+  const f = fixture(t), longName = 'protected-long-directory-name';
+  fs.mkdirSync(path.join(f.workspace, longName));
+  const policy = compilePolicy({ ...f.raw, writeRoots: [f.workspace], protectedRoots: [path.join(f.workspace, longName)] });
+  // `dir /x` prints the 8.3 short name in the column before the long name (blank when none exists).
+  const listing = execFileSync('cmd', ['/c', 'dir', '/a', '/x', f.workspace], { encoding: 'utf8' });
+  const cols = listing.split(/\r?\n/).find(line => line.trimEnd().endsWith(` ${longName}`))?.trim().split(/\s+/) ?? [];
+  const short = cols.length >= 2 && cols.at(-2) !== '<DIR>' ? cols.at(-2) : null;
+  if (!short) return t.skip(`no 8.3 short name for ${longName} on this volume`);
+  assert.equal(evaluate(policy, call(f, path.join(f.workspace, short, 'secret.txt'))).code, 'PROTECTED_PATH');
+  assert.equal(evaluate(policy, call(f, 'src/new.txt')).decision, 'abstain');
+});
+
+test('gitfile-redirected gitdirs stay protected when the whole workspace is writable', t => {
+  const f = fixture(t), policy = compilePolicy({ ...f.raw, writeRoots: [f.workspace] });
+  fs.mkdirSync(path.join(f.workspace, 'wt'));
+  fs.writeFileSync(path.join(f.workspace, 'wt', '.git'), 'gitdir: ../real-git-data\n');
+  fs.mkdirSync(path.join(f.workspace, 'real-git-data', 'hooks'), { recursive: true });
+  // The pointer sits beside the gitdir (`wt/.git` -> `../real-git-data`), never on the write path.
+  assert.equal(evaluate(policy, call(f, 'real-git-data/hooks/pre-commit')).code, 'PROTECTED_PATH');
+  assert.equal(evaluate(policy, call(f, 'real-git-data/config')).code, 'PROTECTED_PATH');
+  assert.equal(evaluate(policy, call(f, 'src/new.txt')).decision, 'abstain');
+});
+
+test('gitfile pointers with garbage content are ignored without crashing', t => {
+  const f = fixture(t), policy = compilePolicy({ ...f.raw, writeRoots: [f.workspace] });
+  fs.mkdirSync(path.join(f.workspace, 'wt'));
+  fs.writeFileSync(path.join(f.workspace, 'wt', '.git'), 'definitely not a gitfile pointer\n');
+  assert.equal(evaluate(policy, call(f, 'wt/notes.txt')).decision, 'abstain');
+  assert.equal(evaluate(policy, call(f, 'src/new.txt')).decision, 'abstain');
+});
+
+test('missing gitdir targets neither crash nor unprotect their future children', t => {
+  const f = fixture(t), policy = compilePolicy({ ...f.raw, writeRoots: [f.workspace] });
+  fs.mkdirSync(path.join(f.workspace, 'wt'));
+  fs.writeFileSync(path.join(f.workspace, 'wt', '.git'), 'gitdir: ../missing-git-data\n');
+  assert.equal(evaluate(policy, call(f, 'src/new.txt')).decision, 'abstain');
+  assert.equal(evaluate(policy, call(f, 'missing-git-data/hooks/pre-commit')).code, 'PROTECTED_PATH');
+});
+
+test('pointer-free ancestor chains keep ordinary writes abstaining', t => {
+  const f = fixture(t), policy = compilePolicy({ ...f.raw, writeRoots: [f.workspace] });
+  fs.mkdirSync(path.join(f.workspace, 'wt'));
+  assert.equal(evaluate(policy, call(f, 'wt/notes.txt')).decision, 'abstain');
+  assert.equal(evaluate(policy, call(f, 'src/new.txt')).decision, 'abstain');
+});
+
+test('symlinked VCS pointers protect their redirect targets', t => {
+  const f = fixture(t), policy = compilePolicy({ ...f.raw, writeRoots: [f.workspace] });
+  fs.mkdirSync(path.join(f.workspace, 'wt'));
+  fs.mkdirSync(path.join(f.workspace, 'vcs-data', 'hooks'), { recursive: true });
+  fs.symlinkSync('../vcs-data', path.join(f.workspace, 'wt', '.git'), 'dir');
+  assert.equal(evaluate(policy, call(f, 'vcs-data/hooks/pre-commit')).code, 'PROTECTED_PATH');
+  assert.equal(evaluate(policy, call(f, 'src/new.txt')).decision, 'abstain');
+});
+
+test('dangling symlinked VCS pointers neither crash nor block ordinary writes', t => {
+  const f = fixture(t), policy = compilePolicy({ ...f.raw, writeRoots: [f.workspace] });
+  fs.mkdirSync(path.join(f.workspace, 'wt'));
+  fs.symlinkSync('../missing-vcs-data', path.join(f.workspace, 'wt', '.git'), 'dir');
+  assert.equal(evaluate(policy, call(f, 'src/new.txt')).decision, 'abstain');
+});
+
+test('scoped deny decisions carry the policy hash for audit attribution', t => {
+  const f = fixture(t), policy = compilePolicy({ ...f.raw, writeRoots: [f.workspace] });
+  fs.linkSync(path.join(f.outside, 'secret.txt'), path.join(f.src, 'linked')); // nlink > 1 -> UNSAFE_WRITE_TARGET
+  assert.equal(evaluate(f.policy, call(f, 'src/linked')).policyHash, f.policy.policyHash);
+  assert.equal(evaluate(policy, call(f, '.git/config')).policyHash, policy.policyHash); // PROTECTED_PATH
+  assert.equal(evaluate(f.policy, call(f, path.join(f.outside, 'x'))).policyHash, f.policy.policyHash); // OUTSIDE_SCOPE
 });

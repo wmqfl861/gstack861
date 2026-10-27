@@ -24,7 +24,9 @@ export function handleZcode(event, policy) {
   } catch { return blocked('INVALID_EVENT'); }
 }
 
-// The host compiles matchers as regexes; refuse strings it would fail to compile ('*', trailing '\').
+// Matcher hygiene: the host compiles matchers as regexes and actually treats '*' as
+// match-all; refusing it here (as with any non-regex string, e.g. a trailing '\') is
+// this generator's conservative choice about what it will emit, not a host limit.
 const compiles = matcher => { try { new RegExp(matcher); return true; } catch { return false; } };
 
 export function zcodeHookConfig({ nodePath, cliPath, policyPath, matcher = '.*' }) {

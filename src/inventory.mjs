@@ -6,20 +6,21 @@ function git(root, ...args) {
 }
 
 /** Inspect committed source only. Never execute upstream setup or skill code. */
-export function inventory(root, expectedCommit) {
+export function inventory(root, expectedCommit, { betweenSteps = () => {} } = {}) {
   if (!/^[a-f0-9]{40}$/.test(expectedCommit)) throw new Error('FULL_COMMIT_REQUIRED');
   const actual = git(root, 'rev-parse', 'HEAD').trim();
   if (actual !== expectedCommit) throw new Error('UPSTREAM_COMMIT_MISMATCH');
   if (git(root, 'status', '--porcelain', '--untracked-files=normal').trim()) throw new Error('UPSTREAM_DIRTY');
+  betweenSteps(); // test seam: HEAD may legally drift after verification; reads below stay pinned to `actual`
   const selected = new Map();
-  for (const entry of git(root, 'ls-tree', '-r', '-z', '--full-tree', 'HEAD').split('\0').filter(Boolean)) {
+  for (const entry of git(root, 'ls-tree', '-r', '-z', '--full-tree', actual).split('\0').filter(Boolean)) {
     const match = /^(100644|100755) blob ([a-f0-9]{40})\t([a-z0-9][a-z0-9-]*)\/(SKILL\.md(?:\.tmpl)?)$/.exec(entry);
     if (!match) continue; // excludes host renders, symlinks and external submodules
     const [, , blob, name, basename] = match;
     if (!selected.has(name) || basename.endsWith('.tmpl')) selected.set(name, { name, blob, source: `${name}/${basename}` });
   }
   const skills = [...selected.values()].sort((a, b) => a.name.localeCompare(b.name)).map(skill => {
-    const text = git(root, 'show', `HEAD:${skill.source}`);
+    const text = git(root, 'show', `${actual}:${skill.source}`);
     const indicators = [];
     if (/\bclaude\b/.test(text)) indicators.push('claude-reference');
     if (/\bcodex\b/.test(text)) indicators.push('codex-reference');

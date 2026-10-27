@@ -73,9 +73,11 @@ test('ZCode hook config can scope the matcher to bound file tools only', t => {
   assert.equal(scoped.hooks.events.PreToolUse[0].matcher, 'Read|Write|Edit');
   assert.throws(() => zcodeHookConfig({ nodePath: process.execPath, cliPath: cli, policyPath: f.policyPath, matcher: '((' }), /INVALID_MATCHER/);
 });
-test('ZCode hook config refuses matchers that are not compilable regexes', t => {
+test('ZCode hook config matcher refusals are a conservative emission choice', t => {
   const f = fixture(t);
-  // These pass the character allowlist but the host would fail to compile them.
+  // The host actually treats '*' as match-all (not a regex-compile failure); a trailing '\'
+  // and 'a**b' are not compilable regexes. Refusing all three is this generator's
+  // conservative choice about what it emits, not a host limit (src/adapters/zcode.mjs).
   for (const matcher of ['*', '\\', 'a**b']) {
     assert.throws(() => zcodeHookConfig({ nodePath: process.execPath, cliPath: cli, policyPath: f.policyPath, matcher }), /INVALID_MATCHER/);
   }
@@ -188,4 +190,14 @@ test('doctor makes no claim of host or full-parity certification', () => {
   assert.equal(info.hosts.zcode, 'not-host-verified');
   assert.equal(info.hosts.dsh, 'not-host-verified');
   assert.equal(info.modelCalls, 0);
+});
+
+test('real hook subprocess decodes multi-byte UTF-8 split across stdin chunks', t => {
+  const f = fixture(t);
+  // ZCode sends toolInput twice (camelCase + snake_case); > 64 KiB forces several stdin chunks.
+  const toolInput = { file_path: path.join(f.src, 'notes.md'), content: '中文内容'.repeat(30000) };
+  const payload = { cwd: f.workspace, hookEventName: 'PreToolUse', toolName: 'Write', toolInput,
+    hook_event_name: 'PreToolUse', tool_name: 'Write', tool_input: toolInput };
+  const child = spawnSync(process.execPath, [cli, 'hook', 'zcode', '--policy', f.policyPath], { input: JSON.stringify(payload), encoding: 'utf8', timeout: 10000 });
+  assert.equal(child.status, 0, child.stdout);
 });

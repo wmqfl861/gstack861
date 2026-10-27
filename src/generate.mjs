@@ -6,7 +6,8 @@ import { textDigest } from './json.mjs';
 
 const HOSTS = ['zcode', 'dsh'];
 const GENERATOR = 'gstack861';
-const GENERATOR_VERSION = '0.2.0';
+// Single-sourced from package.json so manifests can never disagree with the release version.
+const GENERATOR_VERSION = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version;
 
 // Committed source bytes only, never executed. Buffer output (no encoding) keeps the
 // staged copy byte-exact: a UTF-8 round-trip would be lossy for non-UTF-8 bytes.
