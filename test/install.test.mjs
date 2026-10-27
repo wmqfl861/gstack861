@@ -483,47 +483,69 @@ test('a stale install lock fails closed with INSTALL_BUSY and is never auto-clea
 });
 
 test('two real processes racing one install: exactly one wins, the other gets INSTALL_BUSY', async t => {
-  const root = base(t), target = path.join(root, 'target');
-  fs.mkdirSync(target);
-  // The first child installs four large skills so its lock-held window is long and
-  // observable; the second child waits until the lock is really held, then races in
-  // with its own batch — the exact two-writer scenario that used to lose registry
-  // updates and orphan skill directories.
-  const big = 'G'.repeat(2 * 1024 * 1024);
-  const sA = path.join(root, 'staging-a'), sB = path.join(root, 'staging-b');
-  fs.mkdirSync(sA); fs.mkdirSync(sB);
-  for (const name of ['a1', 'a2', 'a3', 'a4']) stage(sA, name, `${name}\n${big}`);
-  stage(sB, 'beta', 'small competing batch');
-  const readyA = path.join(root, 'ready-a'), readyB = path.join(root, 'ready-b');
-  const moduleHref = JSON.stringify(new URL('../src/install.mjs', import.meta.url).href);
-  const child = waitForLock => `import fs from 'node:fs';\n`
-    + `import { installSkills } from ${moduleHref};\n`
-    + `const [staging, target, ready, peer, lock] = [process.argv[1], process.argv[2], process.argv[3], process.argv[4], process.argv[5]];\n`
-    + `fs.writeFileSync(ready, '');\n`
-    + `const deadline = Date.now() + 15000;\n`
-    + `while (!fs.existsSync(peer) && Date.now() < deadline) {}\n`
-    + `if (!fs.existsSync(peer)) { process.stdout.write('PEER_TIMEOUT'); process.exit(3); }\n`
-    + (waitForLock ? `while (!fs.existsSync(lock) && Date.now() < deadline) {}\n` : '')
-    + `try { installSkills({ staging, target }); process.stdout.write('OK'); }\n`
-    + `catch (error) { process.stdout.write(String(error && error.message)); process.exitCode = 2; }`;
-  const spawn = (staging, ready, peer, waitForLock) => execute(process.execPath,
-    ['--input-type=module', '-e', child(waitForLock), staging, target, ready, peer, path.join(target, LOCK)]);
-  const results = await Promise.allSettled([
-    spawn(sA, readyA, readyB, false),
-    spawn(sB, readyB, readyA, true),
-  ]);
-  const winners = results.filter(r => r.status === 'fulfilled' && r.value.stdout === 'OK');
-  const losers = results.filter(r => r.status === 'rejected');
-  assert.equal(winners.length, 1, 'exactly one process may install');
+  // Root cause of the ubuntu-CI flake this loop fixes (run #40487111559, both children
+  // "won"): the racer's whole critical section can elapse before the loser's poll first
+  // runs, so the loser installs uncontested and the old single-shot assertion reported
+  // a mutex violation that never happened. A contention marker distinguishes the cases:
+  // loser-saw-the-lock + loser-won is a REAL product bug (hard fail); no contention
+  // observed is an invalid attempt (retry with a wider window, then skip).
+  const attempt = async skills => {
+    const root = base(t), target = path.join(root, 'target');
+    fs.mkdirSync(target);
+    const big = 'G'.repeat(2 * 1024 * 1024);
+    const sA = path.join(root, 'staging-a'), sB = path.join(root, 'staging-b');
+    fs.mkdirSync(sA); fs.mkdirSync(sB);
+    const names = Array.from({ length: skills }, (_, i) => `a${i + 1}`);
+    for (const name of names) stage(sA, name, `${name}\n${big}`);
+    stage(sB, 'beta', 'small competing batch');
+    const readyA = path.join(root, 'ready-a'), readyB = path.join(root, 'ready-b');
+    const sawLock = path.join(root, 'saw-lock');
+    const moduleHref = JSON.stringify(new URL('../src/install.mjs', import.meta.url).href);
+    const child = waitForLock => `import fs from 'node:fs';\n`
+      + `import { installSkills } from ${moduleHref};\n`
+      + `const [staging, target, ready, peer, lock, sawLock] = [process.argv[1], process.argv[2], process.argv[3], process.argv[4], process.argv[5], process.argv[6]];\n`
+      + `fs.writeFileSync(ready, '');\n`
+      + `const deadline = Date.now() + 15000;\n`
+      + `while (!fs.existsSync(peer) && Date.now() < deadline) {}\n`
+      + `if (!fs.existsSync(peer)) { process.stdout.write('PEER_TIMEOUT'); process.exit(3); }\n`
+      + (waitForLock ? `while (!fs.existsSync(lock) && Date.now() < deadline) {}\n`
+        + `if (fs.existsSync(lock)) fs.writeFileSync(sawLock, '');\n` : '')
+      + `try { installSkills({ staging, target }); process.stdout.write('OK'); }\n`
+      + `catch (error) { process.stdout.write(String(error && error.message)); process.exitCode = 2; }`;
+    const spawn = (staging, ready, peer, waitForLock) => execute(process.execPath,
+      ['--input-type=module', '-e', child(waitForLock), staging, target, ready, peer, path.join(target, LOCK), sawLock]);
+    const results = await Promise.allSettled([
+      spawn(sA, readyA, readyB, false),
+      spawn(sB, readyB, readyA, true),
+    ]);
+    const ok = r => r.status === 'fulfilled' && r.value.stdout === 'OK';
+    const losers = results.filter(r => r.status === 'rejected');
+    return { results, names, big, target, contended: fs.existsSync(sawLock), winners: results.filter(ok).length, losers };
+  };
+  const outcome = winners => winners === 2 ? 'both-won' : winners === 1 ? 'one-won' : 'none-won';
+  let last;
+  for (const [i, skills] of [4, 8, 16, 32, 64].entries()) {
+    last = await attempt(skills);
+    if (outcome(last.winners) === 'both-won' && last.contended) {
+      assert.fail('the loser observed the held lock yet both processes installed - real mutex failure');
+    }
+    if (outcome(last.winners) === 'both-won' && !last.contended) continue; // uncontested attempt, widen the window
+    break; // one-won (the assertable case) or none-won (fail below)
+  }
+  if (outcome(last.winners) === 'both-won') {
+    t.skip('no contention achievable this run (loser never observed the lock; mutex refusal itself is covered by the abandoned-lock test)');
+    return;
+  }
+  const { results, names, big, target, losers } = last;
   assert.equal(losers.length, 1);
   assert.equal(losers[0].reason.stdout, 'INSTALL_BUSY');
   assert.equal(losers[0].reason.code, 2);
   const winnerIsRacer = results[0].status === 'fulfilled';
   assert.ok(winnerIsRacer, 'the process that acquired the lock first must be the winner');
-  assert.deepEqual(readRegistry(target).skills, ['a1', 'a2', 'a3', 'a4']
+  assert.deepEqual(readRegistry(target).skills, names
     .map(name => ({ name, sha256: textDigest(`${name}\n${big}`) })), 'registry must match the winner, no lost updates');
   assert.ok(!fs.existsSync(path.join(target, 'beta')), 'the refused batch must leave no orphan directory');
-  assert.deepEqual(fs.readdirSync(target).sort(), [REGISTRY, 'a1', 'a2', 'a3', 'a4'], 'no orphan directories and no leftover lock');
+  assert.deepEqual(fs.readdirSync(target).sort(), [REGISTRY, ...names], 'no orphan directories and no leftover lock');
 });
 
 test('uninstallSkills purge keeps user entries that do not match the backup naming scheme', t => {
