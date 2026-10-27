@@ -10,7 +10,7 @@ const COMMIT = /^[a-f0-9]{40}$/;
 const REGISTRY = '.gstack861-registry.json';
 const BACKUPS = '.gstack861-backups';
 const LOCK = '.gstack861-install.lock';
-const OUR_BACKUP = /^[a-z0-9][a-z0-9-]*-\d+$/;
+const OUR_BACKUP = /^[a-z0-9][a-z0-9-]*-\d{13,}$/;
 const fail = code => { throw new Error(code); };
 const byName = (a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0);
 
@@ -237,9 +237,13 @@ export function uninstallSkills({ target, purge = false, now = () => new Date().
     if (purge) {
       const backupsStat = fs.lstatSync(backupsRoot, { throwIfNoEntry: false });
       if (backupsStat?.isDirectory() && !backupsStat.isSymbolicLink()) {
-        // Only our own <name>-<timestamp> backup directories; user archives always stay.
+        // Only our own <name>-<13-digit-ms-timestamp> backup directories whose manifest
+        // still proves our generator; user archives and tampered entries always stay,
+        // uncounted — ownership for deletion is proven by content, not by name alone.
         for (const entry of fs.readdirSync(backupsRoot)) {
           if (!OUR_BACKUP.test(entry)) continue;
+          const manifest = readJson(path.join(backupsRoot, entry, 'manifest.json'));
+          if (!object(manifest) || manifest.generator !== GENERATOR) continue;
           fs.rmSync(path.join(backupsRoot, entry), { recursive: true });
           backupsRemoved += 1;
         }
