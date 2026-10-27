@@ -471,3 +471,35 @@ test('approvals ask forwards prompt-file into the question and keeps error codes
   const usage = spawnSync(process.execPath, [cli, 'nope'], { encoding: 'utf8' });
   assert.match(usage.stderr, /approvals ask --state DIR --id ID/);
 });
+test('approvals ask scopes prompt-file failures: missing files INVALID_PROMPT_FILE, relative paths ABSOLUTE_PATH_REQUIRED', t => {
+  const f = fixture(t), state = path.join(f.base, 'approvals');
+  const store = new ApprovalStore(state);
+  const subject = askSubject(f);
+  const id = store.issue(subject);
+  const actionFile = writeActionFile(f, subject.action);
+  const ask = (...extra) => spawnSync(process.execPath, [cli, 'approvals', 'ask', '--state', state, '--id', id,
+    '--host', 'zcode', '--session', 's1', '--run', 'r1', '--policy-hash', subject.policyHash, '--action-file', actionFile, ...extra], { input: 'approve\n', encoding: 'utf8', timeout: 10000 });
+  // A missing prompt file previously leaked the raw ENOENT message. The read runs
+  // before the stdin await, so a bad prompt file exits with EMPTY stdout — no
+  // question printed — and never blocks waiting for an operator answer (the piped
+  // approve below is never consumed).
+  const missing = ask('--prompt-file', path.join(f.base, 'absent-prompt.txt'));
+  assert.equal(missing.status, 1);
+  assert.match(missing.stderr, /gstack861: INVALID_PROMPT_FILE/);
+  assert.equal(missing.stdout, '');
+  // A relative --prompt-file keeps its own path-semantics code; it must not be masked as INVALID_PROMPT_FILE.
+  const relative = ask('--prompt-file', 'relative-prompt.txt');
+  assert.equal(relative.status, 1);
+  assert.match(relative.stderr, /gstack861: ABSOLUTE_PATH_REQUIRED/);
+  assert.equal(relative.stderr.includes('INVALID_PROMPT_FILE'), false);
+  assert.equal(relative.stdout, '');
+  // Both refusals leave the record pending: a prompt-file failure never answers the question.
+  assert.equal(store.get(id).state, 'pending');
+  // The happy path is unaffected: a readable prompt file still flows into the question.
+  const promptFile = path.join(f.base, 'prompt-ok.txt');
+  fs.writeFileSync(promptFile, 'Ship the release?');
+  const ok = ask('--prompt-file', promptFile);
+  assert.equal(ok.status, 0, ok.stderr);
+  const [question] = parsePrinted(ok.stdout);
+  assert.equal(question.prompt, 'Ship the release?');
+});
