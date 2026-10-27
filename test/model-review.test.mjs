@@ -189,15 +189,17 @@ test('no error thrown on any path ever contains the key value', async () => {
 });
 
 test('mid-body abort during response.text() maps to GATEWAY_TIMEOUT', async () => {
-  // Headers arrive, the body stalls mid-stream; the abort signal errors the stream,
-  // and response.text() must surface as a structured GATEWAY_TIMEOUT (not a raw DOMException).
-  const fetchImpl = (url, init) => new Response(new ReadableStream({
-    start(controller) {
-      controller.enqueue(new TextEncoder().encode('{"choices":'));
+  // Headers arrive, the body read stalls; the abort rejects the read mid-body. Uses a
+  // minimal Response shape (not WHATWG stream internals) so the abort chain is
+  // deterministic across Node versions — CI pins 22, dev runs 24.
+  const fetchImpl = (url, init) => ({
+    ok: true,
+    status: 200,
+    text: () => new Promise((_resolve, reject) => {
       init.signal.addEventListener('abort', () =>
-        controller.error(new DOMException('The operation was aborted due to timeout', 'TimeoutError')));
-    },
-  }), { status: 200 });
+        reject(new DOMException('The operation was aborted due to timeout', 'TimeoutError')));
+    }),
+  });
   await assert.rejects(
     runModelReview({ gateway: GATEWAY, target: { files: [{ path: 'a', diff: '+a' }] }, fetchImpl, timeoutMs: 80, env: { GSTACK861_MODEL_CALL: '1', [KEY_ENV]: 'k' } }),
     /GATEWAY_TIMEOUT/,
