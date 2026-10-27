@@ -151,7 +151,13 @@ export function evaluate(policy, call) {
       // ancestor directory is scanned — its own entries and one directory level down — for
       // VCS-named pointer files. Directory-form `.git` needs no parsing: the name and identity
       // checks already cover it. No caching: this runs per write evaluation.
+      // Discovery boundary: a pointer three or more directory levels below every ancestor of
+      // the target (`ancestor/x/y/.git` and deeper) is NOT discovered, so a gitdir redirected
+      // from such a pointer stays writable. The model cannot widen this gap: creating or
+      // modifying a pointer file at ANY depth is already denied by the component name check
+      // above, so the boundary only exposes pointers that predate the guarded session.
       const protectRedirect = (pointer) => {
+        if (fs.statSync(pointer).size > 65536) return; // same cap as loadPolicy; oversized entries are not parsed
         const match = fs.readFileSync(pointer, 'utf8').match(/^gitdir:\s*(\S+)\s*$/m);
         if (!match) return; // content without a gitdir: line is not a pointer — ignore
         const dir = path.resolve(path.dirname(pointer), match[1]);
@@ -165,21 +171,15 @@ export function evaluate(policy, call) {
       };
       const scanPointers = (dir, depth) => {
         let entries;
-        try { entries = fs.readdirSync(dir); }
+        try { entries = fs.readdirSync(dir, { withFileTypes: true }); }
         catch (error) {
           if (error.code === 'ENOENT' || error.code === 'ENOTDIR') return; // vanished or non-directory level
           throw error;
         }
         for (const entry of entries) {
-          const entryPath = path.join(dir, entry);
-          let stat;
-          try { stat = fs.lstatSync(entryPath); }
-          catch (error) {
-            if (error.code === 'ENOENT') continue; // entry vanished between readdir and lstat
-            throw error;
-          }
-          if (stat.isFile()) { if (vcsComponent(entry)) protectRedirect(entryPath); }
-          else if (depth > 0 && stat.isDirectory()) scanPointers(entryPath, depth - 1);
+          const entryPath = path.join(dir, entry.name);
+          if (entry.isFile()) { if (vcsComponent(entry.name)) protectRedirect(entryPath); }
+          else if (depth > 0 && entry.isDirectory()) scanPointers(entryPath, depth - 1);
         }
       };
       for (let current = target.path; ; current = path.dirname(current)) {
