@@ -105,7 +105,7 @@ Codex 以真实探针验证了 12 个场景（探针脚本与输出见其会话�
 | Codex 探针（实测结果） | 修复 | 回归测试 |
 |---|---|---|
 | 卸载删除用户修改/新增文件（Critical） | 卸载所有权改为注册表摘要×manifest×SKILL.md×无多余文件四重内容验证，任一漂移整体拒绝 | install.test：修改拒绝、额外文件拒绝、兄弟目录与注册表字节保全 |
-| 伪造注册表+marker 授权删外来目录（Critical） | 同上——摘要以注册表记录为准，目录自述不可信 | install.test：自洽伪造仍拒绝 |
+| 伪造注册表+marker 授权删外来目录（Critical） | 同上——摘要以注册表记录为准，目录自述不可信 | install.test：注册表摘要不一致的 marker 伪造仍拒绝；完全自洽伪造为既知边界（见下） |
 | 备份 junction/symlink 逃逸 | 备份路径 lstat 校验 + realpath 必须在 target 内 | install.test：junction（win32 实跑）/symlink（POSIX）|
 | 并发安装丢注册表更新 | 目标级互斥锁，第二进程 `INSTALL_BUSY`；注册表锁内读改写 | install.test：真实双进程竞争 |
 | 注册表被目录/符号链接占用 | 校验阶段前置 lstat，零写入拒绝 | install.test：(f)(g) |

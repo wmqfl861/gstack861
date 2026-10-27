@@ -64,13 +64,13 @@
   "testedFiles": [
     {
       "path": "bin/gstack861.mjs",
-      "gitBlobSha1": "05e81a5e4aa5d32e2c98344a58634339a886d716",
-      "sha256": "a85548c68e09831319b6c6f75af0d477912e7fa5b23d8e23dae01e454ca8520d"
+      "gitBlobSha1": "8b5e251e4154bd62d35a55effaa927bf9219c13f",
+      "sha256": "3afc51b88b82965b6631f7c91fe5dca53a1cca2b5c40fbb6b7d47a986eeb7b15"
     },
     {
       "path": "package.json",
-      "gitBlobSha1": "eee9e224a67ee62fc97bd21ca6148958f2b3acf3",
-      "sha256": "b1957c9e1c28ff0382add28e18bf87a21204eb367ca170cef706a78ff27bc4e9"
+      "gitBlobSha1": "10a0fb61259e944a9dfce37de06ac2baaa79568f",
+      "sha256": "c60e01b3d485f132803d3e2dd6cd5b89add620e81727e60a220749cb7293c1c1"
     },
     {
       "path": "scripts/check.mjs",
