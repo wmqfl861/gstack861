@@ -82,19 +82,35 @@ if (args[0] === 'hook') {
       const options = flags(args.slice(1), ['--target'], ['--purge']);
       print(uninstallSkills({ target: absolute(options['--target']), purge: options['--purge'] === true }));
     } else if (args[0] === 'approvals') {
-      const options = flags(args.slice(2), ['--state', '--id', '--host', '--session', '--run', '--policy-hash', '--action-file']);
-      // Validate before constructing the store: a rejected subcommand must not leave a state directory behind.
-      if (!['list', 'show', 'approve', 'reject'].includes(args[1])) throw new Error('UNKNOWN_SUBCOMMAND');
+      const options = flags(args.slice(2), ['--state', '--id', '--host', '--session', '--run', '--policy-hash', '--action-file', '--ttl-ms']);
+      // Validate before constructing the store: a rejected subcommand or argument
+      // must not leave a state directory behind.
+      if (!['list', 'show', 'issue', 'approve', 'reject', 'consume', 'verify'].includes(args[1])) throw new Error('UNKNOWN_SUBCOMMAND');
+      const ttlRaw = options['--ttl-ms'];
+      const ttlMs = ttlRaw === undefined ? undefined : Number(ttlRaw);
+      // Same bounds as ApprovalStore.issue, checked here so a refused value cannot
+      // leave a freshly created state directory behind.
+      if (ttlMs !== undefined && (!Number.isSafeInteger(ttlMs) || ttlMs < 1 || ttlMs > 86400000)) throw new Error('INVALID_TTL');
       const store = new ApprovalStore(absolute(options['--state']));
-      if (args[1] === 'list') print(store.list().map(({ id, state, issuedAt, expiresAt }) => ({ id, state, issuedAt, expiresAt })));
-      else if (args[1] === 'show') print(store.get(options['--id']));
-      else {
+      // The subject is rebuilt from operator-supplied flags plus the action file; only its
+      // digest ever touches a record, so the payload itself is never persisted (verify included).
+      const readSubject = () => {
         let action;
         try { action = JSON.parse(fs.readFileSync(absolute(options['--action-file']), 'utf8')); }
         catch (error) { if (error instanceof SyntaxError) throw new Error('INVALID_ACTION_FILE'); throw error; }
-        const subject = { host: options['--host'], sessionId: options['--session'], runId: options['--run'],
+        return { host: options['--host'], sessionId: options['--session'], runId: options['--run'],
           policyHash: options['--policy-hash'], action };
-        print(args[1] === 'approve' ? store.approve(options['--id'], subject) : store.reject(options['--id'], subject));
+      };
+      if (args[1] === 'list') print(store.list().map(({ id, state, issuedAt, expiresAt }) => ({ id, state, issuedAt, expiresAt })));
+      else if (args[1] === 'show') print(store.get(options['--id']));
+      else if (args[1] === 'issue') {
+        print(store.issue(readSubject(), ttlMs === undefined ? {} : { ttlMs }));
+      } else if (args[1] === 'verify') print(store.verify(options['--id'], readSubject()));
+      else {
+        const subject = readSubject();
+        print(args[1] === 'approve' ? store.approve(options['--id'], subject)
+          : args[1] === 'consume' ? store.consume(options['--id'], subject)
+          : store.reject(options['--id'], subject));
       }
     } else {
       process.stderr.write('Usage: gstack861 doctor | inventory --upstream PATH | zcode-config --policy ABS_PATH\n'
@@ -102,7 +118,9 @@ if (args[0] === 'hook') {
         + '    (--commit is TEST-ONLY: overrides the upstream lock pin; default = upstream.lock.json)\n'
         + '  install --staging DIR --target DIR | uninstall --target DIR [--purge]\n'
         + '  approvals list --state DIR | show --state DIR --id ID\n'
-        + '  approvals approve|reject --state DIR --id ID --host H --session S --run R --policy-hash HASH --action-file F\n');
+        + '  approvals issue --state DIR --host H --session S --run R --policy-hash HASH --action-file F [--ttl-ms N]\n'
+        + '  approvals approve|reject|consume --state DIR --id ID --host H --session S --run R --policy-hash HASH --action-file F\n'
+        + '  approvals verify --state DIR --id ID --host H --session S --run R --policy-hash HASH --action-file F\n');
       process.exitCode = 1;
     }
   } catch (error) {

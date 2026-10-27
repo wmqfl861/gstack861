@@ -168,6 +168,57 @@ test('approvals CLI rejects unknown subcommands, invented states and malformed a
   assert.equal(approve.status, 1);
   assert.match(approve.stderr, /gstack861: INVALID_ACTION_FILE/);
 });
+test('approvals CLI issue→verify→approve→consume chain; verify mismatch stays read-only; replay refused', t => {
+  const f = fixture(t), state = path.join(f.base, 'approvals');
+  const action = { tool: 'Write', input: { file_path: 'src/a' } };
+  const actionFile = path.join(f.base, 'action.json');
+  fs.writeFileSync(actionFile, JSON.stringify(action));
+  const run = (...a) => spawnSync(process.execPath, [cli, 'approvals', ...a], { encoding: 'utf8', timeout: 10000 });
+  const subject = ['--host', 'zcode', '--session', 's1', '--run', 'r1', '--policy-hash', f.policy.policyHash, '--action-file', actionFile];
+  const issue = run('issue', '--state', state, ...subject, '--ttl-ms', '60000');
+  assert.equal(issue.status, 0, issue.stderr);
+  const id = JSON.parse(issue.stdout);
+  assert.match(id, /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+  const recordFile = path.join(state, `${id}.json`);
+  const verifyMatch = run('verify', '--state', state, '--id', id, ...subject);
+  assert.equal(verifyMatch.status, 0, verifyMatch.stderr);
+  assert.deepEqual(JSON.parse(verifyMatch.stdout), { id, state: 'pending', binding: 'match' });
+  const mismatch = run('verify', '--state', state, '--id', id, '--host', 'zcode', '--session', 'other-session',
+    '--run', 'r1', '--policy-hash', f.policy.policyHash, '--action-file', actionFile);
+  assert.equal(mismatch.status, 0, mismatch.stderr);
+  assert.deepEqual(JSON.parse(mismatch.stdout), { id, state: 'pending', binding: 'mismatch' });
+  // Read-only proof: two verifies plus the issue leave the record bytes and state untouched,
+  // and the record still contains a digest only — never the action payload (red line).
+  const issued = fs.readFileSync(recordFile, 'utf8');
+  run('verify', '--state', state, '--id', id, ...subject);
+  assert.equal(fs.readFileSync(recordFile, 'utf8'), issued);
+  assert.equal(JSON.parse(issued).state, 'pending');
+  assert.equal(issued.includes('src/a'), false);
+  const approve = run('approve', '--state', state, '--id', id, ...subject);
+  assert.equal(approve.status, 0, approve.stderr);
+  assert.equal(JSON.parse(approve.stdout).state, 'approved');
+  const consume = run('consume', '--state', state, '--id', id, ...subject);
+  assert.equal(consume.status, 0, consume.stderr);
+  assert.equal(JSON.parse(consume.stdout).state, 'consumed');
+  const replay = run('consume', '--state', state, '--id', id, ...subject);
+  assert.equal(replay.status, 1);
+  assert.match(replay.stderr, /APPROVAL_WRONG_STATE/);
+});
+test('approvals CLI issue validates ttl-ms and refuses unknown subcommands before creating state', t => {
+  const f = fixture(t);
+  const actionFile = path.join(f.base, 'action.json');
+  fs.writeFileSync(actionFile, JSON.stringify({ kind: 'publish' }));
+  const subject = ['--host', 'zcode', '--session', 's1', '--run', 'r1', '--policy-hash', f.policy.policyHash, '--action-file', actionFile];
+  const run = dir => spawnSync(process.execPath, [cli, 'approvals', 'issue', '--state', dir, ...subject, '--ttl-ms', '0'], { encoding: 'utf8', timeout: 10000 });
+  const refused = run(path.join(f.base, 'never-created'));
+  assert.equal(refused.status, 1);
+  assert.match(refused.stderr, /INVALID_TTL/);
+  assert.equal(fs.existsSync(path.join(f.base, 'never-created')), false, 'a refused ttl must not leave a state directory behind');
+  const badNumber = spawnSync(process.execPath, [cli, 'approvals', 'issue', '--state', path.join(f.base, 'never-created2'),
+    ...subject, '--ttl-ms', 'abc'], { encoding: 'utf8', timeout: 10000 });
+  assert.equal(badNumber.status, 1);
+  assert.match(badNumber.stderr, /INVALID_TTL/);
+});
 test('DSH registers a monotonic guard, not a permissive waterfall', t => {
   const f = fixture(t);
   let guard;

@@ -71,6 +71,16 @@ export class ApprovalStore {
   approve(id, subject) { return this.transition(id, subject, ['pending'], 'approved'); }
   reject(id, subject) { return this.transition(id, subject, ['pending', 'approved'], 'rejected'); }
   consume(id, subject) { return this.transition(id, subject, ['approved'], 'consumed'); }
+  /**
+   * Read-only binding check for the operator CLI: computes the subject digest from
+   * the operator-supplied fields and compares it to the record's subjectHash.
+   * Never transitions, never stores the action payload — records keep digests only.
+   */
+  verify(id, subject) {
+    const record = this.get(id);
+    return Object.freeze({ id: record.id, state: record.state,
+      binding: record.subjectHash === subjectDigest(subject) ? 'match' : 'mismatch' });
+  }
   get(id) {
     const filename = this.file(id);
     let stat;
