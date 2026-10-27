@@ -79,7 +79,7 @@ node bin/gstack861.mjs zcode-config --policy /absolute/private/policy.json
 
 1. ① DSH 管线+纵向+toolRewrites（缺 DEEPSEEK_API_KEY）。
 2. ② DSH 插件式技能装载机制验证（host-loading §4 第 4 条，独立于①）。
-3. ③ ZCode guard 层+自动拾取+容忍度（需受控新会话）。
+3. ③ ZCode guard 层+自动拾取+容忍度（需受控新会话）。一键生成受控验收包：`node scripts/acceptance-pack.mjs --out DIR`（含装好技能的 fixture 工作区、可加载样例策略、Hook 片段与打印好的验收清单，详见 `--help`）。
 4. ④ 宿主内嵌询问/审批 UI 接通（区别于③）。
 5. ⑤ GBrain 真接入（待①②③）。
 6. ⑥ 浏览器 QA/scrape/qa 组（浏览器栈）。

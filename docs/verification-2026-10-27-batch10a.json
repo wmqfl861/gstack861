@@ -65,8 +65,8 @@
     },
     {
       "path": "package.json",
-      "gitBlobSha1": "339ea57f9b8f4e4467a1832484ce2311da9db368",
-      "sha256": "04c2a4a16ae8ab043d33d991a507eeff5950388fd7d3c4fcd7f56a82abad8529"
+      "gitBlobSha1": "1c40c6bec5a68cfb7729d6c2575eb1e6cb72d308",
+      "sha256": "84d74087a247fe180192a2290045323406c5ea4d354c481a5f9301b061d0dc21"
     },
     {
       "path": "scripts/check.mjs",
