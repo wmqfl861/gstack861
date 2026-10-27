@@ -608,6 +608,224 @@ test('installSkills refuses to move a user-edited skill into purgeable backups',
   assert.ok(!fs.existsSync(path.join(target, BACKUPS)));
 });
 
+// --- Multi-file skills (optional manifest `files` map) --------------------------
+
+const SCOPE_V1 = '# Scope\n\nLane A scope section v1.\n';
+const SCOPE_V2 = '# Scope\n\nLane A scope section v2 (re-rendered).\n';
+const LIMITS_V1 = '# Limits\n\nLane A limits section.\n';
+const TEMPLATE_V1 = '# Report template\n\nTemplate body.\n';
+
+// Multi-file staging fixture: stage() plus the listed auxiliary files written on
+// disk; the manifest's files map records each file's real digest.
+function stageMulti(staging, name, text, contents, overrides = {}) {
+  const files = {};
+  for (const [key, body] of Object.entries(contents)) {
+    files[key] = textDigest(body);
+    const dest = path.join(staging, name, ...key.split('/'));
+    fs.mkdirSync(path.dirname(dest), { recursive: true });
+    fs.writeFileSync(dest, body);
+  }
+  stage(staging, name, text, { files, ...overrides });
+  return files;
+}
+
+test('installSkills writes every listed file, records the files map in the registry, and uninstall removes it all', t => {
+  const root = base(t), staging = path.join(root, 'staging'), target = path.join(root, 'target');
+  fs.mkdirSync(staging);
+  const files = stageMulti(staging, 'alpha', ALPHA_V1, {
+    'sections/scope.md': SCOPE_V1,
+    'sections/limits.md': LIMITS_V1,
+    'templates/report.md': TEMPLATE_V1,
+  });
+  stage(staging, 'beta', BETA_V1); // a no-files skill rides along untouched
+  assert.deepEqual(installSkills({ staging, target, now: NOW }), { installed: ['alpha', 'beta'], skipped: [], backedUp: [] });
+  const dest = path.join(target, 'alpha');
+  assert.equal(fs.readFileSync(path.join(dest, 'SKILL.md'), 'utf8'), ALPHA_V1);
+  assert.equal(fs.readFileSync(path.join(dest, 'sections', 'scope.md'), 'utf8'), SCOPE_V1);
+  assert.equal(fs.readFileSync(path.join(dest, 'sections', 'limits.md'), 'utf8'), LIMITS_V1);
+  assert.equal(fs.readFileSync(path.join(dest, 'templates', 'report.md'), 'utf8'), TEMPLATE_V1);
+  // manifest bytes copied verbatim from staging, not re-serialized
+  assert.deepEqual(fs.readFileSync(path.join(dest, 'manifest.json')), fs.readFileSync(path.join(staging, 'alpha', 'manifest.json')));
+  assert.deepEqual(readRegistry(target).skills, [
+    { name: 'alpha', sha256: textDigest(ALPHA_V1), files },
+    { name: 'beta', sha256: textDigest(BETA_V1) }, // no files map for a no-files skill
+  ]);
+  if (process.platform !== 'win32') {
+    assert.equal(fs.statSync(path.join(dest, 'sections')).mode & 0o777, 0o755);
+    assert.equal(fs.statSync(path.join(dest, 'templates')).mode & 0o777, 0o755);
+    assert.equal(fs.statSync(path.join(dest, 'sections', 'scope.md')).mode & 0o777, 0o644);
+  }
+  assert.deepEqual(uninstallSkills({ target, now: NOW }), { uninstalled: ['alpha', 'beta'], backupsRemoved: 0 });
+  assert.ok(!fs.existsSync(dest), 'uninstall removes the whole skill directory, listed files included');
+  assert.ok(!fs.existsSync(path.join(target, 'beta')));
+});
+
+test('installSkills refuses a tampered or missing listed file in staging with zero writes', t => {
+  const root = base(t), staging = path.join(root, 'staging'), target = path.join(root, 'target');
+  fs.mkdirSync(staging);
+  stageMulti(staging, 'alpha', ALPHA_V1, { 'sections/scope.md': SCOPE_V1 });
+  stage(staging, 'beta', BETA_V1);
+  fs.writeFileSync(path.join(staging, 'alpha', 'sections', 'scope.md'), `${SCOPE_V1}tampered`);
+  assert.throws(() => installSkills({ staging, target, now: NOW }), /TAMPERED_STAGING/);
+  assert.ok(!fs.existsSync(target), 'validation must fail before the target is even created');
+  fs.unlinkSync(path.join(staging, 'alpha', 'sections', 'scope.md'));
+  assert.throws(() => installSkills({ staging, target, now: NOW }), /TAMPERED_STAGING/, 'a missing listed file is the same refusal');
+  assert.ok(!fs.existsSync(target));
+});
+
+test('a user-modified listed file refuses both uninstall and reinstall', t => {
+  const root = base(t), staging = path.join(root, 'staging'), target = path.join(root, 'target');
+  fs.mkdirSync(staging);
+  stageMulti(staging, 'alpha', ALPHA_V1, { 'sections/scope.md': SCOPE_V1, 'templates/report.md': TEMPLATE_V1 });
+  installSkills({ staging, target, now: NOW });
+  fs.writeFileSync(path.join(target, 'alpha', 'sections', 'scope.md'), `${SCOPE_V1}user note`);
+  // classify's drift check uses the same registry-anchored proof as uninstall
+  const restage = path.join(root, 'restage');
+  fs.mkdirSync(restage);
+  stageMulti(restage, 'alpha', ALPHA_V1, { 'sections/scope.md': SCOPE_V1, 'templates/report.md': TEMPLATE_V1 });
+  assert.throws(() => installSkills({ staging: restage, target, now: NOW }), /USER_FILE_REFUSED/);
+  assert.ok(!fs.existsSync(path.join(target, BACKUPS)), 'a user-edited skill never enters purgeable backups');
+  assert.throws(() => uninstallSkills({ target, now: NOW }), /USER_FILE_REFUSED/);
+  assert.equal(fs.readFileSync(path.join(target, 'alpha', 'sections', 'scope.md'), 'utf8'), `${SCOPE_V1}user note`, 'the user edit survives both refusals');
+  assert.equal(fs.readFileSync(path.join(target, 'alpha', 'templates', 'report.md'), 'utf8'), TEMPLATE_V1);
+  assert.equal(fs.readFileSync(path.join(target, 'alpha', 'SKILL.md'), 'utf8'), ALPHA_V1);
+});
+
+test('uninstallSkills refuses an unlisted extra file inside a multi-file skill directory', t => {
+  const root = base(t), staging = path.join(root, 'staging'), target = path.join(root, 'target');
+  fs.mkdirSync(staging);
+  stageMulti(staging, 'alpha', ALPHA_V1, { 'sections/scope.md': SCOPE_V1 });
+  installSkills({ staging, target, now: NOW });
+  fs.writeFileSync(path.join(target, 'alpha', 'sections', 'notes.md'), 'user data');
+  assert.throws(() => uninstallSkills({ target, now: NOW }), /USER_FILE_REFUSED/);
+  assert.equal(fs.readFileSync(path.join(target, 'alpha', 'sections', 'notes.md'), 'utf8'), 'user data', 'the unlisted file survives');
+  assert.equal(fs.readFileSync(path.join(target, 'alpha', 'sections', 'scope.md'), 'utf8'), SCOPE_V1);
+  assert.ok(fs.existsSync(path.join(target, 'alpha', 'SKILL.md')), 'nothing is deleted on refusal');
+});
+
+test('uninstallSkills refuses a forged registry.files that disagrees with the target', t => {
+  const root = base(t), staging = path.join(root, 'staging'), target = path.join(root, 'target');
+  fs.mkdirSync(staging);
+  stageMulti(staging, 'alpha', ALPHA_V1, { 'sections/scope.md': SCOPE_V1, 'templates/report.md': TEMPLATE_V1 });
+  installSkills({ staging, target, now: NOW });
+  // The registry is the trust anchor: a scope digest the installed bytes cannot match
+  // must refuse even though the directory itself is pristine.
+  const forgedRegistry = JSON.parse(fs.readFileSync(registryFile(target), 'utf8'));
+  forgedRegistry.skills[0].files['sections/scope.md'] = '0'.repeat(64);
+  const forged = `${JSON.stringify(forgedRegistry, null, 2)}\n`;
+  fs.writeFileSync(registryFile(target), forged);
+  assert.throws(() => uninstallSkills({ target, now: NOW }), /USER_FILE_REFUSED/);
+  assert.equal(fs.readFileSync(registryFile(target), 'utf8'), forged, 'the forged registry is left untouched');
+  assert.equal(fs.readFileSync(path.join(target, 'alpha', 'sections', 'scope.md'), 'utf8'), SCOPE_V1);
+  assert.ok(fs.existsSync(path.join(target, 'alpha', 'templates', 'report.md')));
+});
+
+test('installSkills does not skip a re-render that changed only listed files', t => {
+  const root = base(t), target = path.join(root, 'target');
+  const v1 = path.join(root, 'v1'), v2 = path.join(root, 'v2');
+  fs.mkdirSync(v1); fs.mkdirSync(v2);
+  stageMulti(v1, 'alpha', ALPHA_V1, { 'sections/scope.md': SCOPE_V1, 'templates/report.md': TEMPLATE_V1 });
+  const filesV2 = stageMulti(v2, 'alpha', ALPHA_V1, { 'sections/scope.md': SCOPE_V2 }); // same SKILL.md digest; one section changed, one file dropped
+  installSkills({ staging: v1, target, now: NOW });
+  const result = installSkills({ staging: v2, target, now: NOW });
+  assert.deepEqual(result, { installed: ['alpha'], skipped: [], backedUp: ['alpha'] }, 'a stale-files re-render must never be skipped');
+  const dest = path.join(target, 'alpha');
+  assert.equal(fs.readFileSync(path.join(dest, 'sections', 'scope.md'), 'utf8'), SCOPE_V2);
+  assert.ok(!fs.existsSync(path.join(dest, 'templates')), 'a dropped listed file must not linger from the previous install');
+  assert.deepEqual(readRegistry(target).skills, [{ name: 'alpha', sha256: textDigest(ALPHA_V1), files: filesV2 }]);
+  const backupsRoot = path.join(target, BACKUPS);
+  const [backup] = fs.readdirSync(backupsRoot);
+  assert.match(backup, /^alpha-\d+$/);
+  assert.equal(fs.readFileSync(path.join(backupsRoot, backup, 'sections', 'scope.md'), 'utf8'), SCOPE_V1, 'the replaced render survives in the backup');
+  assert.equal(fs.readFileSync(path.join(backupsRoot, backup, 'templates', 'report.md'), 'utf8'), TEMPLATE_V1);
+});
+
+test('installSkills skips an identical multi-file reinstall byte-for-byte', t => {
+  const root = base(t), target = path.join(root, 'target');
+  const v1 = path.join(root, 'v1'), v2 = path.join(root, 'v2');
+  fs.mkdirSync(v1); fs.mkdirSync(v2);
+  const listed = ['SKILL.md', 'manifest.json', 'sections/scope.md', 'templates/report.md'];
+  stageMulti(v1, 'alpha', ALPHA_V1, { 'sections/scope.md': SCOPE_V1, 'templates/report.md': TEMPLATE_V1 });
+  stageMulti(v2, 'alpha', ALPHA_V1, { 'sections/scope.md': SCOPE_V1, 'templates/report.md': TEMPLATE_V1 });
+  installSkills({ staging: v1, target, now: NOW });
+  const before = listed.map(file => fs.statSync(path.join(target, 'alpha', ...file.split('/'))).mtimeMs);
+  const registryBefore = fs.readFileSync(registryFile(target), 'utf8');
+  const result = installSkills({ staging: v2, target, now: NOW });
+  assert.deepEqual(result, { installed: [], skipped: ['alpha'], backedUp: [] });
+  assert.deepEqual(listed.map(file => fs.statSync(path.join(target, 'alpha', ...file.split('/'))).mtimeMs), before, 'skipped skills must not be rewritten');
+  assert.equal(fs.readFileSync(registryFile(target), 'utf8'), registryBefore);
+  assert.ok(!fs.existsSync(path.join(target, BACKUPS)));
+});
+
+test('installSkills rejects reserved top-level names as files keys', t => {
+  const root = base(t);
+  let n = 0;
+  for (const key of ['SKILL.md', 'skill.md', 'Manifest.json', 'MANIFEST.JSON']) {
+    const staging = path.join(root, `staging-${n += 1}`), target = path.join(root, `target-${n}`);
+    fs.mkdirSync(staging);
+    // The listed files are deliberately not written to disk: shape validation must
+    // reject the reserved key before any staging read happens.
+    stage(staging, 'alpha', ALPHA_V1, { files: { [key]: textDigest('body') } });
+    assert.throws(() => installSkills({ staging, target, now: NOW }), /STAGING_INVALID/, `key ${key} must be rejected`);
+    assert.ok(!fs.existsSync(target));
+  }
+});
+
+test('installSkills rejects malformed files maps, keys, and values', t => {
+  const root = base(t);
+  const badKeys = ['../escape.md', '/absolute.md', 'a\\b.md', 'a/b/c/d/e.md', '.hidden.md',
+    'sections/.hidden.md', 'sections//x.md', 'sections/', 'a/./b.md', 'C:\\temp\\x.md'];
+  let n = 0;
+  for (const key of badKeys) {
+    const staging = path.join(root, `staging-${n += 1}`), target = path.join(root, `target-${n}`);
+    fs.mkdirSync(staging);
+    stage(staging, 'alpha', ALPHA_V1, { files: { [key]: textDigest('body') } });
+    assert.throws(() => installSkills({ staging, target, now: NOW }), /STAGING_INVALID/, `key ${key} must be rejected`);
+    assert.ok(!fs.existsSync(target));
+  }
+  for (const files of ['nope', 42, [{ 'a.md': textDigest('body') }]]) {
+    const staging = path.join(root, `staging-${n += 1}`), target = path.join(root, `target-${n}`);
+    fs.mkdirSync(staging);
+    stage(staging, 'alpha', ALPHA_V1, { files });
+    assert.throws(() => installSkills({ staging, target, now: NOW }), /STAGING_INVALID/);
+    assert.ok(!fs.existsSync(target));
+  }
+  for (const value of ['not-hex', 'a'.repeat(63), 42, null]) {
+    const staging = path.join(root, `staging-${n += 1}`), target = path.join(root, `target-${n}`);
+    fs.mkdirSync(staging);
+    stage(staging, 'alpha', ALPHA_V1, { files: { 'sections/x.md': value } });
+    assert.throws(() => installSkills({ staging, target, now: NOW }), /STAGING_INVALID/);
+    assert.ok(!fs.existsSync(target));
+  }
+});
+
+test('uninstallSkills refuses a legacy files-less registry record over a files-bearing target', t => {
+  const root = base(t), staging = path.join(root, 'staging'), target = path.join(root, 'target');
+  fs.mkdirSync(staging);
+  stageMulti(staging, 'alpha', ALPHA_V1, { 'sections/scope.md': SCOPE_V1 });
+  installSkills({ staging, target, now: NOW });
+  // A registry written before multi-file support names no files while the target
+  // carries them: the trust anchors disagree, so deletion is refused.
+  const legacy = `${JSON.stringify({
+    schemaVersion: 1, updatedAt: WHEN, skills: [{ name: 'alpha', sha256: textDigest(ALPHA_V1) }],
+  }, null, 2)}\n`;
+  fs.writeFileSync(registryFile(target), legacy);
+  assert.throws(() => uninstallSkills({ target, now: NOW }), /USER_FILE_REFUSED/);
+  assert.equal(fs.readFileSync(registryFile(target), 'utf8'), legacy, 'the registry is left untouched');
+  assert.equal(fs.readFileSync(path.join(target, 'alpha', 'sections', 'scope.md'), 'utf8'), SCOPE_V1, 'nothing is deleted on refusal');
+});
+
+test('uninstallSkills refuses when a listed file is missing from the target', t => {
+  const root = base(t), staging = path.join(root, 'staging'), target = path.join(root, 'target');
+  fs.mkdirSync(staging);
+  stageMulti(staging, 'alpha', ALPHA_V1, { 'sections/scope.md': SCOPE_V1, 'templates/report.md': TEMPLATE_V1 });
+  installSkills({ staging, target, now: NOW });
+  fs.rmSync(path.join(target, 'alpha', 'sections'), { recursive: true });
+  assert.throws(() => uninstallSkills({ target, now: NOW }), /USER_FILE_REFUSED/);
+  assert.equal(fs.readFileSync(path.join(target, 'alpha', 'SKILL.md'), 'utf8'), ALPHA_V1, 'nothing is deleted on refusal');
+  assert.equal(fs.readFileSync(path.join(target, 'alpha', 'templates', 'report.md'), 'utf8'), TEMPLATE_V1);
+});
+
 test('an I/O failure mid-install leaves every skill whole and the target recoverable', t => {
   const root = base(t), s1 = path.join(root, 's1'), s2 = path.join(root, 's2'), target = path.join(root, 'target');
   fs.mkdirSync(s1); fs.mkdirSync(s2);
