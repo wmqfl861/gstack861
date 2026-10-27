@@ -366,3 +366,26 @@ Lane A（渲染）：初审 Needs fixes（2 Critical）→ 修复轮 → 复审�
 ## 下一验收
 
 **离线可推进空间已尽。** 两项用户解锁（首尾重申）是仅剩的可行动路径：① DEEPSEEK_API_KEY → verify-dsh-guard + DSH 纵向 + toolRewrites；② 受控新 ZCode 会话 → guard 层验收 + 自动拾取。解锁后按解锁顺序推进边界 13 项中的对应项。
+
+# 第十五轮验证记录：批次 10a（解锁助具 acceptance-pack，2026-10-27）——补录
+
+（批次 10a 收尾时本段漏写、证据 JSON 已在——现按 docs/verification-2026-10-27-batch10a.json 补录，数字以该文件为准。）
+
+| 项 | 结果 |
+|---|---|
+| `npm test` | 218/218（新增 6：acceptance-pack） |
+| acceptance-pack | 一条命令生成受控验收包；实现者真机冒烟三探针原样运行；手册缺陷（PROTECTED_PATH vs OUTSIDE_SCOPE）发现并修复，生成器引文同步+漂移守卫测试 |
+
+# 第十六轮验证记录：批次 10b（边界②：DSH 技能装载 activation-tested，2026-10-27）
+
+范围：0.4.8。按 `docs/plans/2026-10-27-batch10b-dsh-skills.md`（计划审查经 asar 源码核实 systemPrompt.section API 并裁定机制——附录已录入 findings；手工 profile 强制、无密钥无任务）。
+
+| 项 | 结果 |
+|---|---|
+| `npm test` | 224/224（新增 6：dsh-skills 插件） |
+| **真实激活验证（无密钥、0 付费调用）** | `node scripts/verify-dsh-skills.mjs` 三控全过（exit 0）：正控 taskless 干净激活；负控①坏目录→插件 REGISTRY_INVALID 警告（堆栈命中真实仓库文件 dsh-skills.mjs:46→install.mjs:69）；负控②删 system-prompt 条目→插件 pending（waiting for service: systemPrompt，inject 声明实证非虚设）。审查者独立复跑 3/3 一致 |
+| 边界②推进 | 机制待验证 → **activation-tested**；运行时消费（模型真读索引/技能）待①，且届时 readRoots 须覆盖技能目录 |
+
+## 下一验收
+
+边界①（DEEPSEEK_API_KEY）与③（受控 ZCode 会话）不变；边界②运行时半边随①解锁。

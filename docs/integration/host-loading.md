@@ -143,7 +143,7 @@ DSH **没有 gstack 式技能目录**：无目录自动扫描，技能/能力装
 1. **插件发现机制**（[DSH 本机调研](dsh-local-findings.md) 第 2 节）：profile 为 `$DSH_HOME/profiles/<name>/`，插件条目经 `cordis.patch.yml` 组合声明，无目录扫描。**[源码]**（本机 0.2.1-rc.3）
 2. **配置格式与隔离**（同调研第 3 节）：YAML patch 列表、`config` 整值替换不合并、`DSH_HOME` 环境变量整体隔离 harness home。**[实跑]**（调研冒烟）
 3. **渲染产物的当前可用形态**：`rendered/.dsh` 树（57 技能 + 根，与 ZCode 侧同构渲染）**可作为上下文/文档注入**——把渲染出的 `SKILL.md` 及其 `sections/` 作为参考资料交给会话（例如放入项目文档目录或按需附上），属上下文注入式消费，**不构成宿主技能装载**。
-4. **插件式技能装载机制待 DSH 侧验证**：DSH 是否存在以插件形式注册「技能」的原生机制，本机未验证；上述调研第 2/3 节仅覆盖 guard 插件的发现与配置面（DSH guard 适配器自身的接入见 README「DSH 接入」与调研文档）。在完成 DSH 侧机制验证之前，本手册不写 DSH 装载步骤。
+4. **插件式技能装载——已验证至 activation-tested（2026-10-27 批次 10b）**：`gstack861-skills` 插件（`src/adapters/dsh-skills.mjs`）经 `systemPrompt.section` 注入技能索引（读取 install 链目标目录与注册表，sha256 信任锚，fail-closed）；无密钥三控实测通过（干净激活/坏目录拒绝/无 systemPrompt 服务 pending）——证据 `docs/verification-2026-10-27-batch10b.json` 与调研文档批次 10b 附录。**运行时消费半边待 DEEPSEEK_API_KEY（边界①），且届时策略 readRoots 须覆盖技能目录**（否则运行时测试假失败）；机制细节见调研第 2/3 节与附录。
 
 ## 5. 证据与回填
 
