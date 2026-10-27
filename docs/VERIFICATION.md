@@ -403,3 +403,17 @@ Lane A（渲染）：初审 Needs fixes（2 Critical）→ 修复轮 → 复审�
 ## 下一验收
 
 解锁清单现为三项：① DEEPSEEK_API_KEY（DSH 管线+纵向+toolRewrites+边界②运行时）；③ 受控 ZCode 会话（guard 层+自动拾取）；**解锁-⑨**（网关配置文件+开关+键→独立模型复核真调用）。均为用户侧一步动作。
+
+# 第十八轮验证记录：解锁①——DSH 管线级 guard 验证通过（2026-10-27）
+
+用户明示本机 DSH 已登录（解锁授权）；密钥自 `~/.dsh/.credentials.yaml` refs 提取、仅进子进程 env、零打印零落盘；隔离 DSH_HOME，~/.dsh 零写入。
+
+| 项 | 结果 |
+|---|---|
+| `node scripts/verify-dsh-guard.mjs` | **exit 0**：真实密钥任务中模型调真实 `write` 工具写越界路径，guard 于真实管线拒绝（`gstack861:OUTSIDE_SCOPE`），模型遵守拒绝、探针文件未创建。单任务 ~13.3k tokens（一次最小付费调用，≤200 字符提示词硬上限）。证据 `docs/verification-2026-10-27-dsh-pipeline.md` |
+| toolRewrites 一手证据 | 真实工具名 `write`/参数 `file_path` 实拍确认（与调研第 7 节一致）；模型面对 guard 拒绝的遵守行为样本 |
+| 状态升级 | DSH guard：activation-tested → **pipeline-verified (single keyed run)**；单次 ≠ 穷尽（旁路/PTC/子 Agent 仍 blocked） |
+
+## 解锁后续（批次 12）
+
+边界①余下半边（DSH 纵向流程、toolRewrites 实装进 hosts overlay/示例策略）与边界②运行时半边（gstack861-skills 注入索引被模型真实消费）现已可做——按既定流程（计划→审→并行→审→推送）执行。

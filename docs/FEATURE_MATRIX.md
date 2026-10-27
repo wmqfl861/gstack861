@@ -1,6 +1,6 @@
 # 功能与证据矩阵
 
-状态：2026-10-27，0.4.9：M2 前置 + 纵向批次 + 批次 2–11（状态目录命名空间、上游渲染 CI 复用 rendered-experimental、原生询问桥 approvals ask、apply-patch/参数 effect、approvals/tasks CLI 全量、ZCode 工作流层纵向流程已实证、渲染产物 stage-render→install→uninstall 装载链全链实测、宿主装载 runbook 实测回填、渲染技能宿主消费 15 例已实证、install --dry-run 零写入预检；DSH 管线就绪脚本待密钥）；离线空间已尽（2026-10-27），剩余项均受阻于用户解锁或环境（README 离线边界节 13 项）。两个宿主均未获得 `host_verified` 或 `full`。
+状态：2026-10-27，0.4.10：M2 前置 + 纵向批次 + 批次 2–12a（状态目录命名空间、上游渲染 CI 复用 rendered-experimental、原生询问桥 approvals ask、apply-patch/参数 effect、approvals/tasks CLI 全量、ZCode 工作流层纵向流程已实证、渲染产物 stage-render→install→uninstall 装载链全链实测、宿主装载 runbook 实测回填、渲染技能宿主消费 15 例已实证、install --dry-run 零写入预检；DSH 管线就绪脚本待密钥）；离线空间已尽（2026-10-27），剩余项均受阻于用户解锁或环境（README 离线边界节 13 项）。两个宿主均未获得 `host_verified` 或 `full`。
 
 | 范围 | ZCode | DSH | 已有证据 / 剩余工作 |
 |---|---|---|---|
@@ -8,7 +8,7 @@
 | 离线回归平台 | contract_tested | contract_tested | Linux 首轮；真实 Windows 本机 86/86 + CI 双平台矩阵 |
 | 源技能盘点器 | contract_tested | contract_tested | 临时 Git 仓库实测；完整上游盘点已在真实 Windows 本机跑通（57 技能） |
 | 文件范围策略 | contract_tested | contract_tested | 真实临时文件、链接与配置测试 |
-| 原生入口 | contract_tested | activation-tested | ZCode 真实 Hook 子进程；DSH 隔离加载激活已实证，管线级拒绝路径有就绪脚本（`scripts/verify-dsh-guard.mjs`，待 DEEPSEEK_API_KEY） |
+| 原生入口 | contract_tested | pipeline-verified（单次密钥运行） | ZCode 真实 Hook 子进程；DSH 隔离加载激活已实证，管线级拒绝路径有就绪脚本（`scripts/verify-dsh-guard.mjs`，待 DEEPSEEK_API_KEY） |
 | 技能生成器 | contract_tested | contract_tested | 字节级复制断言、上游漂移拒绝；产物标记 generated-not-host-verified |
 | 安装/卸载注册 | contract_tested | contract_tested | 两阶段原子性、用户文件保护、备份回滚均有测试；未接入真实宿主技能目录 |
 | 安装/卸载 dry-run 预检 | contract_tested | contract_tested | contract_tested（批次 6）：`install --dry-run` 校验+报告（wouldInstall/wouldSkip/wouldBackUp）结构性零写入，拒绝照常抛错；未接入真实宿主技能目录 |
