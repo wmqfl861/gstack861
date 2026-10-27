@@ -27,17 +27,17 @@
 ### Task 1 (Lane A): src/adapters/dsh-skills.mjs + 单测
 
 **Files:** Create `src/adapters/dsh-skills.mjs`；Test `test/dsh-skills.test.mjs`
-- `export const name='gstack861-skills'`、`inject=['tools']`（闭包同 guard——复用 tools 服务）... 裁定修正：系统提示注入应 inject `systemPrompt`（调研：`@deepseek-ai/dsh-system-prompt` 提供 systemPrompt 服务）。**接口以真实宿主为准**：实现按 inject:['systemPrompt'] 或双注入（tools+systemPrompt），以批次 3 冒烟的正控树为基——由计划审查对照 findings 定夺。
-- `apply(ctx, config)`：config `{ skillsDir }`（绝对路径，指向 install 链 target）；校验（loadRegistry 语义：注册表存在可解析；目录存在）失败→抛错（拒绝激活，fail-closed）；成功→向 systemPrompt 服务注册一节：技能索引（每技能一行：名称+description 首行+SKILL.md 绝对路径），声明「用文件工具读取全文」。
+- `export const name='gstack861-skills'`、`export const inject=['systemPrompt']`（**单一 inject**，计划审查经 asar 源码核实：`dsh-system-prompt` 提供 `SystemPrompt` 服务，`section({name,order,text,interpolate})` 为其对外加性 API，README 明示外部贡献可用任意有限 order；不注入 tools、不注册工具）。机制裁定全文已录入 dsh-local-findings.md 日期附录。
+- `apply(ctx, config)`：先特性检查 `typeof ctx?.systemPrompt?.section !== 'function'` → 抛 `DSH_SYSTEM_PROMPT_SECTION_REQUIRED`（同 dsh.mjs guard 形状）；再校验 config.skillsDir（绝对、存在）与注册表（**复用 install.mjs 的 loadRegistry——导出之**；不可解析/缺失→抛错拒绝激活）；逐技能校验：目录、manifest name、SKILL.md 存在且 **sha256 与注册表记录一致**（注册表=信任锚，诚实 fail-closed）；SKILL.md 缺 description 行→空描述照列（结构性损坏才拒）。任何失败→抛错（宿主转为警告+exit 0，findings 第 2 条）。成功→ `return ctx.systemPrompt.section({ name:'gstack861:skills', order:3050, text:<索引>, interpolate:false })`（返回 disposer，同 guard 模式；interpolate:false 消除未知 {{var}} 装配期异常类；order 3050=宿主 SECTION_ORDERS 的 TOOL_COMPUTER_USE(3000) 与 MCP_SERVERS(3100) 之间）。索引：每技能一行（名称+描述+SKILL.md 绝对路径）+ 头部声明「用你的文件工具读取全文」。
 - 索引构建：读 registry skills 列表→逐个读 `<dir>/manifest.json` 的 name 与 SKILL.md 首个 description 行；任何技能目录损坏→整插件拒绝激活（fail-closed，不部分注入）。
-- 单测（离线）：合法装载目录（复用 stage.test/install fixture 构造）→索引文本含全部技能名与路径；目录缺失/注册表损坏/SKILL.md 缺失→抛错零注入；config 缺 skillsDir→抛错。
+- 单测（离线，fixture 于 test/dsh-skills.test.mjs 本地构造——含 description 与缺 description 两形态）：合法装载目录→section 调用参数（name/order/interpolate:false）与索引文本含全部技能名/路径/描述；目录缺失/注册表损坏/SKILL.md 缺失/**SKILL.md 摘要与注册表不符**→抛错零注入（fake-ctx 模式，见 test/adapters.test.mjs:329）；config 缺 skillsDir/相对路径→抛错。
 
 ### Task 2 (Lane B): scripts/verify-dsh-skills.mjs（无需密钥的激活验证）
 
 **Files:** Create `scripts/verify-dsh-skills.mjs`
-- 模式同 verify-dsh-guard 的环境搭建（隔离 DSH_HOME、shim 包、最小树含 system-prompt+tools+**本插件**、config.skillsDir 指向由测试渲染树 stage+install 出的真实技能目录）；**无密钥可跑**：taskless 启动（同批次 3 正控 3 模式），exit 0 且无 did-not-activate 警告=通过；负控（坏 skillsDir）→插件激活失败警告出现。0 付费调用断言。
+- 环境件**只复用** verify-dsh-guard 的 dshInstall()/childEnv()/shim/清理纪律；profile **手工构建**（findings 冒烟的 gstacksmoke 模式：package.json `dsh.profile.bundles:[]`+dependencies、cordis.yml `[]`、patch 三/四条目 system-prompt+tools+gstack861-skills[+guard 共存项]）——**禁用 `--from-default-profile headless`**（拒绝 taskless 启动）且**禁止为绕过而加任务**（破坏无密钥/0 付费前提）。**无密钥可跑**：taskless 启动，输出两流均无 did-not-activate 警告且 exit 0=通过；负控①坏 skillsDir→激活失败警告出现；负控②删 system-prompt 条目→插件 pending（waiting for service: systemPrompt，证明 inject 声明真实非虚设）。0 付费调用断言（无任务文本、无 LLM 插件、遥测关闭）。
 - 本机实跑：正控通过+负控警告出现，输出留证。
 
 ### Task 3 (协调者): 真实激活验证、文档、证据、终审、推送
-- [ ] 实跑 verify-dsh-skills（正/负控）；host-loading §4 第 4 条更新为「activation-tested（见批次 10b 证据）；运行时消费待 DEEPSEEK_API_KEY」；FEATURE_MATRIX 边界②措辞同步；README 边界节②加一句。
+- [ ] 先回填批次 10a 的第十五轮（其 VERIFICATION 段漏写，证据 JSON 已在）；实跑 verify-dsh-skills（正控+双负控）；host-loading §4 第 4 条→「activation-tested（见批次 10b 证据）；运行时消费待①，且届时 readRoots 须覆盖技能目录否则运行时测试假失败」；FEATURE_MATRIX「渲染技能宿主消费」DSH 列 planned→activation-tested（运行时消费caveat）；README 边界②措辞更新（机制已验证至激活级=离线；运行时消费归①）并与「离线空间已尽」句协调（如 10a 先例：注明本批为解锁助具性质的重开）。
 - [ ] VERIFICATION 第十六轮 + 0.4.8 + 摘要 → 终审 → 推送 → CI 绿。

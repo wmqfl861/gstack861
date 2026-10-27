@@ -140,3 +140,12 @@ exit=0
 5. **打包形态**：适配器经相对导入 `../policy.mjs`；成为真实 profile 依赖需可安装包（包名 `gstack861-guard`，ESM，包含两文件）。本次用 shim re-export 加载了未改动的源文件；正式安装走 `dsh plugin --profile X add <spec>`（pnpm）或手放 `node_modules` + `dependencies` 声明（两者均已被发现机制接受，前者 [未验证]）。
 6. **配置传递**：条目 `config.policyPath` 原样到达 `apply(ctx, config)`（正/负控实测）；注意 patch 对 `config` 是整值替换，安装片段需一次性写全。
 7. **版本映射**：本机 0.2.1-rc.3 与锁文件提交 `22ddee37...` 的对应关系 [未验证]；升级基线时需先补此映射再做回归。
+
+## 附录（2026-10-27，批次 10b 计划审查补录）：systemPrompt/tools 服务 API [源码]
+
+自本机安装（0.2.1-rc.3，版本↔提交映射仍未验证——第 7 条注意事项不变）的 app.asar 直读：
+
+- `@deepseek-ai/dsh-system-prompt`（lib/index.js + README）：`SystemPrompt extends Service`，提供服务名 `systemPrompt`；消费者以 `inject: ['systemPrompt']` 声明。**对外加性 API**：`section({ name, order, text, interpolate?, complete? })`——在调用上下文注册有序提示节，返回精确 disposer；README「Contribute a prompt section」明示外部贡献可用任意有限 order（示例 order:100）；同名层内重复抛错、非有限 order 抛 TypeError。另有 `context()`（动态事实）、`variable()`、`tools()`（schema 提供者）。`personaPrefix` 是该插件自身配置物化为 `deployment:persona-prefix`（order 0）——**不是**扩展点。
+- `@deepseek-ai/dsh-tools`（lib/index.js）：`ctx.tools.register(definition)` 可注册工具（全局或 agent 作用域，返回 disposer，需 `output { schema, render }`）——真实但重于 section，索引场景不需要。
+- 宿主 `SECTION_ORDERS`（同 asar）：`TOOL_COMPUTER_USE=3000`、`MCP_SERVERS=3100` 等——外部节取 3050 落于其间。
+- 机制裁定：gstack861-skills 插件采用**单一 inject systemPrompt + section(name:'gstack861:skills', order:3050, interpolate:false) + 返回 disposer**；拒绝的替代方案：personaPrefix 搭载（他人配置、无生命周期）、工具注册（需 schema/render，索引场景过重）。
