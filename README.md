@@ -10,7 +10,7 @@
 - [功能与证据矩阵](docs/FEATURE_MATRIX.md)
 - [本轮测试说明及限制](docs/VERIFICATION.md)
 - [精确测试文件摘要](docs/verification-2026-10-26.json)（首轮 Linux）；[Windows 轮](docs/verification-2026-10-26-windows.json)；[M2 基础批次](docs/verification-2026-10-26-m2.json)
-- [后续轮次](docs/verification-2026-10-27-review-fixes.json)：[Windows 验收](docs/verification-2026-10-27-windows-acceptance.json)、[M2 纵向](docs/verification-2026-10-27-m2-vertical.json)、[纵向流程证据](docs/verification-2026-10-27-vertical-zcode.md)、[批次 2](docs/verification-2026-10-27-batch2.json)、[批次 3](docs/verification-2026-10-27-batch3.json)、[批次 4](docs/verification-2026-10-27-batch4.json)、[批次 5](docs/verification-2026-10-27-batch5.json)、[渲染技能消费证据](docs/verification-2026-10-27-render-consumption.md)、[批次 6](docs/verification-2026-10-27-batch6.json)、[安全套件](docs/verification-2026-10-27-safety-suite.md)、[批次 7](docs/verification-2026-10-27-batch7.json)、[工作流套件](docs/verification-2026-10-27-workflow-suite.md)
+- [后续轮次](docs/verification-2026-10-27-review-fixes.json)：[Windows 验收](docs/verification-2026-10-27-windows-acceptance.json)、[M2 纵向](docs/verification-2026-10-27-m2-vertical.json)、[纵向流程证据](docs/verification-2026-10-27-vertical-zcode.md)、[批次 2](docs/verification-2026-10-27-batch2.json)、[批次 3](docs/verification-2026-10-27-batch3.json)、[批次 4](docs/verification-2026-10-27-batch4.json)、[批次 5](docs/verification-2026-10-27-batch5.json)、[渲染技能消费证据](docs/verification-2026-10-27-render-consumption.md)、[批次 6](docs/verification-2026-10-27-batch6.json)、[安全套件](docs/verification-2026-10-27-safety-suite.md)、[批次 7](docs/verification-2026-10-27-batch7.json)、[工作流套件](docs/verification-2026-10-27-workflow-suite.md)、[批次 8](docs/verification-2026-10-27-batch8.json)、[产品套件](docs/verification-2026-10-27-product-suite.md)
 - [M2 基础批次实施计划](docs/plans/2026-10-26-m2-foundation.md)
 - [本机 DSH 真实加载调研](docs/integration/dsh-local-findings.md)
 - [ZCode 受控接入验收手册](docs/integration/zcode-acceptance.md)
@@ -72,6 +72,24 @@ node bin/gstack861.mjs zcode-config --policy /absolute/private/policy.json
 - 执行仅限 `scripts/render-upstream.mjs`，且仅当 `CI=true` **且** `GSTACK861_RENDER=ci` 同时成立（后者是维护者在 CI 同等断言下的受控复现通道）；bun 版本必须恰为 1.4.2。
 - 在 `git archive` 生成的**子模块副本**上执行 overlay（`hosts-overlay/zcode.ts`、`dsh.ts`，注册表字面量拼接），`upstream/gstack` 工作树渲染前后断言 pristine；不运行 `setup`、不安装 Claude Code、不调用模型；渲染路径经审查为零 npm 依赖、零网络。
 - 产物落 `rendered/.zcode` 与 `rendered/.dsh`（每宿主 57 技能 + 根路由 `gstack`），零未解析占位符，附 `render-manifest-<host>.json`；状态为 **rendered-experimental**——不构成上游 conformance/full 认证，安装链接入待后续批次。产物经 CI artifacts（30 天）获取。装载链已接通（0.4.1）：`stage-render --rendered DIR --manifest FILE --host zcode|dsh --staging DIR` 将渲染树转换为 staging（含嵌套 sections/templates 多文件技能，registry 为卸载信任锚），随后走既有 `install`/`uninstall`。本机已用真实 CI 渲染产物实跑全链（57+根 → 安装 58 → 幂等重装 → 卸载清空）。`install --dry-run` 与 `uninstall --dry-run` 提供零变更预检（只读校验集+动作报告，拒绝照常抛错）。宿主装载（ZCode 工作区装载与 DSH 边界）见 [docs/integration/host-loading.md](docs/integration/host-loading.md)。渲染作业仅在 ubuntu 运行——bun 渲染与平台无关，Windows 矩阵只跑离线契约与测试。
+
+## 离线边界（2026-10-27 固化）
+
+截至 2026-10-27，本项目在离线环境（无 API Key、无浏览器栈、无设备、无远端、0 付费调用）内可自主推进的空间已尽。已交付：上游渲染的 CI 受限执行管线（rendered-experimental，零付费调用、零网络渲染路径）、装载链 `stage-render → install → uninstall` 全链实测（含 fixture 工作区装载与幂等重装/卸载清空）、渲染技能宿主消费（累计计数以 `npm run doctor` 报告为准；均非 host_verified，自动拾取未验证）、approvals/tasks/ask 三组原语（操作员 CLI 全量接通，`approvals ask` 无答案绝不自动同意）、install/uninstall dry-run 零变更预检，以及多轮外部独立审查与逐批证据体系（链接见上方开发文档节）。在此边界内，剩余 13 项均受阻于用户解锁或环境，逐项如下：
+
+1. ① DSH 管线+纵向+toolRewrites（缺 DEEPSEEK_API_KEY）。
+2. ② DSH 插件式技能装载机制验证（host-loading §4 第 4 条，独立于①）。
+3. ③ ZCode guard 层+自动拾取+容忍度（需受控新会话）。
+4. ④ 宿主内嵌询问/审批 UI 接通（区别于③）。
+5. ⑤ GBrain 真接入（待①②③）。
+6. ⑥ 浏览器 QA/scrape/qa 组（浏览器栈）。
+7. ⑦ iOS 组（设备）。
+8. ⑧ ship/canary/deploy（远端）。
+9. ⑨ 独立模型复核（显式网关配置，0 付费红线内不跑）。
+10. ⑩ 子 Agent 执行器/取消/恢复接线与纵向真实执行（待①③后按批推进）。
+11. ⑪ 宿主级自动安装/升级/卸载（待③）。
+12. ⑫ make-pdf/diagram 完整产物链（重二进制/浏览器，本批以降级/BLOCKED 如实消费）。
+13. ⑬ M4 多 OS 矩阵与完整对等（前述全部之后）。
 
 ## 安全与状态边界
 
