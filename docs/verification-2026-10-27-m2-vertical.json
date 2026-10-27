@@ -1,0 +1,169 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-27",
+  "round": "m2-vertical",
+  "environment": {
+    "kind": "real-windows-machine",
+    "os": "win32-10.0.22624-x64",
+    "node": "v24.21.0",
+    "shell": "git-bash"
+  },
+  "plan": "docs/plans/2026-10-27-m2-vertical.md",
+  "process": "plan independently reviewed (GNU-diff parser design rejected, recalibrated to V4A per pinned host source); three parallel lanes in git worktrees; per-lane independent reviews; ZCode-host vertical flow executed by the live session with an independent review subagent",
+  "commands": [
+    {
+      "command": "npm test",
+      "result": "passed",
+      "tests": 139,
+      "failed": 0,
+      "added": "policy expressiveness 9, minors-2 + CLIs 15"
+    },
+    {
+      "command": "npm run doctor",
+      "result": "passed",
+      "version": "0.3.0"
+    },
+    {
+      "command": "node scripts/verify-dsh-guard.mjs",
+      "result": "exit 2 blocked (DEEPSEEK_API_KEY absent; zero paid calls; keyed-path offline prefix independently reproduced by implementer and reviewer)"
+    },
+    {
+      "command": "node scripts/verify-8dot3.mjs (both volumes)",
+      "result": "no alias bypass, exit 0"
+    },
+    {
+      "command": "ZCode vertical flow (spec/plan/implement/review/qa/approval/ship)",
+      "result": "all phases passed for real; tag v0.1.0; evidence: docs/verification-2026-10-27-vertical-zcode.md"
+    }
+  ],
+  "laneReviews": {
+    "lane-a-policy-expressiveness": "approved; hash byte-compat independently reproduced against base compiler; 2 interpretation rulings accepted",
+    "lane-b-minors-clis": "approved; verify read-only, digest red line, zero-write guarantees verified against source; 2 test modifications are value-source changes",
+    "lane-c-runbook-script": "approved; blocked path exit 2 verified; 4 cross-lane stale runbook spots synced by coordinator (efc5679)"
+  },
+  "paidModelCalls": 0,
+  "knownBoundaries": [
+    "TaskStore and ApprovalStore must not share one --state directory (tasks list fails INVALID_TASK_RECORD on foreign records); fix deferred to batch 2",
+    "DSH pipeline-level verification blocked pending DEEPSEEK_API_KEY (readiness script committed, exit-2 convention)",
+    "ZCode guard-layer host verification pending controlled new session per docs/integration/zcode-acceptance.md",
+    "vertical ship is a fixture-level analog (commit+tag), no deploy stage"
+  ],
+  "hostCertification": {
+    "zcode": "workflow-level-evidence-only",
+    "dsh": "activation-tested-only"
+  },
+  "macOS": "not-run",
+  "testedFiles": [
+    {
+      "path": "bin/gstack861.mjs",
+      "gitBlobSha1": "5730295aa636b1bb0672f072864802f2c0d3a88d",
+      "sha256": "1d5988e473725aa15c7b3d4a9b30f97752cbe02b6e1c817c97385280746a1b2d"
+    },
+    {
+      "path": "package.json",
+      "gitBlobSha1": "8ab65867997ee2d52e7cbb264fad8ba31794749e",
+      "sha256": "b0030cba15ec2d66f987ded46fd3df1f8532e9b557ce98cacd2f1912c727bbd9"
+    },
+    {
+      "path": "scripts/check.mjs",
+      "gitBlobSha1": "aa764e9f32aebebdf63b7839a2d0292d08815d05",
+      "sha256": "3f26d7c520847d1497f7386ec75265a2aa620fb782057105810799c43f09092c"
+    },
+    {
+      "path": "src/adapters/dsh.mjs",
+      "gitBlobSha1": "92b2188912f2781ca414fa8e8ba5078597ee907e",
+      "sha256": "44caf2c956880e0a2b9ca18403ddb9c079e5c287801d206a07d8a6a0bc0d8951"
+    },
+    {
+      "path": "src/adapters/zcode.mjs",
+      "gitBlobSha1": "b7114814e96673bcbd976ecf8041300ed2bef584",
+      "sha256": "9c0a2816d566f5fcde05ad0ced1f4dfb2d4e00216d268e39bfd001adf52dc41d"
+    },
+    {
+      "path": "src/approvals.mjs",
+      "gitBlobSha1": "94ce1b3c3d38456f2b0b321b233885a5511e84e1",
+      "sha256": "86612f4e4933097d95016dd684565cd8e0b9072027faf074688629fc45f76622"
+    },
+    {
+      "path": "src/generate.mjs",
+      "gitBlobSha1": "f9b7d1fd1ba31be854a33a8156b59beb0666ad93",
+      "sha256": "157428893258482e515ff49e1ea197eec7da7be6ca90cf3c4a3b5a3421063082"
+    },
+    {
+      "path": "src/install.mjs",
+      "gitBlobSha1": "a1adc156732b8de3ff8414cd3a09933eb2b92399",
+      "sha256": "c7d879aed9dce75465f2343b2874070bc0b9630ae6e19fe877239ece5bad9548"
+    },
+    {
+      "path": "src/inventory.mjs",
+      "gitBlobSha1": "4b85abf4b2ded7869cd4651ad97f2cf00d27740a",
+      "sha256": "9cd67419fad067a5726e93d1d2c33f76a79f6e66253d4ce3051c23a25e8d2545"
+    },
+    {
+      "path": "src/json.mjs",
+      "gitBlobSha1": "e8723b9857ef3b044a38d13f225d85e71cce81a6",
+      "sha256": "f1865cee2953f68fe6330544b3f0ce7db8f6b00d5a55327d59de2f348c83bb8e"
+    },
+    {
+      "path": "src/policy.mjs",
+      "gitBlobSha1": "788610f8e3cdc65fedfe104623a40f37d4e2cd83",
+      "sha256": "0cd21cc1abaf17d6f09b18936e70ac741b0c93c8d4a8ab262f156225860507e0"
+    },
+    {
+      "path": "src/tasks.mjs",
+      "gitBlobSha1": "7ba73c2250ccecbe33fe19623628f05032b125aa",
+      "sha256": "f2f6235bf9da35b1ce722d8f11b761a8474e8f9e6080e704b08c0b1b84faf608"
+    },
+    {
+      "path": "test/adapters.test.mjs",
+      "gitBlobSha1": "d153f65bb1c1101f34393cab3a79b5f7c5cf78d5",
+      "sha256": "7ffce953bdfa99d3693dd6c6172caef2fa6d008ffc696e8e1ccc599a142abe5a"
+    },
+    {
+      "path": "test/approvals.test.mjs",
+      "gitBlobSha1": "679a136075a7c8d511a7709eb1b568c7645dc431",
+      "sha256": "0dacb18f78069a0f03b64334ad9e1fcf76d0c6ca11df65bf446642746b7f3d98"
+    },
+    {
+      "path": "test/generate.test.mjs",
+      "gitBlobSha1": "52c468560826981e7de15ccf82de67447ef37ef6",
+      "sha256": "fb536d7c667cebf7c6c13a239086cbb0a6be063829820f643dc9b870630aa5a8"
+    },
+    {
+      "path": "test/helpers.mjs",
+      "gitBlobSha1": "a9f9eb6a69043bf912e489f559fa70320031e6bc",
+      "sha256": "a1e0661b4bff12311dbe334ca86b03d71523c551d0fc2c7a6fa8e62f1d26aea7"
+    },
+    {
+      "path": "test/install.test.mjs",
+      "gitBlobSha1": "3107c863a86361c63bb081e7d58c555f98ab7aaa",
+      "sha256": "088aa1c0290e5d56577bea80a36b649c678fe2f96be218722b2011c34750ebe0"
+    },
+    {
+      "path": "test/inventory.test.mjs",
+      "gitBlobSha1": "78a3d8c034452611553d31106d25b5a02fa6dfc9",
+      "sha256": "d638c5bfc0d926056b05a5ccae28647d2b05d2139c3069b373d97acc81f932c2"
+    },
+    {
+      "path": "test/json.test.mjs",
+      "gitBlobSha1": "2cc1b0f2b5b93fd457e017a257db450be7d0cf0f",
+      "sha256": "576fea350051d411e460fb2eb0bd45467c34120ac5b39f072f2060a9af54ac39"
+    },
+    {
+      "path": "test/policy.test.mjs",
+      "gitBlobSha1": "15ce5297b06c51982ccb76b26455b5e460a47b79",
+      "sha256": "cae6d00abb2d03b3a9a357bee1ec703ae1355e101fd85360e8a79ceb4c309daa"
+    },
+    {
+      "path": "test/tasks.test.mjs",
+      "gitBlobSha1": "cd6b6330f04fe6197daf63514b027689aca5c807",
+      "sha256": "37616faab47a966968f7dba3bb9d486ca150bb84ac8a23215dc424b29661085e"
+    },
+    {
+      "path": "upstream.lock.json",
+      "gitBlobSha1": "31332137cf1bf980b25ca044208a9c53adb70edc",
+      "sha256": "160e2ca165946815dbec63ed39df1cc3be6c756536282012546b97d2fbf483dc"
+    }
+  ],
+  "digestMethod": "git ls-tree/show at HEAD commit (repository blob bytes, LF); independent of platform autocrlf"
+}

@@ -173,3 +173,33 @@ Codex 以真实探针验证了 12 个场景（探针脚本与输出见其会话�
 ## 下一验收
 
 不变：真实宿主离线集成与纵向流程；审查第 6、7、9、10 条设计项待用户决策（见计划 Deferred 节）。
+
+# 第六轮验证记录：M2 纵向批次（2026-10-27）
+
+范围：0.3.0。按 `docs/plans/2026-10-27-m2-vertical.md`（计划经独立子代理审核——否决了 GNU diff 解析器设计并按固定提交宿主源码校准为 V4A 信封）以三车道 git worktree 并行开发：策略表达力（ApplyPatch V4A 解析 + 按参数区分 effect）、次要批二与 approvals/tasks CLI、ZCode 验收手册与 DSH 就绪脚本；合并后**ZCode 宿主真实纵向流程**（见 `docs/verification-2026-10-27-vertical-zcode.md`）。付费模型调用：0 次（DSH 密钥缺失，就绪脚本实测 exit 2 blocked）。
+
+## 实际运行
+
+环境：真实 Windows 本机（win32 10.0.22624 x64），Node.js v24.21.0。
+
+| 命令 | 结果 |
+|---|---|
+| `npm test` | 139/139（新增 24：V4A/参数 effect 9、次要批 15） |
+| `npm run check` | exit 0（HEAD 证据门禁为警告态，按审查第 11 条以 CI 为门槛） |
+| `npm run doctor` | 成功，版本 0.3.0 |
+| `node scripts/verify-dsh-guard.mjs` | **exit 2 blocked**（DEEPSEEK_API_KEY 缺失；付费路径离线前缀已被实现者与审查者分别实测复现） |
+| `node scripts/verify-8dot3.mjs`（两卷） | 均 `no alias bypass`，exit 0 |
+| 纵向流程（六阶段+审批+tag） | 全部真实通过，见专项证据文档 |
+
+## 三车道审查结论
+
+Lane A（策略表达力）approved——hash 字节兼容性经审查者对照基线编译器独立复现；GNU 前缀剥离与过度提取两项解释裁定为安全方向正确。Lane B（次要批+CLI）approved——`verify` 只读性、摘要红线、零写入结构保证均对照源码核实；两处测试修改为值来源变更（阈值 1→4MiB、--commit→环境变量），断言强度不减。Lane C（手册+脚本）approved——blocked 路径实测 exit 2、付费路径离线前缀审查者复跑通过；runbook 四处跨车道过期表述已由协调者同步（`efc5679`）。
+
+## 新发现（真实使用暴露，已记录待决）
+
+- TaskStore 与 ApprovalStore 共用状态目录 → `tasks list` 因外来记录 `INVALID_TASK_RECORD` 整体拒绝（fail-closed 不可用）；修复方向留批次 2。
+- 其余 Deferred 见计划文档与本轮新增：DSH 管线级验证待密钥；ZCode guard 层宿主验证待受控新会话；原生询问接线、DSH 纵向流程留批次 2。
+
+## 下一验收
+
+批次 2：defineHost 方向裁定与实施（蓝图第 1 节「先复用上游工具」为据）；共享状态目录缺陷修复；原生询问接线；DSH 纵向（待密钥）。
