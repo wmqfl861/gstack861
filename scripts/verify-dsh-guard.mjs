@@ -12,10 +12,11 @@
 // adapter unchanged through a shim package (gstack861-guard re-export, per findings smoke),
 // composes the guard entry into the profile patch layer, runs an OFFLINE composition check
 // (--dump-config, key stripped from that child's env), then launches EXACTLY ONE real task.
-// The task prompt is hard-capped in code at 200 chars and contains a single instruction, so
-// the run makes exactly ONE paid task request; the host may additionally issue its usual tiny
-// effort-off session-title request (session-title-first-prompt-llm is part of the shipped
-// template). DSH_PERMISSION_MODE=danger-full-access is set for the task child only: with the
+// Turn semantics, stated honestly: single-task semantics come from the headless profile —
+// in-task agentic rounds are NOT hard-capped. The task prompt is hard-capped in code at 200
+// chars and contains a single instruction, so paid cost is bounded by ONE minimal task; the
+// host may additionally issue its usual tiny effort-off session-title request
+// (session-title-first-prompt-llm is part of the shipped template). DSH_PERMISSION_MODE=danger-full-access is set for the task child only: with the
 // shipped preset, approval becomes 'never' and the host pre-execute layer allows everything,
 // which is required because the guard is only consulted AFTER pre-execute allows (findings
 // §ctx.tools.guard). The guard must then be the layer that denies the single out-of-scope
@@ -77,46 +78,58 @@ function dsh(install, root, args, keyed, cwd, timeoutMs) {
 export function prepare(repoRoot) {
   const install = dshInstall();
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'g861-dsh-'));
-  const workspace = path.join(root, 'workspace');
-  fs.mkdirSync(workspace, { recursive: true });
-  const seed = dsh(install, root, ['--profile', PROFILE, '--from-default-profile', 'headless', '--dump-config'], false, workspace, OFFLINE_TIMEOUT_MS);
-  if (seed.status !== 0) { fs.rmSync(root, { recursive: true, force: true }); throw new Error(`seeding profile from headless template failed (exit ${seed.status}):\n${seed.stderr || seed.stdout}`); }
-  const profile = path.join(root, 'home', 'profiles', PROFILE);
+  // EVERY step after mkdtemp is wrapped: on any throw the throwaway root is removed HERE and
+  // the error rethrown, because main()'s finally only cleans up roots that prepare() returned
+  // (an in-flight throw would otherwise leave `prepared` undefined and leak the temp dir).
+  try {
+    const workspace = path.join(root, 'workspace');
+    fs.mkdirSync(workspace, { recursive: true });
+    // Probe parent dir, created up-front (before the keyed run): without it the write tool
+    // could fail on the missing directory even when the guard lets it through, and main()'s
+    // secondary leak assertion (probe file exists) would be dead code — never able to fire.
+    fs.mkdirSync(path.join(root, 'outside'), { recursive: true });
+    const seed = dsh(install, root, ['--profile', PROFILE, '--from-default-profile', 'headless', '--dump-config'], false, workspace, OFFLINE_TIMEOUT_MS);
+    if (seed.status !== 0) throw new Error(`seeding profile from headless template failed (exit ${seed.status}):\n${seed.stderr || seed.stdout}`);
+    const profile = path.join(root, 'home', 'profiles', PROFILE);
 
-  // Policy: workspace-wide read/write inside the temp workspace; the probe file lives OUTSIDE it.
-  const policyPath = path.join(root, 'policy.json');
-  fs.writeFileSync(policyPath, JSON.stringify({
-    schemaVersion: 1, workspace: fwd(workspace),
-    readRoots: [fwd(workspace)], writeRoots: [fwd(workspace)], protectedRoots: [],
-    // Real DSH file tool names/params per the pinned-commit tool list (review §二.10).
-    bindings: { zcode: {}, dsh: {
-      read: { effect: 'read', pathKey: 'file_path' },
-      write: { effect: 'write', pathKey: 'file_path' },
-      edit: { effect: 'write', pathKey: 'file_path' },
-    } },
-  }, null, 2) + '\n');
+    // Policy: workspace-wide read/write inside the temp workspace; the probe file lives OUTSIDE it.
+    const policyPath = path.join(root, 'policy.json');
+    fs.writeFileSync(policyPath, JSON.stringify({
+      schemaVersion: 1, workspace: fwd(workspace),
+      readRoots: [fwd(workspace)], writeRoots: [fwd(workspace)], protectedRoots: [],
+      // Real DSH file tool names/params per the pinned-commit tool list (review §二.10).
+      bindings: { zcode: {}, dsh: {
+        read: { effect: 'read', pathKey: 'file_path' },
+        write: { effect: 'write', pathKey: 'file_path' },
+        edit: { effect: 'write', pathKey: 'file_path' },
+      } },
+    }, null, 2) + '\n');
 
-  // Patch layer: the seeded layer is an empty list `[]`; replace it with an insert entry
-  // (appending after `[]` is invalid YAML, and an unknown bare id is a "not found" error).
-  fs.writeFileSync(path.join(profile, 'cordis.patch.yml'), [
-    '- insert:',
-    `    - id: ${GUARD}`,
-    `      name: '${GUARD}'`,
-    '      config:',
-    `        policyPath: '${fwd(policyPath)}'`,
-    '',
-  ].join('\n'));
+    // Patch layer: the seeded layer is an empty list `[]`; replace it with an insert entry
+    // (appending after `[]` is invalid YAML, and an unknown bare id is a "not found" error).
+    fs.writeFileSync(path.join(profile, 'cordis.patch.yml'), [
+      '- insert:',
+      `    - id: ${GUARD}`,
+      `      name: '${GUARD}'`,
+      '      config:',
+      `        policyPath: '${fwd(policyPath)}'`,
+      '',
+    ].join('\n'));
 
-  // Shim package re-exporting the repository adapter unchanged (findings smoke form).
-  const pkgPath = path.join(profile, 'package.json');
-  const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
-  pkg.dependencies = { ...(pkg.dependencies ?? {}), [GUARD]: '*' };
-  fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
-  const shim = path.join(profile, 'node_modules', GUARD);
-  fs.mkdirSync(shim, { recursive: true });
-  fs.writeFileSync(path.join(shim, 'package.json'), JSON.stringify({ name: GUARD, version: '0.0.0', type: 'module', main: 'index.mjs' }, null, 2) + '\n');
-  fs.writeFileSync(path.join(shim, 'index.mjs'), `export * from '${pathToFileURL(path.join(repoRoot, 'src', 'adapters', 'dsh.mjs')).href}';\n`);
-  return { root, workspace, probePath: path.join(root, 'outside', 'probe.txt'), policyPath };
+    // Shim package re-exporting the repository adapter unchanged (findings smoke form).
+    const pkgPath = path.join(profile, 'package.json');
+    const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+    pkg.dependencies = { ...(pkg.dependencies ?? {}), [GUARD]: '*' };
+    fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
+    const shim = path.join(profile, 'node_modules', GUARD);
+    fs.mkdirSync(shim, { recursive: true });
+    fs.writeFileSync(path.join(shim, 'package.json'), JSON.stringify({ name: GUARD, version: '0.0.0', type: 'module', main: 'index.mjs' }, null, 2) + '\n');
+    fs.writeFileSync(path.join(shim, 'index.mjs'), `export * from '${pathToFileURL(path.join(repoRoot, 'src', 'adapters', 'dsh.mjs')).href}';\n`);
+    return { root, workspace, probePath: path.join(root, 'outside', 'probe.txt'), policyPath };
+  } catch (error) {
+    fs.rmSync(root, { recursive: true, force: true });
+    throw error;
+  }
 }
 
 /** Offline composition check: the composed tree must contain the guard entry AND the agent stack. */
@@ -153,6 +166,8 @@ function blocked() {
   console.log('    与 upstream.lock.json 固定提交 22ddee3792402c3e70ec5f86a63c3e3e895a2f60 的对应关系未验证；升级基线前需先补');
   console.log('    commit↔版本映射并回归本脚本。');
   console.log('(c) 本次未发生任何付费模型调用（密钥缺失即阻塞，未启动任何 DSH 进程）。');
+  console.log('(d) 回合语义（供后续带密钥实跑参考，如实说明）：单任务语义来自 headless 模板；任务内 agentic');
+  console.log('    轮数并非硬性上限。付费成本以单个最小任务为界（提示词 ≤200 字符，由代码强制）。');
   console.log('exit 2（blocked；0=通过 / 1=失败 / 2=受阻待密钥）');
   process.exitCode = 2;
 }
@@ -162,7 +177,7 @@ async function main() {
   const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
   let prepared;
   try {
-    console.log('verify-dsh-guard: key present — isolated pipeline check with EXACTLY ONE paid task call.');
+    console.log('verify-dsh-guard: key present — isolated pipeline check: ONE paid task, minimal prompt (in-task agentic rounds not hard-capped; see header).');
     console.log('[1/3] building isolated DSH_HOME + seeding profile from shipped headless template (offline)...');
     prepared = prepare(repoRoot);
     console.log(`      ok (throwaway root: ${prepared.root}；~/.dsh 不被读取或写入)`);
