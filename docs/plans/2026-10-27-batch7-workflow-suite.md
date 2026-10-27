@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development. 计划按本地规则先经独立子代理审核。复用已验证消费模式（累计 5 例）。三目标技能均含自身 Degraded mode 条款；learn/retro 引用 GBrain（gstack 记忆系统）——本仓库未实现，按「机制差距如实+替代产物」处理。
 
-**Goal:** (1) 消费 `learn`（对批次 6 的 careful 拒绝事件捕获教训——GBrain 未实现，教训以结构化记录落 fixture 仓库 `.gstack-memory/`，差距如实）、`retro`（对 fixture 仓 whole 周期做回顾，产出其规定的回顾报告）、`test-audit`（审计 fixture 测试缺口，产出审计发现）；(2) `uninstall --dry-run`（与 install 对称，只读校验+报告）；(3) 文档滞后清偿（README batch6 链接、矩阵行准备）。版本 0.4.4。
+**Goal:** (1) 消费 `learn`（对批次 6 的 careful 拒绝事件按 learn 自身规定的捕获 schema（gstack-learnings-log JSON：{skill,type,key,insight,confidence,source,files}）记录——GBrain/learnings 二进制未实现，替代产物落 fixture 仓库 `.gstack-memory/lessons.jsonl` 并明标非 GBrain；source 用其证据枚举（observed））、`retro`（按其 Steps 0-14 框架与规定章节（tweetable 摘要/Summary Table/Trends/各维信号/3 Things to Improve 等）对 fixture 周期产出回顾报告；metrics 二进制缺失走其明文降级路径（never invent values，如实披露）；**Step 13 规定的 JSON 快照真实写入 fixture `.context/retros/<date>-<N>.json`**）、`test-audit`（按其**测试价值**方法论——低价值目录/四问价值条/退役卡/裁决 retire-rewrite-extend-retain——审计 fixture 测试；NaN 分支发现以其词汇表述（no_claim/断言强度→rewrite/extend 裁决）；报告路径的 $GSTACK_STATE_ROOT/gstack-paths 依赖缺失→替代路径披露+validation not run 如实标注）；(2) `uninstall --dry-run`（与 install 对称；**镜像真实卸载序列**：目标校验（缺失目标→空报告不抛错）→ regularFile 注册表检查（缺失→空报告）→ loadRegistry → 逐技能 verifyOwned（抛错保留）→ purge 只读预演列表；**不含 assertRegistryPathSafe**——真实卸载从不调用它）；(3) 文档滞后清偿（README batch6 链接、矩阵行准备）。版本 0.4.4。
 
 **Architecture:** Lane A（文档）与 Lane B（代码：install.mjs+bin+测试）不相交；Task 3 消费+证据+终审推送。
 
@@ -37,9 +37,9 @@
 **Files:** `src/install.mjs`、`bin/gstack861.mjs`、`test/install.test.mjs`
 
 **Interfaces:**
-- `uninstallSkills({ target, purge, dryRun })`：dryRun=true 时执行只读校验集——validateTarget、assertRegistryPathSafe、loadRegistry、逐技能 verifyOwned（registry 为锚）+ purge 的只读清理预演（若 purge：列出将被清理的备份项=13 位命名+manifest 校验者，不删）——返回 `{ dryRun: true, wouldUninstall: [names], wouldPurge: [names], refusals? }`：verifyOwned 拒绝场景照常抛错（不吞）；refusals 字段删除（拒绝即抛错，报告只含会成功的动作）。跳过锁、跳过全部删除/注册表写入。
+- `uninstallSkills({ target, purge, dryRun })`：dryRun=true 时**镜像真实序列**（插入点=目标校验块后、withInstallLock 前）：目标字符串/绝对/符号链接检查（缺失目标→`{dryRun:true,wouldUninstall:[],wouldPurge:[]}` 空报告不抛错，与真实行为一致）→ regularFile 注册表（缺失→空报告）→ loadRegistry+去重 → 逐技能 verifyOwned（registry 为锚，抛错照常不吞）→ 若 purge：只读列出将被清理的备份项（命名 `/^[a-z0-9][a-z0-9-]*-d{13,}$/`（13 位及以上）**且** manifest.generator===gstack861；损坏 manifest 保留）并计算备份根是否会清空。返回 `{ dryRun: true, wouldUninstall, wouldPurge }`——**wouldUninstall=[...recorded.keys()]（含已缺失目录的注册名，镜像真实返回）**。跳过锁（不报 INSTALL_BUSY、可能陈旧——证据注明）、跳过全部删除与注册表写入。
 - CLI：`uninstall --target DIR [--purge] [--dry-run]`。
-- 测试：已安装 target dry-run 报告全量+零变更（目录/注册表字节不变）；漂移目录（用户改动）dry-run 照常 USER_FILE_REFUSED；purge dry-run 报告将清理项且保留用户归档；空注册表 dry-run 空报告不抛；正常 uninstall 行为零变化。
+- 测试：已安装 target dry-run 报告全量+零变更（目录/注册表字节不变）；注册但目录已缺失→计入 wouldUninstall（镜像 install.test.mjs:609 的真实语义）；漂移目录 dry-run 照常 USER_FILE_REFUSED；purge dry-run 报告将清理项、保留用户归档与损坏 manifest 项、报告根是否清空；缺失目标与缺失注册表→空报告不抛；符号链接/junction 目标→INVALID_TARGET 零写入（平台对偶）；CLI `uninstall --dry-run` 报告形状；正常 uninstall 行为零变化。
 
 - [ ] 失败测试 → 确认失败 → 实现 → 全绿 → 提交（分支 `b7-lane-b`）：`feat: uninstall --dry-run validates and reports without removing`
 
