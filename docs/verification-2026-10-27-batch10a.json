@@ -1,0 +1,183 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-27",
+  "round": "batch10a-acceptance-pack",
+  "environment": {
+    "kind": "real-windows-machine",
+    "os": "win32-10.0.22624-x64",
+    "node": "v24.21.0",
+    "shell": "git-bash"
+  },
+  "plan": "docs/plans/2026-10-27-batch10a-acceptance-pack.md",
+  "process": "plan reviewed (5 required changes, scope ruling: unlock enablement does not violate the exhausted-offline boundary); single-lane implementation; independent lane review approved incl. disclosure ruling (manual defect handled honestly)",
+  "commands": [
+    {
+      "command": "npm test",
+      "result": "passed",
+      "tests": 218,
+      "failed": 0,
+      "added": 6
+    },
+    {
+      "command": "acceptance-pack smoke (real CLI)",
+      "result": "pack generated; three baked probes ran verbatim: allow exit 0, OUTSIDE_SCOPE deny exit 2, deny exit 2; §6 A-H and §2.4 A/B quoting byte-compared to manuals"
+    },
+    {
+      "command": "manual defect fix",
+      "result": "zcode-acceptance probe-3/row-D corrected: writeRoots=[src] yields OUTSIDE_SCOPE (repo semantics); PROTECTED_PATH documented for whole-workspace writeRoots"
+    }
+  ],
+  "paidModelCalls": 0,
+  "knownBoundaries": [
+    "both unlocks remain user-side and unchanged; acceptance-pack reduces unlock-B friction only",
+    "13-item boundary list untouched; no FEATURE_MATRIX changes; not-host-verified stands"
+  ],
+  "hostCertification": {
+    "zcode": "workflow-level-evidence-only",
+    "dsh": "activation-tested-only"
+  },
+  "macOS": "not-run",
+  "testedFiles": [
+    {
+      "path": "hosts-overlay/dsh.ts",
+      "gitBlobSha1": "0a36dd31e43b15f4e877b828a8fea10126bf706b",
+      "sha256": "f8cd2b0c6f521005fe2a1a6ec4a948736c0368a5211b663d4c58bdec2a97c33d"
+    },
+    {
+      "path": "hosts-overlay/zcode.ts",
+      "gitBlobSha1": "2e7351c355993e65ccb42b636c72e4d8c1a5f66c",
+      "sha256": "e42a31f23a11a415e4b73e2096302e00972ad3ee0e2735f6717b23cb3c5b6ab4"
+    },
+    {
+      "path": "scripts/render-upstream.mjs",
+      "gitBlobSha1": "7e13e88bc463be61e827fd92f62b51b36d28272e",
+      "sha256": "aafd00a2e082195201042dad6efb9d07a956fb86db6147e43d00aeefa4028722"
+    },
+    {
+      "path": "src/stage.mjs",
+      "gitBlobSha1": "7f2cf73759b0885c652b89e28d3e3da59689080a",
+      "sha256": "58036e95958ee0d3798fcc8f441d22d7a76425298493e2c58e9b1480c2c46b63"
+    },
+    {
+      "path": "bin/gstack861.mjs",
+      "gitBlobSha1": "f73dcabefbbe631861d2e762d645eada4c955630",
+      "sha256": "4f5561af5de6c7e931c842b2281182dacb6b56668f10b477f76077800f469265"
+    },
+    {
+      "path": "package.json",
+      "gitBlobSha1": "339ea57f9b8f4e4467a1832484ce2311da9db368",
+      "sha256": "04c2a4a16ae8ab043d33d991a507eeff5950388fd7d3c4fcd7f56a82abad8529"
+    },
+    {
+      "path": "scripts/check.mjs",
+      "gitBlobSha1": "aa764e9f32aebebdf63b7839a2d0292d08815d05",
+      "sha256": "3f26d7c520847d1497f7386ec75265a2aa620fb782057105810799c43f09092c"
+    },
+    {
+      "path": "src/adapters/dsh.mjs",
+      "gitBlobSha1": "92b2188912f2781ca414fa8e8ba5078597ee907e",
+      "sha256": "44caf2c956880e0a2b9ca18403ddb9c079e5c287801d206a07d8a6a0bc0d8951"
+    },
+    {
+      "path": "src/adapters/zcode.mjs",
+      "gitBlobSha1": "b7114814e96673bcbd976ecf8041300ed2bef584",
+      "sha256": "9c0a2816d566f5fcde05ad0ced1f4dfb2d4e00216d268e39bfd001adf52dc41d"
+    },
+    {
+      "path": "src/approvals.mjs",
+      "gitBlobSha1": "34e6b3755e4f9f4b9e078ab34d83a6b30e60ebf5",
+      "sha256": "dcb2bf689df1cb48ef90651750b57f5e0d280f16ce335b8d4272503f1dbf56c0"
+    },
+    {
+      "path": "src/generate.mjs",
+      "gitBlobSha1": "9bd6e9e7cb094813229fcc4b8bdea2aaf783bc63",
+      "sha256": "80d699020e3341115231ca6d7f7c0b1894cb56d9dd06d71d37f47f96dfbb45b9"
+    },
+    {
+      "path": "src/install.mjs",
+      "gitBlobSha1": "6bb60b8a062da298d43155227088cd09403a77bc",
+      "sha256": "7d60569f3c61e358ab2e6c28cf8c75d0e2d5a63a4575329ff59761b8c88bb1d9"
+    },
+    {
+      "path": "src/inventory.mjs",
+      "gitBlobSha1": "4b85abf4b2ded7869cd4651ad97f2cf00d27740a",
+      "sha256": "9cd67419fad067a5726e93d1d2c33f76a79f6e66253d4ce3051c23a25e8d2545"
+    },
+    {
+      "path": "src/json.mjs",
+      "gitBlobSha1": "e8723b9857ef3b044a38d13f225d85e71cce81a6",
+      "sha256": "f1865cee2953f68fe6330544b3f0ce7db8f6b00d5a55327d59de2f348c83bb8e"
+    },
+    {
+      "path": "src/policy.mjs",
+      "gitBlobSha1": "788610f8e3cdc65fedfe104623a40f37d4e2cd83",
+      "sha256": "0cd21cc1abaf17d6f09b18936e70ac741b0c93c8d4a8ab262f156225860507e0"
+    },
+    {
+      "path": "src/tasks.mjs",
+      "gitBlobSha1": "fa9e9614d65fde7b780f36025e17d75b1d8de63c",
+      "sha256": "d8b9554cea84cc57eae203416dd3ff5da31f7a6637de5a9327572af404c8e2c3"
+    },
+    {
+      "path": "test/adapters.test.mjs",
+      "gitBlobSha1": "d0a38cf80e089b44d20d75bbeed9e9f905ab7f4e",
+      "sha256": "cddee3ee111a96790e074bab8b2740c21858f0d35520e48c4acc98afffd7fe98"
+    },
+    {
+      "path": "test/approvals.test.mjs",
+      "gitBlobSha1": "4cdeb487dc16357d7ed525a54c6f1a91977ce7e6",
+      "sha256": "22e47bb49bf62bb20218b602e788d762756616bd680e71d7463bd656b5c762dc"
+    },
+    {
+      "path": "test/generate.test.mjs",
+      "gitBlobSha1": "7e912a99e831858b53ce0ea139f0d70c4c2bd3f5",
+      "sha256": "3825d43fb1811c66998c6ef06a1eb09b52e1bfe4e34a03f856c6f558e308a3ee"
+    },
+    {
+      "path": "test/helpers.mjs",
+      "gitBlobSha1": "a9f9eb6a69043bf912e489f559fa70320031e6bc",
+      "sha256": "a1e0661b4bff12311dbe334ca86b03d71523c551d0fc2c7a6fa8e62f1d26aea7"
+    },
+    {
+      "path": "test/install.test.mjs",
+      "gitBlobSha1": "a2c118ba066cbae898f525908f4b38a571bdfa37",
+      "sha256": "23d7ca246194b1eaab63c98f8331349c64c19443a6570c589dc0ed10f1a943ed"
+    },
+    {
+      "path": "test/inventory.test.mjs",
+      "gitBlobSha1": "78a3d8c034452611553d31106d25b5a02fa6dfc9",
+      "sha256": "d638c5bfc0d926056b05a5ccae28647d2b05d2139c3069b373d97acc81f932c2"
+    },
+    {
+      "path": "test/json.test.mjs",
+      "gitBlobSha1": "2cc1b0f2b5b93fd457e017a257db450be7d0cf0f",
+      "sha256": "576fea350051d411e460fb2eb0bd45467c34120ac5b39f072f2060a9af54ac39"
+    },
+    {
+      "path": "test/policy.test.mjs",
+      "gitBlobSha1": "15ce5297b06c51982ccb76b26455b5e460a47b79",
+      "sha256": "cae6d00abb2d03b3a9a357bee1ec703ae1355e101fd85360e8a79ceb4c309daa"
+    },
+    {
+      "path": "test/render-upstream.test.mjs",
+      "gitBlobSha1": "f063b784d2079424fe8df2de4c98656444ea8a6f",
+      "sha256": "5f7c08f6a85f6bf60835d225031ffe5b533fa74e119deb4d3227385f4ab40256"
+    },
+    {
+      "path": "test/stage.test.mjs",
+      "gitBlobSha1": "eef209f6399ab5b9d1cec252b011b9cb622036d3",
+      "sha256": "9a1a349ad3d7791f9c584ccadb1674543eb523a21afb0b3e768a4d0c08b5b7c4"
+    },
+    {
+      "path": "test/tasks.test.mjs",
+      "gitBlobSha1": "c65e17ea8f82faef0498f0743f0a0e7bfca171df",
+      "sha256": "5da9e384c94710465654f9285e1acac4375d229c03964ed00c5013794aae6981"
+    },
+    {
+      "path": "upstream.lock.json",
+      "gitBlobSha1": "31332137cf1bf980b25ca044208a9c53adb70edc",
+      "sha256": "160e2ca165946815dbec63ed39df1cc3be6c756536282012546b97d2fbf483dc"
+    }
+  ],
+  "digestMethod": "git ls-tree/show at HEAD commit (repository blob bytes, LF); independent of platform autocrlf"
+}

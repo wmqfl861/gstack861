@@ -110,7 +110,7 @@ echo '{"hook_event_name":"PreToolUse","tool_name":"Write","tool_input":{"file_pa
 echo '{"hook_event_name":"PreToolUse","tool_name":"Write","tool_input":{"file_path":"/absolute/experiment-workspace/notes.txt"}}' \
   | node bin/gstack861.mjs hook zcode --policy /absolute/private/policy.json; echo "exit=$?"
 
-# 受 VCS 保护路径：应 deny gstack861:PROTECTED_PATH 且 exit 2
+# 受 VCS 保护路径：应 deny 且 exit 2——本样例策略 writeRoots=[src] 时码为 OUTSIDE_SCOPE（src/policy.mjs 先查写根后查保护根）；要观察 PROTECTED_PATH 本码，把样例策略 writeRoots 改为整个 workspace 后重试（policy.test.mjs「VCS metadata remains protected...」即此情形）
 echo '{"hook_event_name":"PreToolUse","tool_name":"Write","tool_input":{"file_path":"/absolute/experiment-workspace/.git/config"}}' \
   | node bin/gstack861.mjs hook zcode --policy /absolute/private/policy.json; echo "exit=$?"
 ```
@@ -141,7 +141,7 @@ echo '{"hook_event_name":"PreToolUse","tool_name":"Write","tool_input":{"file_pa
 | A | 安装生效 | 完成第 4 节后在新会话发起一次范围内 Read | 宿主加载了 Hook（无启动报错）；读取正常 | 验收项 |
 | B | 放行 = 弃权，不越过宿主权限 | 让模型写 `writeRoots` 内文件 | 守卫不拦截；**宿主自身权限提示/策略仍照常生效**（守卫永不预批） | [仓库已验证] 弃权语义（`src/adapters/zcode.mjs` 注释）+ `test/adapters.test.mjs`「abstaining result」；宿主侧表现为验收项 |
 | C | 越界拒 | 让模型写 `writeRoots` 外、workspace 内文件 | 工具调用被拒，理由含 `gstack861:OUTSIDE_SCOPE`；目标文件未被创建 | [仓库已验证] 同上探针；会话内链路为验收项 |
-| D | VCS 保护 | 让模型改 `workspace/.git/` 下文件 | 拒绝 `gstack861:PROTECTED_PATH` | 同 C |
+| D | VCS 保护 | 让模型改 `workspace/.git/` 下文件 | 拒绝：样例策略（writeRoots=[src]）下码为 `OUTSIDE_SCOPE`；writeRoots 改为整个 workspace 时为 `PROTECTED_PATH`（保护根检查仍生效，二者皆正确拒绝） | 同 C |
 | E | 启动失败 fail-closed | 临时把片段中 `--policy` 指向不存在的路径（或临时改坏策略文件权限）再触发一次范围内调用；随后还原 | 该次调用被拒（`gstack861:HOOK_INPUT_OR_POLICY_ERROR` 或策略专属码），**绝不静默放行**；用第 5 节探针可离线复现诊断 | [仓库已验证] `test/adapters.test.mjs`「denies invalid JSON, missing policy, and oversized payloads」 |
 | F | 超时行为 | 在**一次性验收用**设置里把 `timeoutMs` 改为 `1`，触发一次范围内调用，观察并记录宿主处置（放行/拒绝/报错）；测完还原 `10000` | 记录实测结果。本仓库**不断言**宿主超时语义——`timeoutMs: 10000` 只是片段设定值 | 片段值 [仓库已验证]；超时处置为验收项（README「仍需宿主级验证」） |
 | G | updatedInput 共存禁令 | 审计该设置里**所有其他** Hook/插件：任何一个都**不得**返回 `updatedInput` | 必须为 0 个，否则本守卫验收不通过（见下） | [固定提交源码] 审查报告 §二.6 |
