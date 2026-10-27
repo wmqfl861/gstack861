@@ -30,6 +30,7 @@ const absolute = value => {
   if (typeof value !== 'string' || !path.isAbsolute(value)) throw new Error('ABSOLUTE_PATH_REQUIRED');
   return value;
 };
+const version = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version;
 const lock = () => JSON.parse(fs.readFileSync(new URL('../upstream.lock.json', import.meta.url), 'utf8'));
 
 if (args[0] === 'hook') {
@@ -52,7 +53,7 @@ if (args[0] === 'hook') {
 } else {
   try {
     if (args[0] === 'doctor' && args.length === 1) {
-      print({ version: '0.2.1', node: process.version, platform: process.platform, baseline: lock(),
+      print({ version, node: process.version, platform: process.platform, baseline: lock(),
         hosts: { zcode: 'not-host-verified', dsh: 'not-host-verified' },
         networkCalls: 0, modelCalls: 0,
         safety: 'guard-protocol foundation; not an OS sandbox; no full-parity certification' });

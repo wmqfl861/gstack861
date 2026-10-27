@@ -9,6 +9,9 @@ import { textDigest } from '../src/json.mjs';
 
 const WHEN = '2026-10-26T00:00:00.000Z';
 const NOW = () => WHEN;
+// The one authoritative version: manifests must echo whatever package.json says,
+// not a second literal maintained by hand in the generator.
+const VERSION = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version;
 // Byte-exactness fixture: the trailing 0xff is invalid UTF-8, so a lossy UTF-8
 // round-trip through git show would replace it and fail the digest/byte checks.
 const INVESTIGATE = Buffer.concat([Buffer.from('investigate first'), Buffer.from([0xff])]);
@@ -64,13 +67,13 @@ test('generateSkills writes verbatim SKILL.md copies and exact manifests', t => 
   assert.deepEqual(JSON.parse(fs.readFileSync(path.join(staging, 'investigate', 'manifest.json'), 'utf8')), {
     schemaVersion: 1, name: 'investigate', host: 'zcode', source: 'investigate/SKILL.md',
     blob: result.skills[0].blob, commit: r.commit, sha256: textDigest(investigate), placeholders: [], indicators: [],
-    needsReview: false, status: 'generated-not-host-verified', generator: 'gstack861', generatorVersion: '0.2.0', generatedAt: WHEN,
+    needsReview: false, status: 'generated-not-host-verified', generator: 'gstack861', generatorVersion: VERSION, generatedAt: WHEN,
   });
   assert.deepEqual(JSON.parse(fs.readFileSync(path.join(staging, 'review', 'manifest.json'), 'utf8')), {
     schemaVersion: 1, name: 'review', host: 'zcode', source: 'review/SKILL.md.tmpl',
     blob: result.skills[1].blob, commit: r.commit, sha256: textDigest(review), placeholders: ['TOOLS'],
     indicators: ['claude-reference', 'host-interaction', 'template-resolvers'], needsReview: true,
-    status: 'generated-not-host-verified', generator: 'gstack861', generatorVersion: '0.2.0', generatedAt: WHEN,
+    status: 'generated-not-host-verified', generator: 'gstack861', generatorVersion: VERSION, generatedAt: WHEN,
   });
   if (process.platform !== 'win32') {
     assert.equal(fs.statSync(path.join(staging, 'review', 'SKILL.md')).mode & 0o777, 0o644);
