@@ -77,7 +77,15 @@ if (args[0] === 'hook') {
       print({ version, node: process.version, platform: process.platform, baseline: lock(),
         hosts: { zcode: 'not-host-verified', dsh: 'not-host-verified' },
         networkCalls: 0, modelCalls: 0,
-        safety: 'guard-protocol foundation; not an OS sandbox; no full-parity certification' });
+        safety: 'guard-protocol foundation; not an OS sandbox; no full-parity certification',
+        // count and evidence update together per batch
+        consumption: { renderedSkillsConsumed: 8,
+          evidence: ['docs/verification-2026-10-27-render-consumption.md',
+            'docs/verification-2026-10-27-safety-suite.md',
+            'docs/verification-2026-10-27-workflow-suite.md'],
+          note: 'context-injection; auto-pickup unverified' },
+        unlocks: { dsh: 'set DEEPSEEK_API_KEY then run node scripts/verify-dsh-guard.mjs',
+          zcode: 'follow docs/integration/zcode-acceptance.md + host-loading.md section 2.4 in a controlled new session' } });
     } else if (args[0] === 'inventory') {
       const options = flags(args.slice(1), ['--upstream']);
       if (!options['--upstream']) throw new Error('UPSTREAM_PATH_REQUIRED');

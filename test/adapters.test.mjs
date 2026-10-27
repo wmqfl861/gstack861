@@ -355,6 +355,18 @@ test('doctor makes no claim of host or full-parity certification', () => {
   assert.equal(info.hosts.dsh, 'not-host-verified');
   assert.equal(info.modelCalls, 0);
 });
+test('doctor reports the rendered-skill consumption count and user unlock actions', () => {
+  const child = spawnSync(process.execPath, [cli, 'doctor'], { encoding: 'utf8' });
+  assert.equal(child.status, 0);
+  const info = JSON.parse(child.stdout);
+  assert.equal(info.consumption.renderedSkillsConsumed, 8);
+  assert.deepEqual(info.consumption.evidence, ['docs/verification-2026-10-27-render-consumption.md',
+    'docs/verification-2026-10-27-safety-suite.md', 'docs/verification-2026-10-27-workflow-suite.md']);
+  assert.equal(typeof info.consumption.note, 'string');
+  assert.match(info.consumption.note, /context-injection; auto-pickup unverified/);
+  assert.equal(info.unlocks.dsh, 'set DEEPSEEK_API_KEY then run node scripts/verify-dsh-guard.mjs');
+  assert.equal(info.unlocks.zcode, 'follow docs/integration/zcode-acceptance.md + host-loading.md section 2.4 in a controlled new session');
+});
 
 test('real hook subprocess decodes multi-byte UTF-8 split across stdin chunks', t => {
   const f = fixture(t);
