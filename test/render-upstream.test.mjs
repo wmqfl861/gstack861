@@ -54,9 +54,14 @@ function childEnv(overrides) {
   return { ...env, ...overrides };
 }
 
+// Mirrors the upstream renderer's dir naming exactly (gen-skill-docs.ts):
+// already-prefixed names pass through, everything else gets `gstack-` prepended.
+const renderedDir = (name) => (name.startsWith('gstack-') ? name : `gstack-${name}`);
+
 function writeSkill(skillsRoot, name, body = `${BANNER}\nbody of ${name}\n`) {
-  fs.mkdirSync(path.join(skillsRoot, `gstack-${name}`), { recursive: true });
-  fs.writeFileSync(path.join(skillsRoot, `gstack-${name}`, 'SKILL.md'), body);
+  const dir = renderedDir(name);
+  fs.mkdirSync(path.join(skillsRoot, dir), { recursive: true });
+  fs.writeFileSync(path.join(skillsRoot, dir, 'SKILL.md'), body);
   return body;
 }
 
@@ -210,6 +215,27 @@ test('verifyOutput demands set equality with the inventory and the root router',
   assert.throws(() => verifyOutput({ ...extra, host: 'zcode', inventoryJson }), /RENDER_INCOMPLETE/);
   const noRoot = build((skills, names) => { for (const name of names) writeSkill(skills, name); });
   assert.throws(() => verifyOutput({ ...noRoot, host: 'zcode', inventoryJson }), /RENDER_ROOT_MISSING/);
+});
+
+// Regression (review Critical 1): the real 57-skill inventory contains
+// `gstack-upgrade`; the upstream renderer keeps already-prefixed names as-is
+// (gen-skill-docs.ts: `!name.startsWith('gstack-') ? `gstack-${name}` : name`),
+// so the rendered dir is `gstack-upgrade`, never `gstack-gstack-upgrade`.
+// verifyOutput must map inventory name -> rendered dir exactly like the
+// renderer, in both the set-equality gate and the manifest path builder.
+test('verifyOutput handles already gstack-prefixed inventory names (gstack-upgrade)', (t) => {
+  const s = scratch(t);
+  const outDir = path.join(s, 'out'), manifestDir = path.join(s, 'manifests');
+  const skills = path.join(outDir, '.zcode', 'skills');
+  const names = ['gstack-upgrade', 'review']; // one pre-prefixed, one normal
+  const bodies = new Map(names.map(n => [n, writeSkill(skills, n)]));
+  fs.mkdirSync(path.join(skills, 'gstack'), { recursive: true });
+  fs.writeFileSync(path.join(skills, 'gstack', 'SKILL.md'), `${BANNER}\nroot\n`);
+  const fixtureInventory = { skills: names.map(name => ({ name })) };
+  const manifest = verifyOutput({ outDir, host: 'zcode', inventoryJson: fixtureInventory, manifestDir });
+  assert.deepEqual(Object.keys(manifest.skills).sort(), ['gstack-upgrade', 'review']);
+  assert.equal(manifest.skills['gstack-upgrade'], textDigest(bodies.get('gstack-upgrade')));
+  assert.equal(manifest.skills['review'], textDigest(bodies.get('review')));
 });
 
 test('assertPristine passes only for a clean upstream worktree', (t) => {

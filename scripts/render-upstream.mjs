@@ -110,6 +110,13 @@ function walkFiles(dir) {
   return files;
 }
 
+// Inventory name -> rendered dir, exactly as the upstream renderer names it
+// (gen-skill-docs.ts): already-prefixed names pass through (`gstack-upgrade`
+// renders as dir `gstack-upgrade`), everything else gets `gstack-` prepended.
+function renderedDir(name) {
+  return name.startsWith('gstack-') ? name : `gstack-${name}`;
+}
+
 /** Post-render gate: banner/placeholder/undefined checks, inventory set equality, root router, then manifest. */
 export function verifyOutput({ outDir, host, inventoryJson, manifestDir }) {
   const skillsRoot = path.join(outDir, `.${host}`, 'skills'); // hostSubdir default `.{name}` from defineHost()
@@ -121,13 +128,17 @@ export function verifyOutput({ outDir, host, inventoryJson, manifestDir }) {
   if (!fs.existsSync(rootSkill)) throw new Error(`RENDER_ROOT_MISSING ${rel(rootSkill)}`);
 
   const expected = inventoryJson.skills.map(s => s.name);
-  const rendered = fs.readdirSync(skillsRoot, { withFileTypes: true })
+  // Compare in rendered-dir space: the renderer keeps already-prefixed
+  // inventory names as-is, so de-prefixing dir names here would corrupt the
+  // comparison (`gstack-upgrade` -> phantom missing/extra pair).
+  const expectedDirs = expected.map(renderedDir);
+  const renderedDirs = fs.readdirSync(skillsRoot, { withFileTypes: true })
     .filter(e => e.isDirectory() && e.name.startsWith('gstack-'))
-    .map(e => e.name.slice('gstack-'.length));
-  const missing = expected.filter(name => !rendered.includes(name));
-  const extra = rendered.filter(name => !expected.includes(name));
+    .map(e => e.name);
+  const missing = expectedDirs.filter(dir => !renderedDirs.includes(dir));
+  const extra = renderedDirs.filter(dir => !expectedDirs.includes(dir));
   if (missing.length || extra.length) {
-    throw new Error(`RENDER_INCOMPLETE expected ${expected.length} skills, rendered ${rendered.length} (missing=[${missing.join(',')}] extra=[${extra.join(',')}])`);
+    throw new Error(`RENDER_INCOMPLETE expected ${expectedDirs.length} skills, rendered ${renderedDirs.length} (missing=[${missing.join(',')}] extra=[${extra.join(',')}])`);
   }
 
   for (const file of walkFiles(skillsRoot)) {
@@ -139,7 +150,7 @@ export function verifyOutput({ outDir, host, inventoryJson, manifestDir }) {
 
   const skills = {};
   for (const name of [...expected].sort()) {
-    const file = path.join(skillsRoot, `gstack-${name}`, 'SKILL.md');
+    const file = path.join(skillsRoot, renderedDir(name), 'SKILL.md');
     if (!fs.existsSync(file)) throw new Error(`RENDER_VERIFY_FAILED ${rel(file)}: missing`);
     skills[name] = textDigest(fs.readFileSync(file, 'utf8'));
   }

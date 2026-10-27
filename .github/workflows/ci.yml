@@ -37,6 +37,9 @@ jobs:
         with:
           persist-credentials: false
           submodules: true
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0 (same SHA pin as offline-contracts)
+        with:
+          node-version: '22.16.0'
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2 (same SHA pin as upstream platform-qualification.yml)
         with:
           bun-version: 1.4.2
@@ -46,6 +49,9 @@ jobs:
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7 (SHA pin reused from upstream)
         with:
           name: rendered-skills
+          # Rendered skills live under rendered/.zcode/... and rendered/.dsh/...;
+          # upload-artifact v7 drops dot-directories unless this is set (upstream eval-sweep.yml does the same).
+          include-hidden-files: true
           path: rendered/
           retention-days: 30
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7 (SHA pin reused from upstream)
