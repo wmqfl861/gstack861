@@ -1,6 +1,6 @@
 # 功能与证据矩阵
 
-状态：2026-10-26，M0/M1 基础 + M2 前置批次（任务日志/生成/安装/审批 CLI/DSH 调研）；Windows 离线回归已接入。两个宿主均未获得 `host_verified` 或 `full`。
+状态：2026-10-27，0.3.0：M2 前置 + 纵向批次（apply-patch/参数 effect、approvals/tasks CLI 全量、ZCode 工作流层纵向流程已实证、DSH 管线就绪脚本待密钥）。两个宿主均未获得 `host_verified` 或 `full`。
 
 | 范围 | ZCode | DSH | 已有证据 / 剩余工作 |
 |---|---|---|---|
@@ -8,7 +8,7 @@
 | 离线回归平台 | contract_tested | contract_tested | Linux 首轮；真实 Windows 本机 86/86 + CI 双平台矩阵 |
 | 源技能盘点器 | contract_tested | contract_tested | 临时 Git 仓库实测；完整上游盘点已在真实 Windows 本机跑通（57 技能） |
 | 文件范围策略 | contract_tested | contract_tested | 真实临时文件、链接与配置测试 |
-| 原生入口 | contract_tested | activation-tested | ZCode 真实 Hook 子进程；DSH 已在本机 0.2.1-rc.3 隔离配置真实加载激活（见调研文档），工具执行级拒绝路径未验证 |
+| 原生入口 | contract_tested | activation-tested | ZCode 真实 Hook 子进程；DSH 隔离加载激活已实证，管线级拒绝路径有就绪脚本（`scripts/verify-dsh-guard.mjs`，待 DEEPSEEK_API_KEY） |
 | 技能生成器 | contract_tested | contract_tested | 字节级复制断言、上游漂移拒绝；产物标记 generated-not-host-verified |
 | 安装/卸载注册 | contract_tested | contract_tested | 两阶段原子性、用户文件保护、备份回滚均有测试；未接入真实宿主技能目录 |
 | 任务持久化/断点恢复 | contract_tested | contract_tested | 状态机、跨进程锁、防篡改；未接宿主执行器 |
@@ -16,7 +16,7 @@
 | 自动安装/升级/卸载（宿主级） | planned | planned | ZCode 仅输出配置，不改用户文件；DSH 安装片段需含 system-prompt+tools 闭包（调研结论） |
 | 不可绕过的全宿主安全 | blocked | blocked | 启动失败、工具替换、PTC、子 Agent、Shell/OS 隔离；DSH apply() 抛错仅警告且退出码 0（实测），验收须解析警告 |
 | 相对路径/Session cwd | contract_tested | blocked | ZCode 用事件 cwd；DSH 暂只接受绝对路径 |
-| 规划/规格/需求工作流 | planned | planned | 原生提问、plan mode 与模板 resolver |
+| 纵向流程（spec→ship） | workflow-evidence | planned | ZCode 侧六阶段+审批+交付已真实跑通（见 verification-2026-10-27-vertical-zcode.md，非 host_verified）；DSH 侧待密钥 |
 | 开发/调查/review | planned | planned | 尚未用真实宿主执行纵向任务 |
 | 子 Agent 与工作流恢复 | planned | planned | 核心日志已就绪；执行器、取消、恢复接线未做 |
 | 独立模型复核 | planned | planned | 显式模型配置、隔离上下文、授权 |

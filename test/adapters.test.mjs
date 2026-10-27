@@ -274,6 +274,16 @@ test('tasks CLI create→start→interrupt→resume→complete smoke records own
   assert.deepEqual(list.map(r => r.id), [id]);
   assert.equal(list[0].state, 'completed');
 });
+test('tasks create rejects --id instead of silently ignoring it', t => {
+  const f = fixture(t), state = path.join(f.base, 'tasks-id');
+  const actionFile = path.join(f.base, 'action.json');
+  fs.writeFileSync(actionFile, JSON.stringify({ tool: 'Write', input: { file_path: 'src/a' } }));
+  const child = spawnSync(process.execPath, [cli, 'tasks', 'create', '--state', state, '--id', '00000000-0000-4000-8000-000000000000',
+    '--host', 'zcode', '--session', 's1', '--run', 'r1', '--policy-hash', f.policy.policyHash, '--action-file', actionFile], { encoding: 'utf8', timeout: 10000 });
+  assert.equal(child.status, 1);
+  assert.match(child.stderr, /INVALID_ARGUMENTS/);
+  assert.equal(fs.existsSync(state), false, 'refusal must not leave a state directory behind');
+});
 test('tasks CLI cancels interrupted tasks and refuses unknown subcommands without creating state', t => {
   const f = fixture(t), state = path.join(f.base, 'tasks');
   const actionFile = path.join(f.base, 'action.json');

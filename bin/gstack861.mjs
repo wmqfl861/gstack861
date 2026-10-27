@@ -122,6 +122,7 @@ if (args[0] === 'hook') {
       if (!['create', 'start', 'resume', 'complete', 'fail', 'cancel', 'interrupt', 'show', 'list'].includes(args[1])) throw new Error('UNKNOWN_SUBCOMMAND');
       const owner = options['--owner'];
       if (owner !== undefined && !['create', 'start'].includes(args[1])) throw new Error('INVALID_ARGUMENTS');
+      if (options['--id'] !== undefined && args[1] === 'create') throw new Error('INVALID_ARGUMENTS');
       // Same shape as TaskStore.create/start, checked before any directory is created.
       if (owner !== undefined && (owner.length < 1 || owner.length > 256)) throw new Error('INVALID_OWNER');
       const store = new TaskStore(absolute(options['--state']));
@@ -139,7 +140,8 @@ if (args[0] === 'hook') {
         + '  approvals issue --state DIR --host H --session S --run R --policy-hash HASH --action-file F [--ttl-ms N]\n'
         + '  approvals approve|reject|consume --state DIR --id ID --host H --session S --run R --policy-hash HASH --action-file F\n'
         + '  approvals verify --state DIR --id ID --host H --session S --run R --policy-hash HASH --action-file F\n'
-        + '  tasks create|start --state DIR [--id ID] --host H --session S --run R --policy-hash HASH --action-file F [--owner O]\n'
+        + '  tasks create --state DIR --host H --session S --run R --policy-hash HASH --action-file F [--owner O]\n'
+        + '  tasks start --state DIR --id ID --host H --session S --run R --policy-hash HASH --action-file F [--owner O]\n'
         + '  tasks resume|complete|fail|cancel|interrupt --state DIR --id ID --host H --session S --run R --policy-hash HASH --action-file F\n'
         + '  tasks show --state DIR --id ID | tasks list --state DIR\n');
       process.exitCode = 1;

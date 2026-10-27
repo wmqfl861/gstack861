@@ -19,12 +19,12 @@ DSH 管线级 guard 验证（真实工具调用拒绝路径）待 `DEEPSEEK_API_
 
 ## 已实现
 
-1. 宿主中立策略核心：显式文件工具绑定、读写范围分离、符号链接和路径越界检查、未知工具默认拒绝、配置摘要。
+1. 宿主中立策略核心：显式文件工具绑定（0.3.0 起支持 `parser: 'apply-patch'` V4A 补丁解析与 `effectKey`/`readWhen` 按参数区分读写）、读写范围分离、符号链接和路径越界检查、未知工具默认拒绝、配置摘要。
 2. ZCode 同步 PreToolUse 协议适配与配置片段生成（支持按绑定工具收窄 matcher）；实际 Node Hook 子进程回归。
 3. DSH 原生 `ctx.tools.guard` 插件入口；协议测试通过；并已在本机真实 DSH 0.2.1-rc.3 隔离配置中完成加载/激活冒烟（见调研文档），guard 工具执行级拒绝路径仍未验证。
-4. 持久审批状态核心：等待人工批准、会话/操作/配置绑定、过期、拒绝、单次消费、跨进程竞争保护；操作员 CLI（`approvals list/show/approve/reject`）已接通审批通道，宿主内询问 UI 仍未接通。
+4. 持久审批状态核心：等待人工批准、会话/操作/配置绑定、过期、拒绝、单次消费、跨进程竞争保护；操作员 CLI（`approvals issue/verify/approve/reject/consume/list/show`）已接通完整审批闭环（含只读绑定校验），宿主内询问 UI 仍未接通。
 5. 固定提交的上游源技能盘点器：模板去重、文件摘要、宿主依赖提示；不执行上游代码，不自动宣布兼容。
-6. 持久任务日志：planned/running/completed/failed/cancelled/interrupted 状态机、断点恢复标记、跨进程转移锁、防篡改记录校验。
+6. 持久任务日志：planned/running/completed/failed/cancelled/interrupted 状态机、断点恢复与 interrupted→cancelled、owner 标记、跨进程转移锁、防篡改记录校验；`tasks` CLI（create/start/resume/complete/fail/cancel/interrupt/show/list）已接通。
 7. 固定上游技能生成器：从盘点结果生成宿主技能包（逐字节复制的 SKILL.md + manifest，含占位符与宿主依赖提示、`generated-not-host-verified` 标记），不解析模板、不执行上游代码。
 8. 两阶段安装/卸载注册：先全量校验后写入、绝不覆盖或删除用户文件（`USER_FILE_REFUSED`）、幂等跳过、版本漂移自动备份、注册表原子更新；所有权按注册表摘要内容验证，安装/卸载互斥锁与备份/注册表路径安全校验（含 junction 逃逸防护）。
 
