@@ -79,7 +79,11 @@ export function prepareCopy({ upstreamDir, commit, scratch, overlayDir = path.jo
   fs.mkdirSync(copyDir, { recursive: true });
   // Relative paths + cwd: GNU tar would read an absolute `C:\...` argument as a
   // remote-host spec; relative names work identically on GNU tar, bsdtar and CI.
-  const extract = spawnSync('tar', ['-xf', 'upstream.tar', '-C', 'copy'], { cwd: scratch, encoding: 'utf8' });
+  // MSYS=winsymlinks:nativestrict lets Git Bash tar materialize the upstream tree's
+  // symlinks on the Windows maintainer channel (CI's GNU tar needs no help and
+  // ignores the variable).
+  const extract = spawnSync('tar', ['-xf', 'upstream.tar', '-C', 'copy'],
+    { cwd: scratch, encoding: 'utf8', env: { ...process.env, MSYS: 'winsymlinks:nativestrict' } });
   if (extract.status !== 0) throw new Error(`PREPARE_COPY_FAILED tar extract: ${extract.stderr}`);
   for (const host of hosts) {
     const source = path.join(overlayDir, `${host}.ts`);
@@ -90,9 +94,11 @@ export function prepareCopy({ upstreamDir, commit, scratch, overlayDir = path.jo
   return copyDir;
 }
 
-/** Run the upstream renderer for one host on the copy. Non-zero exit carries the real output. */
-export function runRender({ copyDir, outDir, host, bunPath = 'bun' }) {
-  const render = spawnSync(bunPath, ['run', 'scripts/gen-skill-docs.ts', '--host', host, '--out-dir', outDir],
+/** Run the upstream renderer for one host on the copy. Non-zero exit carries the real output.
+ * Executes the script directly (its own shebang form): `bun run <file>` silently no-ops
+ * with exit 0 when spawned from Node on Windows — observed in the batch-3 CI first run. */
+export function runRender({ copyDir, outDir, host, bunPath = 'bun', spawnImpl = spawnSync }) {
+  const render = spawnImpl(bunPath, ['scripts/gen-skill-docs.ts', '--host', host, '--out-dir', outDir],
     { cwd: copyDir, encoding: 'utf8', maxBuffer: 32 * 1024 * 1024 });
   if (render.status !== 0) {
     throw new Error(`RENDER_FAILED bun --host ${host} exited ${render.status}\n${(render.stdout ?? '')}${(render.stderr ?? '')}`);
@@ -144,8 +150,10 @@ export function verifyOutput({ outDir, host, inventoryJson, manifestDir }) {
   for (const file of walkFiles(skillsRoot)) {
     const text = fs.readFileSync(file, 'utf8');
     if (!text.includes('AUTO-GENERATED')) throw new Error(`RENDER_VERIFY_FAILED ${rel(file)}: missing AUTO-GENERATED banner`);
+    // No whole-word "undefined" guard: upstream's own claude renders legitimately contain
+    // prose uses (e.g. gstack-autoplan's example "returns undefined when the session cookie
+    // expires"); template-value gaps surface as fatal leftover placeholders upstream-side.
     if (/\{\{[^}]*\}\}/.test(text)) throw new Error(`RENDER_VERIFY_FAILED ${rel(file)}: unresolved {{...}} placeholder`);
-    if (/\bundefined\b/.test(text)) throw new Error(`RENDER_VERIFY_FAILED ${rel(file)}: standalone undefined token`);
   }
 
   const skills = {};

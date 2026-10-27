@@ -6,7 +6,7 @@ import path from 'node:path';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import {
-  assertRenderAllowed, assertPristine, verifyBunPin, patchIndex, prepareCopy, verifyOutput,
+  assertRenderAllowed, assertPristine, verifyBunPin, patchIndex, prepareCopy, verifyOutput, runRender,
   GENERATED_BY, OVERLAY_HOSTS, EXPECTED_BUN_VERSION,
 } from '../scripts/render-upstream.mjs';
 import { textDigest } from '../src/json.mjs';
@@ -173,11 +173,13 @@ test('verifyOutput accepts 57 skills plus the root router and writes the manifes
   assert.deepEqual(JSON.parse(fs.readFileSync(path.join(manifestDir, 'render-manifest-zcode.json'), 'utf8')), manifest);
 });
 
-test('verifyOutput rejects placeholder residue, missing banners and undefined tokens', (t) => {
+test('verifyOutput rejects placeholder residue and missing banners, accepts prose undefined', (t) => {
   const cases = [
     [`${BANNER}\n{{TOOLS}} residue\n`, /RENDER_VERIFY_FAILED/],
     ['no banner at all\n', /RENDER_VERIFY_FAILED/],
-    [`${BANNER}\nvalue: undefined here\n`, /RENDER_VERIFY_FAILED/],
+    // Prose "undefined" is legitimate (upstream gstack-autoplan's own example sentence);
+    // only placeholder residue and missing banners are rejected.
+    [`${BANNER}\nvalue: undefined here\n`, null],
   ];
   cases.forEach(([body, pattern], i) => {
     const s = scratch(t);
@@ -186,8 +188,13 @@ test('verifyOutput rejects placeholder residue, missing banners and undefined to
     for (const name of NAMES) writeSkill(skills, name, name === 'skill-03' ? body : `${BANNER}\nbody of ${name}\n`);
     fs.mkdirSync(path.join(skills, 'gstack'), { recursive: true });
     fs.writeFileSync(path.join(skills, 'gstack', 'SKILL.md'), `${BANNER}\nroot router\n`);
-    assert.throws(() => verifyOutput({ outDir, host: 'zcode', inventoryJson, manifestDir }), pattern, `case ${i}`);
-    assert.equal(fs.existsSync(path.join(manifestDir, 'render-manifest-zcode.json')), false, 'no manifest for a rejected render');
+    if (pattern) {
+      assert.throws(() => verifyOutput({ outDir, host: 'zcode', inventoryJson, manifestDir }), pattern, `case ${i}`);
+      assert.equal(fs.existsSync(path.join(manifestDir, 'render-manifest-zcode.json')), false, 'no manifest for a rejected render');
+    } else {
+      assert.doesNotThrow(() => verifyOutput({ outDir, host: 'zcode', inventoryJson, manifestDir }), `case ${i}`);
+      assert.equal(fs.existsSync(path.join(manifestDir, 'render-manifest-zcode.json')), true, 'accepted render writes the manifest');
+    }
   });
 });
 
@@ -243,4 +250,21 @@ test('assertPristine passes only for a clean upstream worktree', (t) => {
   assert.doesNotThrow(() => assertPristine(repo.dir));
   fs.writeFileSync(path.join(repo.dir, 'untracked.txt'), 'dirt');
   assert.throws(() => assertPristine(repo.dir), /UPSTREAM_DIRTY_RENDER/);
+});
+
+test('runRender executes the script directly (no `run` subcommand) and injects the out-dir', () => {
+  // `bun run <file>` silently no-ops (exit 0, zero output) when spawned from Node on
+  // Windows — observed live in the batch-3 CI first run; direct execution is the
+  // shebang's own intended form. This pins the invocation shape.
+  let captured = null;
+  const spawnImpl = (cmd, args, opts) => {
+    captured = { cmd, args, opts };
+    return { status: 0, stdout: 'GENERATED: .zcode/skills/gstack/SKILL.md', stderr: '' };
+  };
+  const result = runRender({ copyDir: 'C:/copy', outDir: 'C:/out', host: 'zcode', bunPath: 'bun', spawnImpl });
+  assert.equal(captured.cmd, 'bun');
+  assert.equal(captured.args[0], 'scripts/gen-skill-docs.ts', 'must execute the file directly, not via the run subcommand');
+  assert.deepEqual(captured.args.slice(1), ['--host', 'zcode', '--out-dir', 'C:/out']);
+  assert.equal(captured.opts.cwd, 'C:/copy');
+  assert.match(result.stdout, /GENERATED/);
 });
