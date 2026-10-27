@@ -74,7 +74,7 @@
   },
   "macOS": "not-run",
   "paidModelCalls": 0,
-  "ciRunUrl": "recorded post-push in merge report",
+  "ciRunUrl": "https://github.com/wmqfl861/gstack861/actions?query=branch%3Aclaude%2Freview-2026-10-27 (all 6 branch runs green through 2c0363c; runs #12/#13 cover the final head)",
   "testedFiles": [
     {
       "path": "bin/gstack861.mjs",
