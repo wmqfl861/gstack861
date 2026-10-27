@@ -26,3 +26,30 @@ jobs:
       - run: npm run doctor
       - name: Inventory pinned upstream without executing its code
         run: node bin/gstack861.mjs inventory --upstream upstream/gstack
+  # CI-scoped upstream render (red-line relaxation R1): the orchestrator itself
+  # fail-closes outside CI=true AND GSTACK861_RENDER=ci, so local runs refuse.
+  # ubuntu only — the bun render is platform-independent (README notes this).
+  render-upstream:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+          submodules: true
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2 (same SHA pin as upstream platform-qualification.yml)
+        with:
+          bun-version: 1.4.2
+      - run: node scripts/render-upstream.mjs --upstream upstream/gstack --out rendered
+        env:
+          GSTACK861_RENDER: ci
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7 (SHA pin reused from upstream)
+        with:
+          name: rendered-skills
+          path: rendered/
+          retention-days: 30
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7 (SHA pin reused from upstream)
+        with:
+          name: render-manifests
+          path: render-manifests/
+          retention-days: 30
