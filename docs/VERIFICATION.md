@@ -203,3 +203,30 @@ Lane A（策略表达力）approved——hash 字节兼容性经审查者对照�
 ## 下一验收
 
 批次 2：defineHost 方向裁定与实施（蓝图第 1 节「先复用上游工具」为据）；共享状态目录缺陷修复；原生询问接线；DSH 纵向（待密钥）。
+
+# 第七轮验证记录：批次 2（状态目录命名空间 + 加固清扫，2026-10-27）
+
+范围：0.3.1。按 `docs/plans/2026-10-27-batch2-state-namespace.md`（计划经独立子代理审核，采纳 2 条必需修改：两处字面路径测试豁免、action-file 收紧限枚举类）修复纵向流程暴露的共享状态目录缺陷并清扫前批 Minor。
+
+## 实际运行
+
+环境：真实 Windows 本机（win32 10.0.22624 x64），Node.js v24.21.0。
+
+| 命令 | 结果 |
+|---|---|
+| `npm test` | 146/146（新增 6：共享目录回归、双向伪装+解析边界、损坏审批记录、受限 CLI 错误、blobHash 守卫） |
+| `npm run doctor` | 成功，版本 0.3.1 |
+| `node scripts/verify-dsh-guard.mjs` | exit 2 blocked（密钥缺失；回合语义披露已加入；付费调用 0 次） |
+| `node scripts/verify-8dot3.mjs`（两卷） | 均 exit 0 |
+
+## 破坏性变更（0.3.0 → 0.3.1）
+
+TaskStore/ApprovalStore 记录文件改用 `task-<uuid>.json` / `approval-<uuid>.json` 前缀命名空间：两店可安全共用一个 `--state` 目录（原缺陷：`tasks list` 因审批记录不满足任务 schema 整体 `INVALID_TASK_RECORD`）。0.3.0 时代的无前缀记录对 list/get 均不可见（等效丢失，需人工改名迁移）；本仓库自用工具、无外部部署。伪装测试证明内容校验仍是权威（改名的记录按内容拒绝）。
+
+## 车道审查结论
+
+Lane 1（命名空间+收紧）approved——两处豁免测试修改经 git diff 逐行核验为纯字面路径替换，断言强度不变；`ABSOLUTE_PATH_REQUIRED` 语义经新增负向断言钉死。Lane 2（脚本加固）approved——exit 2 约定审查者实跑复验，清理路径无泄漏/无双清。
+
+## 下一验收
+
+批次 3：defineHost 方向裁定与实施（专项计划）；原生询问接线；DSH 纵向（待 DEEPSEEK_API_KEY）；ZCode guard 层（待用户受控新会话）。
