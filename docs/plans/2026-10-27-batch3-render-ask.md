@@ -36,12 +36,12 @@
 **Interfaces:**
 - `hosts-overlay/zcode.ts` / `dsh.ts`：`defineHost({ name, displayName })` + 上述保守能力显式声明 + 头注释（依据与 TODO：toolRewrites 待宿主工具名证据）。
 - `scripts/render-upstream.mjs` 导出可测函数 + CLI：
-  - `prepareCopy({ upstreamDir, commit, scratch })`：`git archive <commit> | tar -x`（Windows 用 `git archive --format=tar -o` + tar）；复制 overlay；`patchIndex(copyDir, hosts)`——机械追加导入/注册/再导出行，**先按锚点断言上游 index.ts 含预期结构**（`export const ALL_HOST_CONFIGS = [` 等），锚点缺失抛 `OVERLAY_ANCHOR_MISSING`（防上游漂移静默错补）。
+  - `prepareCopy({ upstreamDir, commit, scratch })`：`git archive <commit> | tar -x`（Windows 用 `git archive --format=tar -o` + tar）；复制 overlay；`patchIndex(copyDir, hosts)`——**唯一补丁点是 `hosts/index.ts` 的字面量拼接**（`HOST_CONFIG_MAP`/`ALL_HOST_NAMES`/`HOST_PATHS`/`Host` 全部在模块求值期从该字面量派生，push 无效）：(i) 锚点断言 `import agy from './agy';` 存在后插入 `import zcode from './zcode';`/`import dsh from './dsh';`；(ii) 锚点断言**完整字面行** `export const ALL_HOST_CONFIGS: HostConfig[] = [claude, codex, factory, kiro, opencode, slate, cursor, openclaw, hermes, gbrain, copilot, agy];` 存在后，在 `= [` 之后头部插入 `zcode, dsh, `；(iii) 文件尾追加 `export { zcode, dsh };`。任一锚点不匹配 → `OVERLAY_ANCHOR_MISSING`（防上游漂移静默错补）。overlay 文件复制到 `<copy>/hosts/*.ts`（`./define-host` 相对导入得以解析）。
   - `runRender({ copyDir, outDir, host, bunPath })`：`bun run scripts/gen-skill-docs.ts --host <h> --out-dir <out>`。
-  - `verifyOutput({ outDir, inventoryJson })`：零占位符；`<hostSubdir>/skills/` 下 `gstack-*` 目录清单化（名称+sha256）并与盘点 57 技能集合比对（缺失→`RENDER_INCOMPLETE`）；产出 `render-manifest-<host>.json`。
-  - CLI 主流程：环境门（非 CI 且无 `GSTACK861_RENDER=ci` → `RENDER_NOT_ALLOWED` 且零副作用）；scratch 用 mkdtemp；`finally` 清理；**前后各断言子模块 pristine**（非空 → `UPSTREAM_DIRTY_RENDER`）。
-- CI job：ubuntu-latest；submodules checkout；oven-sh/setup-bun（SHA 固定，`bun-version: 1.4.2`）；`GSTACK861_RENDER=ci node scripts/render-upstream.mjs`；上传两宿主渲染产物 + manifest 为 artifacts。windows-latest 不跑该 job（bun/渲染门禁与平台无关，CI 单平台即可，README 注明）。
-- 本地测试（无 bun）：环境门拒绝+零残留；`patchIndex` 对 fixture index.ts（复刻上游锚点结构）成功补丁、锚点缺失抛错；`verifyOutput` 对手工 fixture 输出目录（含一个 `{{X}}` 残留→拒；57 齐全→过；缺一→`RENDER_INCOMPLETE`）；pristine 断言逻辑（对干净/弄脏 fixture git 仓库）。
+  - `verifyOutput({ outDir, inventoryJson })`：零占位符 + 每文件含 `AUTO-GENERATED` 横幅 + 无独立 `undefined` 词元；`<hostSubdir>/skills/`（hostSubdir 默认 `.{name}`，即 `.zcode`/`.dsh`）下 `gstack-*` 目录清单化（名称+sha256，去 `gstack-` 前缀后与盘点 57 技能集合比对，缺失→`RENDER_INCOMPLETE`）；**显式断言根路由 `<hostSubdir>/skills/gstack/SKILL.md` 存在**（目录名无连字符，glob 不可见；总数=57+1）；产出 `render-manifest-<host>.json`。
+  - CLI 主流程：环境门为 **AND**——`process.env.CI === 'true' && process.env.GSTACK861_RENDER === 'ci'`（缺一 → `RENDER_NOT_ALLOWED` 且零副作用；CI 测试环境天然满足 CI=true 但无环境变量，本地拒绝测试稳定）；执行前 `bun --version` 必须恰为 `1.4.2`（否则 `BUN_VERSION_PIN_VIOLATED`——固定版本声明对每条放行路径成立）；scratch 用 mkdtemp；`finally` 清理；**前后各断言子模块 pristine**（非空 → `UPSTREAM_DIRTY_RENDER`）。
+- CI job：ubuntu-latest；submodules checkout；oven-sh/setup-bun（SHA 固定，`bun-version: 1.4.2`）；`GSTACK861_RENDER=ci node scripts/render-upstream.mjs`；上传两宿主渲染产物 + manifest 为 artifacts（`actions/upload-artifact` SHA 固定，`retention-days: 30`，`timeout-minutes` 与既有作业一致）。PR 与 push 都跑（尽早信号；作业本身 fail-closed）。windows-latest 不跑该 job（bun 渲染与平台无关，README 注明）。
+- 本地测试（无 bun）：环境门拒绝+零残留（子进程显式设/不设两变量，覆盖 AND 语义）；`prepareCopy` 对 `repository()` 式 git fixture 全链路（archive→解包→overlay→补丁，无 bun）；`patchIndex` 对真实上游 index.ts 字面副本成功、锚点漂移 fixture 抛 `OVERLAY_ANCHOR_MISSING`；`verifyOutput` 对手工 fixture（`{{X}}` 残留→拒；缺横幅→拒；57 齐全+根存在→过；缺一→`RENDER_INCOMPLETE`；缺根→拒）；pristine 断言（干净/弄脏 fixture git 仓库）。
 
 - [ ] 失败测试 → 确认失败 → 实现 → `npm test` 全绿 → 本地实跑编排器确认 `RENDER_NOT_ALLOWED` → 提交（分支 `b3-lane-a`）
 
@@ -55,7 +55,7 @@
 - `approvals ask --state D --id ID --host H --session S --run R --policy-hash HASH --action-file F [--prompt-file ABS]`：
   1. 打印结构化问题 JSON（id、state、subject 摘要字段、actionDigest=subjectDigest 前 16 位、expiresAt 剩余毫秒、prompt 文本）。
   2. 阻塞读 stdin 首行：`approve` 或 `reject`（后续可选行=reason，≤256 字符写入 changedAt 旁的 `reason` 字段?——不改记录 schema，reason 仅打印回显不落盘，避免动 schema；裁决记录之）。
-  3. `approve` → store.approve（subject 旗标）；`reject` → store.reject；其余词/EOF → **exit 3 `ASK_UNANSWERED`，状态保持 pending 不变**。
+  3. `approve` → `print(store.approve(...))`；`reject` → `print(store.reject(...))`（输出契约=先问题 JSON 后结果 JSON，均 stdout）；答案词匹配=trim 后精确小写 `approve`/`reject`；其余词/EOF → **exit 3 `ASK_UNANSWERED`，状态保持 pending 不变**。
   4. 已过期/已消费等照常透传错误码 exit 1。
 - 测试：子进程管道 stdin `approve\n` → approved；`reject\n` → rejected；EOF → exit 3 且 `approvals show` 仍 pending；坏词 → exit 3；`--prompt-file` 内容进问题 JSON；usage 文本更新。
 
