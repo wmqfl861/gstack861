@@ -56,6 +56,16 @@
       "sha256": "aafd00a2e082195201042dad6efb9d07a956fb86db6147e43d00aeefa4028722"
     },
     {
+      "path": "src/gateway.mjs",
+      "gitBlobSha1": "efbe7d5eba92577c2af4e0d42af924615a32ac7b",
+      "sha256": "06d937d990b4156cc096ab573e954a93d20e9da68a81ca48d8d5f057876059e2"
+    },
+    {
+      "path": "src/model-review.mjs",
+      "gitBlobSha1": "7eb897e652962ef2e9035d60304f1f5df608cc70",
+      "sha256": "09edc9af8c7fa6d4c8f084c70d5c30f938402664ec9606742b8f407b34b7bff6"
+    },
+    {
       "path": "src/stage.mjs",
       "gitBlobSha1": "7f2cf73759b0885c652b89e28d3e3da59689080a",
       "sha256": "58036e95958ee0d3798fcc8f441d22d7a76425298493e2c58e9b1480c2c46b63"
@@ -67,8 +77,8 @@
     },
     {
       "path": "package.json",
-      "gitBlobSha1": "72fb922704cf761f1fb093573f016b16a0795916",
-      "sha256": "0e5ed1795157e7d30c9ea70cabf5ff37fd6bedcf08c17a6e38a9d7cc97366ef1"
+      "gitBlobSha1": "71baef6078067ded39e182ba8a48d048a2a43971",
+      "sha256": "c2b0ac362462c44d17dcaa9cc6c4d221cd34b1e11dd3bc05ca1614604485de7a"
     },
     {
       "path": "scripts/check.mjs",
@@ -164,6 +174,16 @@
       "path": "test/render-upstream.test.mjs",
       "gitBlobSha1": "f063b784d2079424fe8df2de4c98656444ea8a6f",
       "sha256": "5f7c08f6a85f6bf60835d225031ffe5b533fa74e119deb4d3227385f4ab40256"
+    },
+    {
+      "path": "test/gateway.test.mjs",
+      "gitBlobSha1": "bd3bc1068ff4cb1beb7e11138bee9ea28ed44329",
+      "sha256": "e6eeee57325bae633be8f60f77ff1dddad9e1789f302d46eee31510d97d92d49"
+    },
+    {
+      "path": "test/model-review.test.mjs",
+      "gitBlobSha1": "31e25aecafe129bbfd07cf1302885378867312f4",
+      "sha256": "26cdc44954e5e570baa7946c3cad583044bff201e894250f381cb8937f4165fc"
     },
     {
       "path": "test/stage.test.mjs",
