@@ -28,7 +28,9 @@ export class TaskStore {
   }
   file(id) {
     if (typeof id !== 'string' || !ID.test(id)) fail('INVALID_TASK_ID');
-    return path.join(this.directory, `${id}.json`);
+    // Filename namespace: task-<id>.json keeps this store's records invisible to any
+    // other store sharing the same --state directory (approval-<id>.json is foreign).
+    return path.join(this.directory, `task-${id}.json`);
   }
   create(subject, { owner } = {}) {
     if (owner !== undefined && !validOwner(owner)) fail('INVALID_OWNER');
@@ -60,8 +62,10 @@ export class TaskStore {
   list({ state } = {}) {
     const records = [];
     for (const name of fs.readdirSync(this.directory).sort()) {
-      if (!name.endsWith('.json')) continue;
-      const id = name.slice(0, -5);
+      // Own namespace only: task-<uuid>.json. Foreign-prefixed, double-prefixed
+      // (task-task-<uuid>.json) and garbage names are never even parsed.
+      if (!name.startsWith('task-') || !name.endsWith('.json')) continue;
+      const id = name.slice(5, -5);
       if (!ID.test(id)) continue;
       const record = this.get(id);
       if (state === undefined || record.state === state) records.push(record);

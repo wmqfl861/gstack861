@@ -37,7 +37,9 @@ export class ApprovalStore {
   }
   file(id) {
     if (typeof id !== 'string' || !ID.test(id)) fail('INVALID_APPROVAL_ID');
-    return path.join(this.directory, `${id}.json`);
+    // Filename namespace: approval-<id>.json keeps this store's records invisible to
+    // any other store sharing the same --state directory (task-<id>.json is foreign).
+    return path.join(this.directory, `approval-${id}.json`);
   }
   issue(subject, { ttlMs = 300000 } = {}) {
     if (!Number.isSafeInteger(ttlMs) || ttlMs < 1 || ttlMs > 86400000) fail('INVALID_TTL');
@@ -54,8 +56,9 @@ export class ApprovalStore {
       const stat = fs.lstatSync(filename);
       if (!stat.isFile() || stat.isSymbolicLink() || stat.nlink !== 1 || stat.size > 4096) fail('UNSAFE_APPROVAL_FILE');
       if (process.platform !== 'win32' && (stat.mode & 0o077)) fail('UNSAFE_APPROVAL_PERMISSIONS');
-      const record = JSON.parse(fs.readFileSync(filename, 'utf8'));
-      if (record.schemaVersion !== 1 || record.id !== id || !Number.isSafeInteger(record.expiresAt)) fail('INVALID_APPROVAL_RECORD');
+      let record;
+      try { record = JSON.parse(fs.readFileSync(filename, 'utf8')); } catch { fail('INVALID_APPROVAL_RECORD'); }
+      if (!object(record) || record.schemaVersion !== 1 || record.id !== id || !Number.isSafeInteger(record.expiresAt)) fail('INVALID_APPROVAL_RECORD');
       if (record.subjectHash !== subjectDigest(subject)) fail('APPROVAL_BINDING_MISMATCH');
       if (this.now() >= record.expiresAt) fail('APPROVAL_EXPIRED');
       if (!from.includes(record.state)) fail('APPROVAL_WRONG_STATE');
@@ -87,17 +90,18 @@ export class ApprovalStore {
     try { stat = fs.lstatSync(filename); }
     catch (error) { if (error.code === 'ENOENT') fail('NOT_FOUND'); throw error; }
     if (!stat.isFile() || stat.isSymbolicLink() || stat.nlink !== 1 || stat.size > 4096) fail('UNSAFE_APPROVAL_FILE');
-    const record = JSON.parse(fs.readFileSync(filename, 'utf8'));
+    let record;
+    try { record = JSON.parse(fs.readFileSync(filename, 'utf8')); } catch { fail('INVALID_APPROVAL_RECORD'); }
     // Read views only ever surface records in a real state-machine state.
     if (!object(record) || record.schemaVersion !== 1 || record.id !== id || !Number.isSafeInteger(record.expiresAt)
       || !['pending', 'approved', 'rejected', 'consumed'].includes(record.state)) fail('INVALID_APPROVAL_RECORD');
     return Object.freeze(record);
   }
-  /** Read-only operator view; skips lock dirs and temp files by name. */
+  /** Read-only operator view; reads only its own approval-<uuid>.json namespace. */
   list() {
     return fs.readdirSync(this.directory)
-      .filter(name => name.endsWith('.json') && ID.test(name.slice(0, -5)))
-      .map(name => this.get(name.slice(0, -5)))
+      .filter(name => name.startsWith('approval-') && name.endsWith('.json') && ID.test(name.slice(9, -5)))
+      .map(name => this.get(name.slice(9, -5)))
       .sort((a, b) => a.id.localeCompare(b.id));
   }
 }

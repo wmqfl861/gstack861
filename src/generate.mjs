@@ -26,6 +26,10 @@ function contains(parent, child) {
  * `git rev-parse <commit>:<path>` reports for a committed file.
  */
 export function blobHash(buffer) {
+  // Byte semantics only: a plain string would hash its content (update accepts
+  // strings) and a non-Buffer typed array lacks the exact-length byte view the
+  // length header promises. Refuse anything that is not a Buffer outright.
+  if (!Buffer.isBuffer(buffer)) throw new Error('INVALID_BUFFER');
   return createHash('sha1')
     .update(Buffer.from(`blob ${buffer.length}\0`, 'utf8'))
     .update(buffer)

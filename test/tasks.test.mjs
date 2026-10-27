@@ -4,10 +4,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
+import { fileURLToPath } from 'node:url';
 import { TaskStore } from '../src/tasks.mjs';
 import { ApprovalStore, subjectDigest } from '../src/approvals.mjs';
 import { fixture } from './helpers.mjs';
 const execute = promisify(execFile);
+const cli = fileURLToPath(new URL('../bin/gstack861.mjs', import.meta.url));
 const subject = f => ({ host: 'zcode', runId: 'r1', sessionId: 's1', policyHash: f.policy.policyHash, action: { kind: 'publish', artifactHash: 'fixture' } });
 
 test('task lifecycle create→start→complete tracks state and attempts', t => {
@@ -123,10 +125,46 @@ test('subjectDigest matches the ApprovalStore digest for the same subject', t =>
   const f = fixture(t), s = subject(f);
   assert.match(subjectDigest(s), /^[a-f0-9]{64}$/);
   const approvalId = new ApprovalStore(path.join(f.base, 'approvals')).issue(s);
-  const approvalRecord = JSON.parse(fs.readFileSync(path.join(f.base, 'approvals', `${approvalId}.json`), 'utf8'));
+  const approvalRecord = JSON.parse(fs.readFileSync(path.join(f.base, 'approvals', `approval-${approvalId}.json`), 'utf8'));
   assert.equal(subjectDigest(s), approvalRecord.subjectHash);
   const store = new TaskStore(path.join(f.base, 'tasks'));
   assert.equal(store.get(store.create(s)).subjectHash, subjectDigest(s));
+});
+test('shared state directory keeps task and approval stores namespaced and transitions intact', async t => {
+  const f = fixture(t), dir = path.join(f.base, 'shared-state'), s = subject(f);
+  const tasks = new TaskStore(dir), approvals = new ApprovalStore(dir);
+  const taskId = tasks.create(s);
+  const approvalId = approvals.issue(s);
+  // Filename namespaces: each store owns its prefixed file; no bare-uuid records exist.
+  assert.equal(fs.existsSync(path.join(dir, `task-${taskId}.json`)), true);
+  assert.equal(fs.existsSync(path.join(dir, `approval-${approvalId}.json`)), true);
+  assert.equal(fs.existsSync(path.join(dir, `${taskId}.json`)), false);
+  // Record content is unchanged: the bare uuid stays the id inside the file.
+  assert.equal(JSON.parse(fs.readFileSync(path.join(dir, `task-${taskId}.json`), 'utf8')).id, taskId);
+  assert.deepEqual(tasks.list().map(r => r.id), [taskId]);
+  assert.deepEqual(approvals.list().map(r => r.id), [approvalId]);
+  // Foreign records must not break transitions in either store.
+  assert.equal(tasks.start(taskId, s).state, 'running');
+  assert.equal(approvals.approve(approvalId, s).state, 'approved');
+  assert.equal(tasks.complete(taskId, s).state, 'completed');
+  assert.equal(approvals.consume(approvalId, s).state, 'consumed');
+  // Operator CLI smoke: approvals show stays readable in the mixed directory.
+  const show = await execute(process.execPath, [cli, 'approvals', 'show', '--state', dir, '--id', approvalId]);
+  assert.equal(JSON.parse(show.stdout).state, 'consumed');
+});
+test('approval records disguised into the task namespace fail closed and stray names are ignored', t => {
+  const f = fixture(t), dir = path.join(f.base, 'shared'), s = subject(f);
+  const tasks = new TaskStore(dir), approvals = new ApprovalStore(dir);
+  const approvalId = approvals.issue(s);
+  const taskId = tasks.create(s);
+  // A foreign record renamed into task-<uuid>.json: content validation stays authoritative.
+  fs.renameSync(approvals.file(approvalId), path.join(dir, `task-${approvalId}.json`));
+  assert.throws(() => tasks.get(approvalId), /INVALID_TASK_RECORD/);
+  assert.throws(() => tasks.list(), /INVALID_TASK_RECORD/);
+  // Double-prefixed and foreign-named files are not task-namespace members: list ignores them.
+  fs.renameSync(path.join(dir, `task-${approvalId}.json`), path.join(dir, `task-task-${approvalId}.json`));
+  fs.writeFileSync(path.join(dir, 'approval-x.json'), 'garbage');
+  assert.deepEqual(tasks.list().map(r => r.id), [taskId]);
 });
 test('task directories must be absolute and not symlinked', t => {
   const f = fixture(t), dir = path.join(f.base, 'tasks');

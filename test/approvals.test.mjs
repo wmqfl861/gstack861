@@ -5,6 +5,7 @@ import path from 'node:path';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { ApprovalStore } from '../src/approvals.mjs';
+import { TaskStore } from '../src/tasks.mjs';
 import { fixture } from './helpers.mjs';
 const execute = promisify(execFile);
 const subject = f => ({ host: 'zcode', runId: 'r1', sessionId: 's1', policyHash: f.policy.policyHash, action: { kind: 'publish', artifactHash: 'fixture' } });
@@ -89,6 +90,35 @@ test('verify is read-only: reports binding without transitioning or storing payl
   assert.throws(() => store.verify(id, { ...s, extra: true }), /INVALID_SUBJECT/);
   assert.throws(() => store.verify('00000000-0000-4000-8000-000000000000', s), /NOT_FOUND/);
   for (const wrong of ['../policy', '', 'constructor']) assert.throws(() => store.verify(wrong, s), /INVALID_APPROVAL_ID/);
+});
+test('task records disguised into the approval namespace fail closed and stray names are ignored', t => {
+  const f = fixture(t), dir = path.join(f.base, 'shared'), s = subject(f);
+  const tasks = new TaskStore(dir), approvals = new ApprovalStore(dir);
+  const approvalId = approvals.issue(s);
+  const taskId = tasks.create(s);
+  // A foreign record renamed into approval-<uuid>.json: content validation stays authoritative.
+  fs.renameSync(tasks.file(taskId), path.join(dir, `approval-${taskId}.json`));
+  assert.throws(() => approvals.get(taskId), /INVALID_APPROVAL_RECORD/);
+  assert.throws(() => approvals.list(), /INVALID_APPROVAL_RECORD/);
+  // Double-prefixed and foreign-named files are not approval-namespace members: list ignores them.
+  fs.renameSync(path.join(dir, `approval-${taskId}.json`), path.join(dir, `approval-approval-${taskId}.json`));
+  fs.writeFileSync(path.join(dir, 'task-x.json'), 'garbage');
+  assert.deepEqual(approvals.list().map(r => r.id), [approvalId]);
+});
+test('corrupt and non-object approval records fail closed in transitions and reads', t => {
+  const f = fixture(t), store = new ApprovalStore(path.join(f.base, 'approvals')), s = subject(f);
+  const id = store.issue(s);
+  // Corrupt JSON previously surfaced as a raw SyntaxError from transition.
+  fs.writeFileSync(store.file(id), '{');
+  assert.throws(() => store.approve(id, s), /INVALID_APPROVAL_RECORD/);
+  assert.throws(() => store.get(id), /INVALID_APPROVAL_RECORD/);
+  // A null record previously crashed transition with a raw TypeError; get already failed closed.
+  fs.writeFileSync(store.file(id), 'null\n');
+  assert.throws(() => store.approve(id, s), /INVALID_APPROVAL_RECORD/);
+  assert.throws(() => store.get(id), /INVALID_APPROVAL_RECORD/);
+  fs.writeFileSync(store.file(id), '[]\n');
+  assert.throws(() => store.approve(id, s), /INVALID_APPROVAL_RECORD/);
+  assert.throws(() => store.get(id), /INVALID_APPROVAL_RECORD/);
 });
 test('two real processes cannot both consume one approval', async t => {
   const f = fixture(t), dir = path.join(f.base, 'approvals'), store = new ApprovalStore(dir), s = subject(f);

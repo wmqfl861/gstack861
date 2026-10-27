@@ -193,6 +193,20 @@ test('approvals CLI rejects unknown subcommands, invented states and malformed a
   assert.equal(approve.status, 1);
   assert.match(approve.stderr, /gstack861: INVALID_ACTION_FILE/);
 });
+test('approvals CLI action-file failures are scoped: missing files INVALID_ACTION_FILE, relative paths ABSOLUTE_PATH_REQUIRED', t => {
+  const f = fixture(t), state = path.join(f.base, 'approvals');
+  const base = [cli, 'approvals', 'approve', '--state', state, '--id', '00000000-0000-4000-8000-000000000000',
+    '--host', 'zcode', '--session', 's1', '--run', 'r1', '--policy-hash', f.policy.policyHash];
+  // A missing action file previously leaked the raw ENOENT message.
+  const missing = spawnSync(process.execPath, [...base, '--action-file', path.join(f.base, 'absent-action.json')], { encoding: 'utf8', timeout: 10000 });
+  assert.equal(missing.status, 1);
+  assert.match(missing.stderr, /gstack861: INVALID_ACTION_FILE/);
+  // A relative --action-file keeps its own path-semantics code; it must not be masked as INVALID_ACTION_FILE.
+  const relative = spawnSync(process.execPath, [...base, '--action-file', 'relative-action.json'], { encoding: 'utf8', timeout: 10000 });
+  assert.equal(relative.status, 1);
+  assert.match(relative.stderr, /gstack861: ABSOLUTE_PATH_REQUIRED/);
+  assert.equal(relative.stderr.includes('INVALID_ACTION_FILE'), false);
+});
 test('approvals CLI issue→verify→approve→consume chain; verify mismatch stays read-only; replay refused', t => {
   const f = fixture(t), state = path.join(f.base, 'approvals');
   const action = { tool: 'Write', input: { file_path: 'src/a' } };
@@ -204,7 +218,7 @@ test('approvals CLI issue→verify→approve→consume chain; verify mismatch st
   assert.equal(issue.status, 0, issue.stderr);
   const id = JSON.parse(issue.stdout);
   assert.match(id, /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
-  const recordFile = path.join(state, `${id}.json`);
+  const recordFile = path.join(state, `approval-${id}.json`);
   const verifyMatch = run('verify', '--state', state, '--id', id, ...subject);
   assert.equal(verifyMatch.status, 0, verifyMatch.stderr);
   assert.deepEqual(JSON.parse(verifyMatch.stdout), { id, state: 'pending', binding: 'match' });
