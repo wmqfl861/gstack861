@@ -365,3 +365,109 @@ test('real hook subprocess decodes multi-byte UTF-8 split across stdin chunks', 
   const child = spawnSync(process.execPath, [cli, 'hook', 'zcode', '--policy', f.policyPath], { input: JSON.stringify(payload), encoding: 'utf8', timeout: 10000 });
   assert.equal(child.status, 0, child.stdout);
 });
+
+/** ask prints the question JSON first and the transition result second; split the two pretty docs. */
+function parsePrinted(out) {
+  const boundary = out.indexOf('\n}\n');
+  assert.notEqual(boundary, -1, 'expected two printed JSON documents on stdout');
+  return [JSON.parse(out.slice(0, boundary + 2)), JSON.parse(out.slice(boundary + 3))];
+}
+const askSubject = f => ({ host: 'zcode', sessionId: 's1', runId: 'r1', policyHash: f.policy.policyHash,
+  action: { tool: 'Write', input: { file_path: 'src/a' } } });
+const writeActionFile = (f, action) => {
+  const actionFile = path.join(f.base, 'action.json');
+  fs.writeFileSync(actionFile, JSON.stringify(action));
+  return actionFile;
+};
+
+test('approvals ask applies a piped approve and keeps pending on EOF or unrecognized answers', t => {
+  const f = fixture(t), state = path.join(f.base, 'approvals');
+  const store = new ApprovalStore(state);
+  const subject = askSubject(f);
+  const id = store.issue(subject);
+  const actionFile = writeActionFile(f, subject.action);
+  const ask = input => spawnSync(process.execPath, [cli, 'approvals', 'ask', '--state', state, '--id', id,
+    '--host', 'zcode', '--session', 's1', '--run', 'r1', '--policy-hash', subject.policyHash, '--action-file', actionFile], { input, encoding: 'utf8', timeout: 10000 });
+  // EOF with no answer line: the question still prints, then the bridge blocks — never auto-agrees.
+  const eof = ask('');
+  assert.equal(eof.status, 3);
+  assert.match(eof.stderr, /^gstack861: ASK_UNANSWERED\n$/);
+  assert.equal(JSON.parse(eof.stdout).id, id);
+  const show = () => JSON.parse(spawnSync(process.execPath, [cli, 'approvals', 'show', '--state', state, '--id', id], { encoding: 'utf8', timeout: 10000 }).stdout);
+  assert.equal(show().state, 'pending', 'unanswered ask must leave the record pending');
+  // Matching is trimmed but case-sensitive: ' Approve ' is not an answer.
+  const shout = ask(' Approve \n');
+  assert.equal(shout.status, 3);
+  assert.match(shout.stderr, /ASK_UNANSWERED/);
+  assert.equal(show().state, 'pending');
+  // An exact piped approve answers the question and prints the approved record.
+  const ok = ask('approve\n');
+  assert.equal(ok.status, 0, ok.stderr);
+  const [question, result] = parsePrinted(ok.stdout);
+  assert.equal(question.id, id);
+  assert.equal(question.state, 'pending');
+  assert.equal(question.prompt, '');
+  assert.deepEqual(question.subject, { host: 'zcode', sessionId: 's1', runId: 'r1', policyHashPrefix16: subject.policyHash.slice(0, 16) });
+  assert.equal(question.actionDigest, store.get(id).subjectHash.slice(0, 16));
+  assert.ok(question.expiresInMillisRemaining > 0 && question.expiresInMillisRemaining <= 300000);
+  assert.equal(result.state, 'approved');
+  // stdout ends with exactly the record as persisted on disk.
+  assert.deepEqual(result, JSON.parse(fs.readFileSync(path.join(state, `approval-${id}.json`), 'utf8')));
+});
+test('approvals ask reject echoes the reason in stdout only, never in the record', t => {
+  const f = fixture(t), state = path.join(f.base, 'approvals');
+  const store = new ApprovalStore(state);
+  const subject = askSubject(f);
+  const id = store.issue(subject);
+  const actionFile = writeActionFile(f, subject.action);
+  const child = spawnSync(process.execPath, [cli, 'approvals', 'ask', '--state', state, '--id', id,
+    '--host', 'zcode', '--session', 's1', '--run', 'r1', '--policy-hash', subject.policyHash, '--action-file', actionFile], { input: 'reject\nreason text\n', encoding: 'utf8', timeout: 10000 });
+  assert.equal(child.status, 0, child.stderr);
+  const [, result] = parsePrinted(child.stdout);
+  assert.equal(result.state, 'rejected');
+  assert.equal(result.reason, 'reason text');
+  // The on-disk record keeps the digest-only schema: reason is echoed, never persisted.
+  const raw = fs.readFileSync(path.join(state, `approval-${id}.json`), 'utf8');
+  assert.equal(raw.includes('reason text'), false);
+  const record = JSON.parse(raw);
+  assert.equal(record.reason, undefined);
+  assert.deepEqual(Object.keys(record).sort(),
+    ['changedAt', 'expiresAt', 'id', 'issuedAt', 'schemaVersion', 'state', 'subjectHash']);
+});
+test('approvals ask forwards prompt-file into the question and keeps error codes and usage intact', t => {
+  const f = fixture(t), state = path.join(f.base, 'approvals');
+  const store = new ApprovalStore(state);
+  const subject = askSubject(f);
+  const id = store.issue(subject);
+  const actionFile = writeActionFile(f, subject.action);
+  const promptFile = path.join(f.base, 'prompt.txt');
+  fs.writeFileSync(promptFile, 'Deploy to production?');
+  const ask = (input, ...extra) => spawnSync(process.execPath, [cli, 'approvals', 'ask', '--state', state, '--id', id,
+    '--host', 'zcode', '--session', 's1', '--run', 'r1', '--policy-hash', subject.policyHash, '--action-file', actionFile, ...extra], { input, encoding: 'utf8', timeout: 10000 });
+  const ok = ask('approve\n', '--prompt-file', promptFile);
+  assert.equal(ok.status, 0, ok.stderr);
+  const [question] = parsePrinted(ok.stdout);
+  assert.equal(question.prompt, 'Deploy to production?');
+  assert.equal(question.actionDigest, store.get(id).subjectHash.slice(0, 16));
+  // Missing required flags is an argument error before any question or state directory work.
+  const missing = spawnSync(process.execPath, [cli, 'approvals', 'ask', '--state', state], { encoding: 'utf8', timeout: 10000 });
+  assert.equal(missing.status, 1);
+  assert.match(missing.stderr, /INVALID_ARGUMENTS/);
+  assert.equal(missing.stdout, '');
+  // A structurally invalid subject fails with the existing code and no question printed.
+  const bad = spawnSync(process.execPath, [cli, 'approvals', 'ask', '--state', state, '--id', id, '--host', 'zcode',
+    '--session', 's1', '--run', 'r1', '--policy-hash', 'nope', '--action-file', actionFile], { input: 'approve\n', encoding: 'utf8', timeout: 10000 });
+  assert.equal(bad.status, 1);
+  assert.match(bad.stderr, /INVALID_SUBJECT/);
+  assert.equal(bad.stdout, '');
+  // A well-formed but mismatched subject still surfaces the binding error after the answer.
+  const other = store.issue(subject);
+  const mismatch = spawnSync(process.execPath, [cli, 'approvals', 'ask', '--state', state, '--id', other, '--host', 'zcode',
+    '--session', 'other-session', '--run', 'r1', '--policy-hash', subject.policyHash, '--action-file', actionFile], { input: 'approve\n', encoding: 'utf8', timeout: 10000 });
+  assert.equal(mismatch.status, 1);
+  assert.match(mismatch.stderr, /APPROVAL_BINDING_MISMATCH/);
+  assert.equal(store.get(other).state, 'pending');
+  // The usage text documents the new bridge.
+  const usage = spawnSync(process.execPath, [cli, 'nope'], { encoding: 'utf8' });
+  assert.match(usage.stderr, /approvals ask --state DIR --id ID/);
+});
