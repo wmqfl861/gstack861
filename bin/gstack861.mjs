@@ -140,6 +140,22 @@ if (args[0] === 'hook') {
         const subject = subjectFrom(options);
         const record = store.get(options['--id']);
         const promptFile = options['--prompt-file'];
+        // Read the prompt file before the stdin await below: a bad prompt file must
+        // exit with EMPTY stdout — no question printed — and never block on an answer.
+        // Path semantics stay outside the scoped catch, same as subjectFrom: a
+        // relative --prompt-file keeps its own ABSOLUTE_PATH_REQUIRED code.
+        let prompt = '';
+        if (promptFile !== undefined) {
+          const file = absolute(promptFile);
+          try { prompt = fs.readFileSync(file, 'utf8'); }
+          catch (error) {
+            // Scoped by error type: read errors carry a filesystem code (ENOENT, EACCES...).
+            // The prompt is plain UTF-8 text with no parse step, so the SyntaxError/
+            // RangeError classes below are the shared pattern, not a parse-error case here.
+            if (error instanceof SyntaxError || error instanceof RangeError || typeof error.code === 'string') throw new Error('INVALID_PROMPT_FILE');
+            throw error;
+          }
+        }
         // Step 1: the structured question — everything the operator needs to decide,
         // never the action payload itself, only its digest prefix.
         print({ id: record.id, state: record.state,
@@ -147,7 +163,7 @@ if (args[0] === 'hook') {
             policyHashPrefix16: subject.policyHash.slice(0, 16) },
           actionDigest: subjectDigest(subject).slice(0, 16),
           expiresInMillisRemaining: record.expiresAt - Date.now(),
-          prompt: promptFile === undefined ? '' : fs.readFileSync(absolute(promptFile), 'utf8') });
+          prompt });
         // Step 2: block on the operator's stdin answer. No piped answer means no
         // approval — the bridge never auto-agrees.
         const chunks = []; let bytes = 0;

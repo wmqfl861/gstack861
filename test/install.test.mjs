@@ -799,6 +799,45 @@ test('installSkills rejects malformed files maps, keys, and values', t => {
   }
 });
 
+test('installSkills refuses files keys that collide case-insensitively with zero writes', t => {
+  const root = base(t), staging = path.join(root, 'staging'), target = path.join(root, 'target');
+  fs.mkdirSync(staging);
+  // The listed files are deliberately not written to disk: the collision check is part
+  // of manifest shape validation and must refuse before any staging file read.
+  // POSIX nuance: a case pair like A.md/a.md previously installed successfully there
+  // as two distinct files; refusing it is intentional cross-platform tightening (the
+  // same manifest already collided on case-insensitive win32/apfs targets), not
+  // merely an early EEXIST.
+  stage(staging, 'alpha', ALPHA_V1, { files: { 'A.md': textDigest('body-a'), 'a.md': textDigest('body-b') } });
+  assert.throws(() => installSkills({ staging, target, now: NOW }), /STAGING_INVALID/);
+  assert.ok(!fs.existsSync(target), 'the refusal must happen before the target is even created');
+});
+
+test('installSkills refuses a files key that collides as a directory prefix of another', t => {
+  const root = base(t);
+  let n = 0;
+  // A file `a` and a directory `a/` cannot coexist on any filesystem, so these pairs
+  // are refused regardless of case sensitivity — the check is segment-wise (key + '/').
+  for (const [keyA, keyB] of [['a', 'a/b.md'], ['sections', 'sections/x.md'], ['Sections', 'sections/x.md']]) {
+    const staging = path.join(root, `staging-${n += 1}`), target = path.join(root, `target-${n}`);
+    fs.mkdirSync(staging);
+    stage(staging, 'alpha', ALPHA_V1, { files: { [keyA]: textDigest('body-a'), [keyB]: textDigest('body-b') } });
+    assert.throws(() => installSkills({ staging, target, now: NOW }), /STAGING_INVALID/, `${keyA} + ${keyB} must collide`);
+    assert.ok(!fs.existsSync(target));
+  }
+});
+
+test('installSkills installs files keys that share a bare string prefix but no segment', t => {
+  const root = base(t), staging = path.join(root, 'staging'), target = path.join(root, 'target');
+  fs.mkdirSync(staging);
+  // a.md and a.md2 share the literal string prefix "a.md" but no whole path segment:
+  // the collision rule is segment-wise (key + '/'), never a bare startsWith, so both install.
+  stageMulti(staging, 'alpha', ALPHA_V1, { 'a.md': 'plain body', 'a.md2': 'sibling body' });
+  assert.deepEqual(installSkills({ staging, target, now: NOW }), { installed: ['alpha'], skipped: [], backedUp: [] });
+  assert.equal(fs.readFileSync(path.join(target, 'alpha', 'a.md'), 'utf8'), 'plain body');
+  assert.equal(fs.readFileSync(path.join(target, 'alpha', 'a.md2'), 'utf8'), 'sibling body');
+});
+
 test('uninstallSkills refuses a legacy files-less registry record over a files-bearing target', t => {
   const root = base(t), staging = path.join(root, 'staging'), target = path.join(root, 'target');
   fs.mkdirSync(staging);

@@ -73,6 +73,7 @@ function loadRegistry(target) {
     let files;
     if (entry.files !== undefined) {
       if (!object(entry.files)) fail('REGISTRY_INVALID');
+      // listedKey-only by design: registry files maps can only originate from staging-validated manifests.
       for (const [key, value] of Object.entries(entry.files)) {
         if (!listedKey(key) || typeof value !== 'string' || !SHA256.test(value)) fail('REGISTRY_INVALID');
       }
@@ -159,6 +160,17 @@ function stagingPlan(staging) {
       if (!object(manifest.files)) fail('STAGING_INVALID');
       for (const [key, value] of Object.entries(manifest.files)) {
         if (!listedKey(key) || typeof value !== 'string' || !SHA256.test(value)) fail('STAGING_INVALID');
+      }
+      // Cross-key collision pre-validation: two distinct keys of ONE files map that
+      // meet after toLowerCase() — either exactly, or where one is a whole-segment
+      // directory prefix of the other (key + '/', never a bare startsWith: a.md and
+      // a.md2 coexist) — would write two files onto one path on case-insensitive
+      // targets and shadow each other on case-sensitive ones. O(n²) over a small map.
+      const lowered = Object.keys(manifest.files).map(key => key.toLowerCase());
+      for (let i = 0; i < lowered.length; i++) {
+        for (let j = i + 1; j < lowered.length; j++) {
+          if (lowered[i] === lowered[j] || lowered[i].startsWith(`${lowered[j]}/`) || lowered[j].startsWith(`${lowered[i]}/`)) fail('STAGING_INVALID');
+        }
       }
     }
     const files = manifest.files !== undefined && Object.keys(manifest.files).length > 0 ? { ...manifest.files } : undefined;
