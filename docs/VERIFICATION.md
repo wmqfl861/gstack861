@@ -351,3 +351,18 @@ Lane A（渲染）：初审 Needs fixes（2 Critical）→ 修复轮 → 复审�
 ## 下一验收
 
 两项用户解锁不变（首尾重申）。M3 非设备纯工作流消费已覆盖 11 技能；剩余非设备项（diagram/make-pdf 的生成类、context-save/restore 等）可继续；设备依赖组与 M4 待环境。
+
+# 第十四轮验证记录：批次 9（收官消费 + 离线边界固化，2026-10-27）
+
+范围：0.4.6。按 `docs/plans/2026-10-27-batch9-final-suite.md` v2（计划审查修正全部并入：make-pdf/diagram 真实降级路径、context-save/restore 规定细节、边界 13 项、Lane B 移出 README）。
+
+| 项 | 结果 |
+|---|---|
+| `npm test` | 212/212（doctor 计数 15 断言随 Lane B） |
+| 收官消费 | 见 `docs/verification-2026-10-27-final-suite.md`：context-save（规定布局+溯源词逐字）、context-restore（HEAD_MATCHES+Verify first/Next steps 分栏）、diagram（BLOCKED+.mmd 部分产物）、make-pdf（BLOCKED+降级 --to html 交付）；累计 15 例，M3 非设备组收官 |
+| 离线边界固化 | README「离线边界」节 13 项逐项注阻塞原因；FEATURE_MATRIX 状态行同步 |
+| 车道审查 | 双车道合并后由终审覆盖（Lane A 边界声明逐项核对为终审重点） |
+
+## 下一验收
+
+**离线可推进空间已尽。** 两项用户解锁（首尾重申）是仅剩的可行动路径：① DEEPSEEK_API_KEY → verify-dsh-guard + DSH 纵向 + toolRewrites；② 受控新 ZCode 会话 → guard 层验收 + 自动拾取。解锁后按解锁顺序推进边界 13 项中的对应项。
