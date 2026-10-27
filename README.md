@@ -10,7 +10,7 @@
 - [功能与证据矩阵](docs/FEATURE_MATRIX.md)
 - [本轮测试说明及限制](docs/VERIFICATION.md)
 - [精确测试文件摘要](docs/verification-2026-10-26.json)（首轮 Linux）；[Windows 轮](docs/verification-2026-10-26-windows.json)；[M2 基础批次](docs/verification-2026-10-26-m2.json)
-- [后续轮次](docs/verification-2026-10-27-review-fixes.json)：[Windows 验收](docs/verification-2026-10-27-windows-acceptance.json)、[M2 纵向](docs/verification-2026-10-27-m2-vertical.json)、[纵向流程证据](docs/verification-2026-10-27-vertical-zcode.md)、[批次 2](docs/verification-2026-10-27-batch2.json)、[批次 3](docs/verification-2026-10-27-batch3.json)、[批次 4](docs/verification-2026-10-27-batch4.json)、[批次 5](docs/verification-2026-10-27-batch5.json)、[渲染技能消费证据](docs/verification-2026-10-27-render-consumption.md)、[批次 6](docs/verification-2026-10-27-batch6.json)、[安全套件](docs/verification-2026-10-27-safety-suite.md)
+- [后续轮次](docs/verification-2026-10-27-review-fixes.json)：[Windows 验收](docs/verification-2026-10-27-windows-acceptance.json)、[M2 纵向](docs/verification-2026-10-27-m2-vertical.json)、[纵向流程证据](docs/verification-2026-10-27-vertical-zcode.md)、[批次 2](docs/verification-2026-10-27-batch2.json)、[批次 3](docs/verification-2026-10-27-batch3.json)、[批次 4](docs/verification-2026-10-27-batch4.json)、[批次 5](docs/verification-2026-10-27-batch5.json)、[渲染技能消费证据](docs/verification-2026-10-27-render-consumption.md)、[批次 6](docs/verification-2026-10-27-batch6.json)、[安全套件](docs/verification-2026-10-27-safety-suite.md)、[批次 7](docs/verification-2026-10-27-batch7.json)、[工作流套件](docs/verification-2026-10-27-workflow-suite.md)
 - [M2 基础批次实施计划](docs/plans/2026-10-26-m2-foundation.md)
 - [本机 DSH 真实加载调研](docs/integration/dsh-local-findings.md)
 - [ZCode 受控接入验收手册](docs/integration/zcode-acceptance.md)
