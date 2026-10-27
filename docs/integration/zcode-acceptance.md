@@ -130,7 +130,7 @@ echo '{"hook_event_name":"PreToolUse","tool_name":"Write","tool_input":{"file_pa
 }
 ```
 
-拒绝码一览（`src/policy.mjs`、`bin/gstack861.mjs`）：`OUTSIDE_SCOPE`（越出对应读写根）、`PROTECTED_PATH`（VCS/受保护根）、`UNMAPPED_TOOL`（matcher `.*` 下未绑定工具）、`MISSING_PATH`、`PATH_TRAVERSAL`、`INVALID_PATH_OR_CALL`、`INVALID_EVENT`、`UNSAFE_WRITE_TARGET`（目标已存在且非普通文件或硬链接数 >1）、`INPUT_TOO_LARGE`（stdin 超 1 MiB；`toolInput` 双份发送使有效内容约减半，见审查报告 §二.8）、`UNSAFE_POLICY_FILE`/`POLICY_MUST_BE_OUTSIDE_WORKSPACE`（策略文件本身不合规）、`HOOK_INPUT_OR_POLICY_ERROR`（其余启动/解析失败，fail-closed）。除显式列出的码外，一切异常都收敛为拒绝而非放行。
+拒绝码一览（`src/policy.mjs`、`bin/gstack861.mjs`）：`OUTSIDE_SCOPE`（越出对应读写根）、`PROTECTED_PATH`（VCS/受保护根）、`UNMAPPED_TOOL`（matcher `.*` 下未绑定工具）、`MISSING_PATH`、`PATH_TRAVERSAL`、`INVALID_PATH_OR_CALL`、`INVALID_EVENT`、`UNSAFE_WRITE_TARGET`（目标已存在且非普通文件或硬链接数 >1）、`INPUT_TOO_LARGE`（stdin 超 4 MiB，0.3.0 起；`toolInput` 双份发送使有效内容约减半）、`CWD_REQUIRED`（相对路径或缺 `cwd` 的 apply-patch 绑定调用）、`UNSAFE_POLICY_FILE`/`POLICY_MUST_BE_OUTSIDE_WORKSPACE`（策略文件本身不合规）、`HOOK_INPUT_OR_POLICY_ERROR`（其余启动/解析失败，fail-closed）。除显式列出的码外，一切异常都收敛为拒绝而非放行。
 
 ## 6. 新会话验收清单
 
@@ -158,8 +158,8 @@ echo '{"hook_event_name":"PreToolUse","tool_name":"Write","tool_input":{"file_pa
 ## 8. 已知边界（引用，不在此重复）
 
 - 守卫不是操作系统沙箱；TOCTOU、恶意同用户进程、宿主旁路执行器不在保障内——见 README「安全与状态边界」。
-- `ApplyPatch` 形态的修改在本版本无法通过守卫评估（事件工具名无绑定；审查报告 §二.7；固定提交 `tool/compat.ts` 把它当作 Write/Edit 的别名参与 Hook 匹配，事件里的工具名仍是 `ApplyPatch`）。验收会话中若出现此类调用，被拒属预期。
-- stdin 1 MiB 上限与 `toolInput` 双份发送的实际有效上限——审查报告 §二.8。
+- `ApplyPatch` 形态的修改自 0.3.0 起可通过 `parser: 'apply-patch'` 绑定评估（V4A 信封解析，逐路径全量写保护）；本手册样例策略未包含该绑定，故验收会话中此类调用仍被拒，属预期（绑定方法见 `src/policy.mjs` 与 `test/policy.test.mjs`）。
+- stdin 4 MiB 上限（0.3.0 起）与 `toolInput` 双份发送的实际有效上限（审查报告 §二.8 描述的是提升前状态）。
 - 强范围保护（默认 `.*` matcher）会拒绝所有未映射工具，不是常规开发流程的完整安全安装（README「ZCode 接入」）。
 
 ## 9. 验收后的证据
