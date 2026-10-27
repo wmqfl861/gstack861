@@ -1,0 +1,166 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-27",
+  "round": "claude-review-fixes",
+  "environment": {
+    "kind": "claude-cloud-sandbox",
+    "os": "linux",
+    "node": "v22.23.4"
+  },
+  "review": "docs/reviews/2026-10-27-claude-review.md",
+  "commands": [
+    {
+      "command": "npm run check",
+      "result": "passed",
+      "modules": 22
+    },
+    {
+      "command": "npm test",
+      "result": "passed",
+      "tests": 105,
+      "failed": 0,
+      "skipped": 0,
+      "cancelled": 0,
+      "added": "5 regression tests (hook UTF-8 decoding 1, install/uninstall recovery 3, nested .git 1)"
+    },
+    {
+      "command": "npm run doctor",
+      "result": "passed",
+      "version": "0.2.1"
+    },
+    {
+      "command": "node bin/gstack861.mjs inventory --upstream upstream/gstack",
+      "result": "passed",
+      "skills": 57,
+      "note": "the CI step that failed on runs #4-#7 because of ABSOLUTE_PATH_REQUIRED"
+    },
+    {
+      "command": "5 new regression tests run against d89eab1 sources",
+      "result": "5 failed as expected; the other 100 passed"
+    }
+  ],
+  "notRun": [
+    "Windows: scripts/verify-8dot3.mjs (8.3 short-name aliasing of protectedRoots) and the full suite on win32",
+    "macOS (case-insensitive APFS aliasing)",
+    "real ZCode / DSH host integration"
+  ],
+  "hostCertification": {
+    "zcode": "not-run",
+    "dsh": "activation-tested-only"
+  },
+  "macOS": "not-run",
+  "paidModelCalls": 0,
+  "testedFiles": [
+    {
+      "path": "bin/gstack861.mjs",
+      "gitBlobSha1": "5916447c0df638cc049e4969488dd57eedd7e144",
+      "sha256": "d8e5fa234fd16cbc3a2d5319d113674edfc05d81c2fbba4465fb3fb05dc988f6"
+    },
+    {
+      "path": "package.json",
+      "gitBlobSha1": "10a0fb61259e944a9dfce37de06ac2baaa79568f",
+      "sha256": "c60e01b3d485f132803d3e2dd6cd5b89add620e81727e60a220749cb7293c1c1"
+    },
+    {
+      "path": "scripts/check.mjs",
+      "gitBlobSha1": "ea659ab5cec1f2aaaf74e564c8fcb3999bb27569",
+      "sha256": "476c371abf9fbb60f6b66910a6838f86c1fa2a9c1297fb375012168f72ffa363"
+    },
+    {
+      "path": "src/adapters/dsh.mjs",
+      "gitBlobSha1": "92b2188912f2781ca414fa8e8ba5078597ee907e",
+      "sha256": "44caf2c956880e0a2b9ca18403ddb9c079e5c287801d206a07d8a6a0bc0d8951"
+    },
+    {
+      "path": "src/adapters/zcode.mjs",
+      "gitBlobSha1": "ff41bbf88a39f6bc719c52bb1e85499bff965b9e",
+      "sha256": "75b6074015b117b9fd3fbc4f4c3913e5ef93fd8a3e27a169dbe46af799de3931"
+    },
+    {
+      "path": "src/approvals.mjs",
+      "gitBlobSha1": "dc373ce62dbdcdf5d99b41d28094898a140a1c05",
+      "sha256": "7c5220cb65f93325338ce4ee161c6b0e9e24e7652093965be8ff32db213bc9e3"
+    },
+    {
+      "path": "src/generate.mjs",
+      "gitBlobSha1": "fefcd289986ae1831a45bbf90a9ac8479c77e875",
+      "sha256": "989739e72b6052206e4374e462be7304dcb20a0c0357e52994a1211f57cc9708"
+    },
+    {
+      "path": "src/install.mjs",
+      "gitBlobSha1": "2a782effe04fe199a1a97ad050ca487932172c2e",
+      "sha256": "b450c5a3b04051b13c59706cfa2628f300aca88be2daf366a23c2adca33eebcb"
+    },
+    {
+      "path": "src/inventory.mjs",
+      "gitBlobSha1": "ae15a9fa5dccf8f0341787ad73a5382288b69a79",
+      "sha256": "520fdfe3e4def01263603c3a875144257bc0668966c2571ea03a322c56f09011"
+    },
+    {
+      "path": "src/json.mjs",
+      "gitBlobSha1": "e8723b9857ef3b044a38d13f225d85e71cce81a6",
+      "sha256": "f1865cee2953f68fe6330544b3f0ce7db8f6b00d5a55327d59de2f348c83bb8e"
+    },
+    {
+      "path": "src/policy.mjs",
+      "gitBlobSha1": "0825b8f6aff6b408a6776b2593c19eb02bbdd99e",
+      "sha256": "556a7686ef3926287d28fbbb7b2a38bea39155e84a72a40f13e988cbe1d52a41"
+    },
+    {
+      "path": "src/tasks.mjs",
+      "gitBlobSha1": "40396d0ef526cb75b91a7ce77d3f9483645e4970",
+      "sha256": "d16aa087ab3897d0f482a992934ff01a4a451c04f11718b6e1515b485dd174c1"
+    },
+    {
+      "path": "test/adapters.test.mjs",
+      "gitBlobSha1": "bd4fd5be6312e6be106d11037c05e6583dd17afd",
+      "sha256": "f6ef2f3024aef37af261fde2dfb9d4470b3762647d7a6eb2c6d5c6eee2947106"
+    },
+    {
+      "path": "test/approvals.test.mjs",
+      "gitBlobSha1": "8155bdfc78945e141cb21e3f3fc45afeb29a57d8",
+      "sha256": "83b4d31b98fa248dbf50694b943f8612bc30c81ececcfdea674b59ccbb0fff94"
+    },
+    {
+      "path": "test/generate.test.mjs",
+      "gitBlobSha1": "57c2b739f2493cfc1b0595348356662d06c540a6",
+      "sha256": "0e1e23f5b20e31d14253168242bec3e1550191abdddea02185bb1762fce70ae5"
+    },
+    {
+      "path": "test/helpers.mjs",
+      "gitBlobSha1": "a9f9eb6a69043bf912e489f559fa70320031e6bc",
+      "sha256": "a1e0661b4bff12311dbe334ca86b03d71523c551d0fc2c7a6fa8e62f1d26aea7"
+    },
+    {
+      "path": "test/install.test.mjs",
+      "gitBlobSha1": "4c74fc4cac2866e1c10cc92b713ec4b33a946e53",
+      "sha256": "fc14220a71a7998bd7c80e7e773374a6baed3da31cc280110a1e7089ecd02b92"
+    },
+    {
+      "path": "test/inventory.test.mjs",
+      "gitBlobSha1": "07797f44357073208c8590d27db2e72d397be025",
+      "sha256": "c2106c006eb24131c738420fc1e9b056efa4fcab906f3cda8cc34d08405e31ab"
+    },
+    {
+      "path": "test/json.test.mjs",
+      "gitBlobSha1": "2cc1b0f2b5b93fd457e017a257db450be7d0cf0f",
+      "sha256": "576fea350051d411e460fb2eb0bd45467c34120ac5b39f072f2060a9af54ac39"
+    },
+    {
+      "path": "test/policy.test.mjs",
+      "gitBlobSha1": "0bcb8dd853e27e83cd630ee97c3b7ecd83abeccb",
+      "sha256": "351bf17bcb0a6d0cd00bb365a738e088d5795b5917152169fb7ddb0df969b11e"
+    },
+    {
+      "path": "test/tasks.test.mjs",
+      "gitBlobSha1": "24f85691798dc6824c60d3df975b662b24c4d5cb",
+      "sha256": "688632be4d30ef3a0cfbe668a7982d9aa60ed5236e84b3ac6d5b8ed80fa28d6d"
+    },
+    {
+      "path": "upstream.lock.json",
+      "gitBlobSha1": "31332137cf1bf980b25ca044208a9c53adb70edc",
+      "sha256": "160e2ca165946815dbec63ed39df1cc3be6c756536282012546b97d2fbf483dc"
+    }
+  ],
+  "digestMethod": "git ls-tree/show at HEAD commit (repository blob bytes, LF); independent of platform autocrlf"
+}
