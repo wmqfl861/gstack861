@@ -43,11 +43,11 @@
   3. `evaluate` 写效果分支：受保护身份集合 = `policy.protectedRoots` 与 `targetPath(workspace/.git)`（存在者）的并集（注意 `compilePolicy` 已把 `workspace/.git` 推入 protectedRoots——并集是有意冗余，防止该行为未来变化，勿去重省略）；从 `target.path` 逐级 `path.dirname` 向上遍历**已存在的祖先**（含目标自身）至 `policy.workspace`（含）为止，任一祖先身份命中集合 → `PROTECTED_PATH`。现有名称检查（`vcsComponent` 分量检查、`inside` 字符串比较）全部保留作为补充。
   4. win32-only 测试：长名受保护目录（如 `protected-long-directory-name`）经 `cmd /c dir /a /x` 读取其 8.3 短名（无短名则 `t.skip`），经短名写入 secret 文件 → `PROTECTED_PATH`；同策略下合法写入路径仍 `abstain`。
 
-- [ ] **Step 1: 失败测试**（win32-only 8.3 短名绕过用例；并附「必须原样保持通过」的既有回归清单：符号链接解析、悬空链接、VCS symlink target、大小写无关前缀等）
-- [ ] **Step 2: 确认失败**（`node --test test/policy.test.mjs`，win32 上新用例 FAIL：`IN_SCOPE`）
-- [ ] **Step 3: 实现规范化与身份比较**
-- [ ] **Step 4: 全量回归**（`npm test` 全绿；重跑 `node scripts/verify-8dot3.mjs` 两卷 → `RESULT: no alias bypass on this volume`，exit 0）
-- [ ] **Step 5: 提交并报告**
+- [x] **Step 1: 失败测试**（win32-only 8.3 短名绕过用例；并附「必须原样保持通过」的既有回归清单：符号链接解析、悬空链接、VCS symlink target、大小写无关前缀等）
+- [x] **Step 2: 确认失败**（`node --test test/policy.test.mjs`，win32 上新用例 FAIL：`IN_SCOPE`）
+- [x] **Step 3: 实现规范化与身份比较**
+- [x] **Step 4: 全量回归**（`npm test` 全绿；重跑 `node scripts/verify-8dot3.mjs` 两卷 → `RESULT: no alias bypass on this volume`，exit 0）
+- [x] **Step 5: 提交并报告**
 
 ### Task 2: gitfile 重定向 gitdir 保护（审查第 4 条余项）
 
@@ -60,7 +60,7 @@
 - Produces: 祖先遍历的每一级**已存在祖先目录 A**（含 `policy.workspace`）中，用 `readdir(A)` 找出名称命中 `vcsComponent` 且 `lstat` 为**普通文件**的条目（覆盖 `.git` 与 `git~N` 指针拼写；目录形式的 `.git` 已被既有逻辑覆盖）：读取内容，匹配 `/^gitdir:\s*(\S+)\s*$/m`；命中则 `dir = path.resolve(dirname(gitfile), 目标)`——该目录**无论是否存在**都加入本次评估的字符串 `inside` 受保护检查（覆盖未来创建的子路径）；仅当其存在时再经 `fs.realpathSync.native` 规范并加入受保护身份集合（ENOENT 跳过，不得让 `evaluate` 兜底 catch 把全工作区写入误拒）。内容不含 `gitdir:` 行 → 忽略。写 gitfile 本身已被现有名称检查拒绝。
 - 测试：`wt/.git` 为文件内容 `gitdir: ../real-git-data`；`writeRoots` 覆盖全工作区；写 `real-git-data/hooks/pre-commit` → `PROTECTED_PATH`；写 gitdir 内新文件 → `PROTECTED_PATH`；写普通路径 → `abstain`；`.git` 文件内容为垃圾 → 不崩溃且普通写入仍 `abstain`；gitdir 指向不存在路径 → 不崩溃且普通写入仍 `abstain`，但写该不存在 gitdir 的未来子路径仍被拒。
 
-- [ ] **Step 1-5**: 同 Task 1 流程（失败测试 → 确认失败 → 实现 → 全量回归 → 提交报告）
+- [x] **Step 1-5**: 同 Task 1 流程（失败测试 → 确认失败 → 实现 → 全量回归 → 提交报告）
 
 ### Task 3: 低风险次要修复批（审查第四节精选 + 第 6/11 条文档面）
 
@@ -76,7 +76,7 @@
 5. `scripts/check.mjs` 证据门禁降级为警告输出（审查第 11 条：CI 绿灯是合并门槛，摘要门证明不了测试跑过）；保留 `round-digests.mjs` 用法不变。
 6. `.gitignore` 增加 `.superpowers/`（标注为仓库卫生项，非审查修复）。
 
-- [ ] **Step 1-5**: 行为项（1、2、3）先失败测试 → 实现 → 全量回归；文档/配置项（4、5、6）随实现提交。**逐项独立提交**（审查建议，便于追溯）。
+- [x] **Step 1-5**: 行为项（1、2、3）先失败测试 → 实现 → 全量回归；文档/配置项（4、5、6）随实现提交。**逐项独立提交**（审查建议，便于追溯）。
 
 ### Task 4: 证据、推送与合并（协调者执行）
 
@@ -89,10 +89,10 @@
 - VERIFICATION.md 增补 Windows 验收轮次；摘要按既定协议（先提交代码 → 新 HEAD 重算 → 单独提交清单）。
 - 推送分支 → 查 CI（Actions 页面）→ 绿后按用户指令合并。
 
-- [ ] **Step 1: 证据文件与 VERIFICATION 增补**
-- [ ] **Step 2: `npm run check && npm test && node scripts/verify-8dot3.mjs`（两卷）全绿**
-- [ ] **Step 3: 摘要重算（协议顺序）→ 提交 → 推送分支**
-- [ ] **Step 4: CI 绿 → 合并（本地 merge 到 main 并推送，按用户「条件满足后合并」指令；在最终报告中明示此动作）**
+- [x] **Step 1: 证据文件与 VERIFICATION 增补**
+- [x] **Step 2: `npm run check && npm test && node scripts/verify-8dot3.mjs`（两卷）全绿**
+- [x] **Step 3: 摘要重算（协议顺序）→ 提交 → 推送分支**
+- [x] **Step 4: CI 绿 → 合并（本地 merge 到 main 并推送，按用户「条件满足后合并」指令；在最终报告中明示此动作）**
 
 ## Deferred（明确不在本轮，留档可审计）
 
