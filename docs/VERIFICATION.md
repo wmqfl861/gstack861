@@ -246,7 +246,8 @@ Lane 1（命名空间+收紧）approved——两处豁免测试修改经 git dif
 | `node scripts/render-upstream.mjs`（本地，无 CI 变量） | `RENDER_NOT_ALLOWED` exit 1，零残留，子模块 pristine |
 | `node scripts/verify-dsh-guard.mjs` | exit 2 blocked（密钥仍缺） |
 | 渲染编排器审查修复轮 | 审查者静态证明两处 CI 必败缺陷（`gstack-upgrade` 前缀错配；artifact 隐藏目录排除），TDD 红线复现后修复，范围化复审接受（复审者独立换装旧代码复现红灯） |
-| **渲染 CI 首跑** | 推送后以 Actions 实际运行结果为准，此处不预填 |
+| **渲染 CI 首跑** | 失败（run 40462001245）：`bun run <file>` 在 Node spawnSync 下静默空转（exit 0 零输出）——经本地全保真复现（pinned bun 1.4.2）定位，同批修复 MSYS tar 符号链接与撤销误报守卫 |
+| **渲染 CI 二跑** | **成功**（run 40464085183，d7ee2f4）：三作业全绿，render-upstream 每宿主渲染 57 技能+根路由，artifacts 已上传（30 天） |
 
 ## 上游渲染红线放宽的精确边界（R1，README 全文）
 

@@ -25,9 +25,13 @@
     {
       "command": "node scripts/verify-dsh-guard.mjs",
       "result": "exit 2 blocked (DEEPSEEK_API_KEY absent)"
+    },
+    {
+      "command": "local end-to-end render (CI=true GSTACK861_RENDER=ci, pinned bun 1.4.2)",
+      "result": "exit 0; zcode 58 dirs (57+root), dsh 58, zero placeholders, submodule pristine"
     }
   ],
-  "renderFirstRun": "recorded from actual GitHub Actions result post-push; not pre-filled",
+  "renderFirstRun": "failed: run 40462001245 (bun run <file> no-ops under Node spawnSync, exit 0 zero output) — root-caused by full-fidelity local reproduction with pinned bun 1.4.2; also fixed MSYS tar symlinks and revoked the false-positive undefined-word guard (upstream prose contains it)",
   "laneReviews": {
     "lane-a-render": "needs-fixes (gstack-upgrade prefix inversion, hidden-dir artifacts; both statically proven) -> fix ce55d7a -> re-review accepted (RED independently reproduced by re-reviewer)",
     "lane-b-ask": "approved first pass"
@@ -56,8 +60,8 @@
     },
     {
       "path": "scripts/render-upstream.mjs",
-      "gitBlobSha1": "aac95d48a5be11942df2b4cf768377b1f9d7a2ec",
-      "sha256": "bf21b4b395345e750cb34207b57764f7dff4f1998c4ff4d94ca9056a3dd6ab89"
+      "gitBlobSha1": "7e13e88bc463be61e827fd92f62b51b36d28272e",
+      "sha256": "aafd00a2e082195201042dad6efb9d07a956fb86db6147e43d00aeefa4028722"
     },
     {
       "path": "bin/gstack861.mjs",
@@ -161,8 +165,8 @@
     },
     {
       "path": "test/render-upstream.test.mjs",
-      "gitBlobSha1": "e2ee26640d63b0fafbb642bca7088dac07277557",
-      "sha256": "652a49875af5a8ba8979230a0c13a8dc3cc21120783cfcf69a232bf96a478192"
+      "gitBlobSha1": "f063b784d2079424fe8df2de4c98656444ea8a6f",
+      "sha256": "5f7c08f6a85f6bf60835d225031ffe5b533fa74e119deb4d3227385f4ab40256"
     },
     {
       "path": "test/tasks.test.mjs",
@@ -175,5 +179,6 @@
       "sha256": "160e2ca165946815dbec63ed39df1cc3be6c756536282012546b97d2fbf483dc"
     }
   ],
-  "digestMethod": "git ls-tree/show at HEAD commit (repository blob bytes, LF); independent of platform autocrlf"
+  "digestMethod": "git ls-tree/show at HEAD commit (repository blob bytes, LF); independent of platform autocrlf",
+  "renderSecondRun": "success: run 40464085183 at d7ee2f4 — all 3 jobs green; render-upstream rendered 57 skills + root router per host, artifacts uploaded (retention 30d)"
 }
