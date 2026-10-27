@@ -138,13 +138,55 @@ export function evaluate(policy, call) {
     if (binding.effect === 'write') {
       if (path.relative(policy.workspace, target.path).split(path.sep).some(vcsComponent)) return deny('PROTECTED_PATH', hash);
       const gitRoot = targetPath(path.join(policy.workspace, '.git')).path;
-      if ([...policy.protectedRoots, gitRoot].some(root => inside(root, target.path))) return deny('PROTECTED_PATH', hash);
-      // Identity comparison as defense in depth: spellings the string checks above cannot see
+      // Identity comparison as defense in depth: spellings the string checks below cannot see
       // (8.3 short names, case aliases) must not make a protected directory writable. The union
       // with workspace/.git is deliberately redundant with compilePolicy's protectedRoots push.
       const protectedIdentities = new Set(
         [...policy.protectedRoots, gitRoot].map(existingIdentity).filter(id => id !== null),
       );
+      const protectedPaths = [...policy.protectedRoots, gitRoot];
+      // A `.git` FILE (worktree / separate-git-dir pointer) redirects git to a gitdir whose
+      // hooks would run at the next git operation. Such pointers sit BESIDE the write path
+      // (`wt/.git` pointing at sibling `real-git-data/`), never on it, so every existing
+      // ancestor directory is scanned — its own entries and one directory level down — for
+      // VCS-named pointer files. Directory-form `.git` needs no parsing: the name and identity
+      // checks already cover it. No caching: this runs per write evaluation.
+      const protectRedirect = (pointer) => {
+        const match = fs.readFileSync(pointer, 'utf8').match(/^gitdir:\s*(\S+)\s*$/m);
+        if (!match) return; // content without a gitdir: line is not a pointer — ignore
+        const dir = path.resolve(path.dirname(pointer), match[1]);
+        protectedPaths.push(dir); // unresolved form, so future children of a missing gitdir stay denied
+        try {
+          const identity = existingIdentity(fs.realpathSync.native(dir));
+          if (identity !== null) protectedIdentities.add(identity); // catches alias spellings of the gitdir
+        } catch (error) {
+          if (error.code !== 'ENOENT') throw error; // missing gitdir: skip; anything else fails closed
+        }
+      };
+      const scanPointers = (dir, depth) => {
+        let entries;
+        try { entries = fs.readdirSync(dir); }
+        catch (error) {
+          if (error.code === 'ENOENT' || error.code === 'ENOTDIR') return; // vanished or non-directory level
+          throw error;
+        }
+        for (const entry of entries) {
+          const entryPath = path.join(dir, entry);
+          let stat;
+          try { stat = fs.lstatSync(entryPath); }
+          catch (error) {
+            if (error.code === 'ENOENT') continue; // entry vanished between readdir and lstat
+            throw error;
+          }
+          if (stat.isFile()) { if (vcsComponent(entry)) protectRedirect(entryPath); }
+          else if (depth > 0 && stat.isDirectory()) scanPointers(entryPath, depth - 1);
+        }
+      };
+      for (let current = target.path; ; current = path.dirname(current)) {
+        scanPointers(current, 1);
+        if (current === policy.workspace || current === path.dirname(current)) break;
+      }
+      if (protectedPaths.some(root => inside(root, target.path))) return deny('PROTECTED_PATH', hash);
       for (let current = target.path; ; current = path.dirname(current)) {
         const identity = existingIdentity(current);
         if (identity !== null && protectedIdentities.has(identity)) return deny('PROTECTED_PATH', hash);

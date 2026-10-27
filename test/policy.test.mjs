@@ -148,6 +148,40 @@ test('writes through 8.3 short-name aliases of protected roots are blocked (win3
   assert.equal(evaluate(policy, call(f, 'src/new.txt')).decision, 'abstain');
 });
 
+test('gitfile-redirected gitdirs stay protected when the whole workspace is writable', t => {
+  const f = fixture(t), policy = compilePolicy({ ...f.raw, writeRoots: [f.workspace] });
+  fs.mkdirSync(path.join(f.workspace, 'wt'));
+  fs.writeFileSync(path.join(f.workspace, 'wt', '.git'), 'gitdir: ../real-git-data\n');
+  fs.mkdirSync(path.join(f.workspace, 'real-git-data', 'hooks'), { recursive: true });
+  // The pointer sits beside the gitdir (`wt/.git` -> `../real-git-data`), never on the write path.
+  assert.equal(evaluate(policy, call(f, 'real-git-data/hooks/pre-commit')).code, 'PROTECTED_PATH');
+  assert.equal(evaluate(policy, call(f, 'real-git-data/config')).code, 'PROTECTED_PATH');
+  assert.equal(evaluate(policy, call(f, 'src/new.txt')).decision, 'abstain');
+});
+
+test('gitfile pointers with garbage content are ignored without crashing', t => {
+  const f = fixture(t), policy = compilePolicy({ ...f.raw, writeRoots: [f.workspace] });
+  fs.mkdirSync(path.join(f.workspace, 'wt'));
+  fs.writeFileSync(path.join(f.workspace, 'wt', '.git'), 'definitely not a gitfile pointer\n');
+  assert.equal(evaluate(policy, call(f, 'wt/notes.txt')).decision, 'abstain');
+  assert.equal(evaluate(policy, call(f, 'src/new.txt')).decision, 'abstain');
+});
+
+test('missing gitdir targets neither crash nor unprotect their future children', t => {
+  const f = fixture(t), policy = compilePolicy({ ...f.raw, writeRoots: [f.workspace] });
+  fs.mkdirSync(path.join(f.workspace, 'wt'));
+  fs.writeFileSync(path.join(f.workspace, 'wt', '.git'), 'gitdir: ../missing-git-data\n');
+  assert.equal(evaluate(policy, call(f, 'src/new.txt')).decision, 'abstain');
+  assert.equal(evaluate(policy, call(f, 'missing-git-data/hooks/pre-commit')).code, 'PROTECTED_PATH');
+});
+
+test('pointer-free ancestor chains keep ordinary writes abstaining', t => {
+  const f = fixture(t), policy = compilePolicy({ ...f.raw, writeRoots: [f.workspace] });
+  fs.mkdirSync(path.join(f.workspace, 'wt'));
+  assert.equal(evaluate(policy, call(f, 'wt/notes.txt')).decision, 'abstain');
+  assert.equal(evaluate(policy, call(f, 'src/new.txt')).decision, 'abstain');
+});
+
 test('scoped deny decisions carry the policy hash for audit attribution', t => {
   const f = fixture(t), policy = compilePolicy({ ...f.raw, writeRoots: [f.workspace] });
   fs.linkSync(path.join(f.outside, 'secret.txt'), path.join(f.src, 'linked')); // nlink > 1 -> UNSAFE_WRITE_TARGET
