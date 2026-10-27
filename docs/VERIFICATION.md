@@ -321,3 +321,18 @@ Lane A（渲染）：初审 Needs fixes（2 Critical）→ 修复轮 → 复审�
 ## 下一验收
 
 两项用户解锁不变（DSH 密钥 / ZCode 受控会话）。渲染技能消费累计 5 例；下一批候选：解锁后项优先，否则 M3 非设备组继续（/learn /retro /test-audit 等纯工作流技能同模式消费）。
+
+# 第十二轮验证记录：批次 7（工作流技能消费 II + uninstall dry-run，2026-10-27）
+
+范围：0.4.4。按 `docs/plans/2026-10-27-batch7-workflow-suite.md`（计划审查四组修正：镜像真实卸载序列、learn 真实 schema、retro 全框架+Step13 真写、test-audit 价值词汇）。
+
+| 项 | 结果 |
+|---|---|
+| `npm test` | 211/211（新增 11：uninstall dry-run 全景） |
+| uninstall --dry-run | 结构性零变更（审查者通读 dry 链核实）；purge 预演谓词与真实删除共享同源 |
+| 工作流消费套件 | 见 `docs/verification-2026-10-27-workflow-suite.md`：learn（真实 schema 教训×2）、retro（全章节+Step13 JSON 快照真写+metrics 降级不杜撰）、test-audit（价值词汇裁决 rewrite，report-only）；渲染技能累计消费 8 例 |
+| 车道审查 | Lane B 一次通过；Lane A 单行链接（终审覆盖） |
+
+## 下一验收
+
+两项用户解锁不变（首尾重申）。剩余 M3 非设备纯工作流技能渐次消费；设备依赖组与 M4 待环境。
