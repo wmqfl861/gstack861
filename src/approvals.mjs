@@ -37,7 +37,9 @@ export class ApprovalStore {
   }
   file(id) {
     if (typeof id !== 'string' || !ID.test(id)) fail('INVALID_APPROVAL_ID');
-    return path.join(this.directory, `${id}.json`);
+    // Filename namespace: approval-<id>.json keeps this store's records invisible to
+    // any other store sharing the same --state directory (task-<id>.json is foreign).
+    return path.join(this.directory, `approval-${id}.json`);
   }
   issue(subject, { ttlMs = 300000 } = {}) {
     if (!Number.isSafeInteger(ttlMs) || ttlMs < 1 || ttlMs > 86400000) fail('INVALID_TTL');
@@ -93,11 +95,11 @@ export class ApprovalStore {
       || !['pending', 'approved', 'rejected', 'consumed'].includes(record.state)) fail('INVALID_APPROVAL_RECORD');
     return Object.freeze(record);
   }
-  /** Read-only operator view; skips lock dirs and temp files by name. */
+  /** Read-only operator view; reads only its own approval-<uuid>.json namespace. */
   list() {
     return fs.readdirSync(this.directory)
-      .filter(name => name.endsWith('.json') && ID.test(name.slice(0, -5)))
-      .map(name => this.get(name.slice(0, -5)))
+      .filter(name => name.startsWith('approval-') && name.endsWith('.json') && ID.test(name.slice(9, -5)))
+      .map(name => this.get(name.slice(9, -5)))
       .sort((a, b) => a.id.localeCompare(b.id));
   }
 }

@@ -204,7 +204,7 @@ test('approvals CLI issue→verify→approve→consume chain; verify mismatch st
   assert.equal(issue.status, 0, issue.stderr);
   const id = JSON.parse(issue.stdout);
   assert.match(id, /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
-  const recordFile = path.join(state, `${id}.json`);
+  const recordFile = path.join(state, `approval-${id}.json`);
   const verifyMatch = run('verify', '--state', state, '--id', id, ...subject);
   assert.equal(verifyMatch.status, 0, verifyMatch.stderr);
   assert.deepEqual(JSON.parse(verifyMatch.stdout), { id, state: 'pending', binding: 'match' });
