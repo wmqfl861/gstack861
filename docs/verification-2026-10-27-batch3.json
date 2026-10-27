@@ -45,14 +45,29 @@
   "macOS": "not-run",
   "testedFiles": [
     {
+      "path": "hosts-overlay/dsh.ts",
+      "gitBlobSha1": "0a36dd31e43b15f4e877b828a8fea10126bf706b",
+      "sha256": "f8cd2b0c6f521005fe2a1a6ec4a948736c0368a5211b663d4c58bdec2a97c33d"
+    },
+    {
+      "path": "hosts-overlay/zcode.ts",
+      "gitBlobSha1": "2e7351c355993e65ccb42b636c72e4d8c1a5f66c",
+      "sha256": "e42a31f23a11a415e4b73e2096302e00972ad3ee0e2735f6717b23cb3c5b6ab4"
+    },
+    {
+      "path": "scripts/render-upstream.mjs",
+      "gitBlobSha1": "aac95d48a5be11942df2b4cf768377b1f9d7a2ec",
+      "sha256": "bf21b4b395345e750cb34207b57764f7dff4f1998c4ff4d94ca9056a3dd6ab89"
+    },
+    {
       "path": "bin/gstack861.mjs",
       "gitBlobSha1": "62378dedb32af9681d5614f27004f07615c7504d",
       "sha256": "2d0731335cac85c696eb7cc9445a4358a7c05755ab7b8de74fddcc48b3b8e931"
     },
     {
       "path": "package.json",
-      "gitBlobSha1": "e4a5e674b19ced8572791aadd65cf42af9fa7e5a",
-      "sha256": "9479a2aac990ddc28538af71e19e7c9a110cc9b24145371b3113744c46443c5a"
+      "gitBlobSha1": "8497dafcae0ec9198e817aca77aaee8a3b0af803",
+      "sha256": "59001403aa0460b44cedad79a92312abefbbe21d73e8404988c357ae244fe2c6"
     },
     {
       "path": "scripts/check.mjs",
@@ -143,6 +158,11 @@
       "path": "test/policy.test.mjs",
       "gitBlobSha1": "15ce5297b06c51982ccb76b26455b5e460a47b79",
       "sha256": "cae6d00abb2d03b3a9a357bee1ec703ae1355e101fd85360e8a79ceb4c309daa"
+    },
+    {
+      "path": "test/render-upstream.test.mjs",
+      "gitBlobSha1": "e2ee26640d63b0fafbb642bca7088dac07277557",
+      "sha256": "652a49875af5a8ba8979230a0c13a8dc3cc21120783cfcf69a232bf96a478192"
     },
     {
       "path": "test/tasks.test.mjs",
