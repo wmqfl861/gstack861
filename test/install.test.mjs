@@ -1053,3 +1053,195 @@ test('install --dry-run keeps ABSOLUTE_PATH_REQUIRED for a relative target', asy
   await assert.rejects(execute(process.execPath, [CLI, 'install', '--staging', staging, '--target', 'relative-target', '--dry-run']),
     error => error.code === 1 && /ABSOLUTE_PATH_REQUIRED/.test(error.stderr));
 });
+
+// --- uninstall --dry-run (read-only report) --------------------------------------
+
+test('uninstallSkills dry-run reports the full uninstall set and mutates nothing', t => {
+  const root = base(t), staging = path.join(root, 'staging'), target = path.join(root, 'target');
+  fs.mkdirSync(staging);
+  stageMulti(staging, 'alpha', ALPHA_V1, { 'sections/scope.md': SCOPE_V1 });
+  stage(staging, 'beta', BETA_V1);
+  installSkills({ staging, target, now: NOW });
+  fs.mkdirSync(path.join(target, 'not-ours'));
+  fs.writeFileSync(path.join(target, 'not-ours', 'SKILL.md'), 'user content');
+  const registryBefore = fs.readFileSync(registryFile(target), 'utf8');
+  const result = uninstallSkills({ target, now: NOW, dryRun: true });
+  assert.deepEqual(result, { dryRun: true, wouldUninstall: ['alpha', 'beta'], wouldPurge: [] });
+  assert.equal(fs.readFileSync(path.join(target, 'alpha', 'SKILL.md'), 'utf8'), ALPHA_V1, 'the dry-run must delete nothing');
+  assert.equal(fs.readFileSync(path.join(target, 'alpha', 'sections', 'scope.md'), 'utf8'), SCOPE_V1);
+  assert.equal(fs.readFileSync(path.join(target, 'beta', 'SKILL.md'), 'utf8'), BETA_V1);
+  assert.equal(fs.readFileSync(path.join(target, 'not-ours', 'SKILL.md'), 'utf8'), 'user content');
+  assert.equal(fs.readFileSync(registryFile(target), 'utf8'), registryBefore, 'the registry must not be rewritten');
+  // the prediction stays actionable: a real uninstall right after works unchanged
+  assert.deepEqual(uninstallSkills({ target, now: NOW }), { uninstalled: ['alpha', 'beta'], backupsRemoved: 0 });
+  assert.equal(fs.readFileSync(path.join(target, 'not-ours', 'SKILL.md'), 'utf8'), 'user content');
+});
+
+test('uninstallSkills dry-run counts a registered skill whose directory is already gone', t => {
+  const root = base(t), staging = path.join(root, 'staging'), target = path.join(root, 'target');
+  fs.mkdirSync(staging);
+  stage(staging, 'alpha', ALPHA_V1);
+  stage(staging, 'beta', BETA_V1);
+  installSkills({ staging, target, now: NOW });
+  fs.rmSync(path.join(target, 'beta'), { recursive: true });
+  const registryBefore = fs.readFileSync(registryFile(target), 'utf8');
+  const result = uninstallSkills({ target, now: NOW, dryRun: true });
+  assert.deepEqual(result, { dryRun: true, wouldUninstall: ['alpha', 'beta'], wouldPurge: [] }, 'the absent dir still counts, mirroring the real return');
+  assert.ok(fs.existsSync(path.join(target, 'alpha')), 'the dry-run must delete nothing');
+  assert.equal(fs.readFileSync(registryFile(target), 'utf8'), registryBefore);
+});
+
+test('uninstallSkills dry-run refuses drift exactly like the real run and removes nothing', t => {
+  const root = base(t), staging = path.join(root, 'staging'), target = path.join(root, 'target');
+  fs.mkdirSync(staging);
+  stage(staging, 'alpha', ALPHA_V1);
+  stage(staging, 'beta', BETA_V1);
+  installSkills({ staging, target, now: NOW });
+  const registryBefore = fs.readFileSync(registryFile(target), 'utf8');
+  fs.writeFileSync(path.join(target, 'alpha', 'SKILL.md'), `${ALPHA_V1}\nuser note`);
+  assert.throws(() => uninstallSkills({ target, now: NOW, dryRun: true }), /USER_FILE_REFUSED/, 'a dry-run never swallows refusals');
+  assert.equal(fs.readFileSync(path.join(target, 'alpha', 'SKILL.md'), 'utf8'), `${ALPHA_V1}\nuser note`, 'the user edit must survive');
+  assert.equal(fs.readFileSync(path.join(target, 'beta', 'SKILL.md'), 'utf8'), BETA_V1, 'two-phase: the other skill survives too');
+  assert.equal(fs.readFileSync(registryFile(target), 'utf8'), registryBefore, 'the registry must be left untouched');
+});
+
+test('uninstallSkills dry-run with purge lists the drift backup and the emptied root', t => {
+  const root = base(t), target = path.join(root, 'target');
+  const v1 = path.join(root, 'v1'), v2 = path.join(root, 'v2');
+  fs.mkdirSync(v1); fs.mkdirSync(v2);
+  stage(v1, 'alpha', ALPHA_V1);
+  stage(v2, 'alpha', ALPHA_V2);
+  installSkills({ staging: v1, target, now: NOW });
+  installSkills({ staging: v2, target, now: NOW });
+  const backupsRoot = path.join(target, BACKUPS);
+  const [backup] = fs.readdirSync(backupsRoot);
+  assert.match(backup, /^alpha-\d+$/);
+  const registryBefore = fs.readFileSync(registryFile(target), 'utf8');
+  const result = uninstallSkills({ target, purge: true, now: NOW, dryRun: true });
+  assert.deepEqual(result, { dryRun: true, wouldUninstall: ['alpha'], wouldPurge: [backup], wouldEmptyBackupsRoot: true });
+  assert.deepEqual(fs.readdirSync(backupsRoot), [backup], 'the dry-run must not remove the backup');
+  assert.equal(fs.readFileSync(path.join(target, 'alpha', 'SKILL.md'), 'utf8'), ALPHA_V2, 'the skill must stay installed');
+  assert.equal(fs.readFileSync(registryFile(target), 'utf8'), registryBefore);
+});
+
+test('uninstallSkills dry-run with purge leaves user archives and unverifiable backups unlisted and in place', t => {
+  const root = base(t), target = path.join(root, 'target');
+  const v1 = path.join(root, 'v1'), v2 = path.join(root, 'v2');
+  fs.mkdirSync(v1); fs.mkdirSync(v2);
+  stage(v1, 'alpha', ALPHA_V1);
+  stage(v2, 'alpha', ALPHA_V2);
+  installSkills({ staging: v1, target, now: NOW });
+  installSkills({ staging: v2, target, now: NOW });
+  const backupsRoot = path.join(target, BACKUPS);
+  const [backup] = fs.readdirSync(backupsRoot);
+  fs.mkdirSync(path.join(backupsRoot, 'user-archive'));
+  fs.writeFileSync(path.join(backupsRoot, 'user-archive', 'SKILL.md'), 'user archive');
+  fs.writeFileSync(path.join(backupsRoot, 'keeper.txt'), 'user file');
+  const corrupt = path.join(backupsRoot, 'alpha-1761453400000');
+  fs.mkdirSync(corrupt);
+  fs.writeFileSync(path.join(corrupt, 'SKILL.md'), 'body');
+  fs.writeFileSync(path.join(corrupt, 'manifest.json'), '{ not json');
+  const foreign = path.join(backupsRoot, 'beta-1761453400001');
+  fs.mkdirSync(foreign);
+  fs.writeFileSync(path.join(foreign, 'SKILL.md'), 'body');
+  fs.writeFileSync(path.join(foreign, 'manifest.json'), `${JSON.stringify({ schemaVersion: 1, generator: 'not-us' }, null, 2)}\n`);
+  const result = uninstallSkills({ target, purge: true, now: NOW, dryRun: true });
+  assert.deepEqual(result, { dryRun: true, wouldUninstall: ['alpha'], wouldPurge: [backup] }, 'only the verifiably-own backup may be listed, and the root would not be emptied');
+  assert.deepEqual(fs.readdirSync(backupsRoot).sort(),
+    ['alpha-1761453400000', backup, 'beta-1761453400001', 'keeper.txt', 'user-archive'].sort(), 'every entry must survive the dry-run');
+  assert.equal(fs.readFileSync(path.join(corrupt, 'manifest.json'), 'utf8'), '{ not json', 'the corrupt-manifest backup must survive verbatim');
+  assert.equal(fs.readFileSync(path.join(foreign, 'manifest.json'), 'utf8'), `${JSON.stringify({ schemaVersion: 1, generator: 'not-us' }, null, 2)}\n`, 'the foreign-generator backup must survive verbatim');
+  assert.equal(fs.readFileSync(path.join(backupsRoot, 'user-archive', 'SKILL.md'), 'utf8'), 'user archive');
+});
+
+test('uninstallSkills dry-run on an absent target returns the empty report without throwing', t => {
+  const root = base(t), target = path.join(root, 'target');
+  assert.deepEqual(uninstallSkills({ target, now: NOW, dryRun: true }), { dryRun: true, wouldUninstall: [], wouldPurge: [] });
+  assert.ok(!fs.existsSync(target), 'the dry-run must not create the target');
+});
+
+test('uninstallSkills dry-run without a registry returns the empty report without inventing one', t => {
+  const root = base(t), target = path.join(root, 'target');
+  fs.mkdirSync(target);
+  fs.mkdirSync(path.join(target, 'stray'));
+  fs.writeFileSync(path.join(target, 'stray', 'SKILL.md'), 'user content');
+  assert.deepEqual(uninstallSkills({ target, now: NOW, dryRun: true }), { dryRun: true, wouldUninstall: [], wouldPurge: [] });
+  assert.equal(fs.readFileSync(path.join(target, 'stray', 'SKILL.md'), 'utf8'), 'user content');
+  assert.ok(!fs.existsSync(registryFile(target)), 'the dry-run must not invent a registry');
+});
+
+test('uninstallSkills dry-run takes no lock, so a stale one never reports INSTALL_BUSY', t => {
+  const root = base(t), staging = path.join(root, 'staging'), target = path.join(root, 'target');
+  fs.mkdirSync(staging);
+  stage(staging, 'alpha', ALPHA_V1);
+  installSkills({ staging, target, now: NOW });
+  const lock = path.join(target, LOCK);
+  fs.mkdirSync(lock);
+  const registryBefore = fs.readFileSync(registryFile(target), 'utf8');
+  const result = uninstallSkills({ target, now: NOW, dryRun: true });
+  assert.deepEqual(result, { dryRun: true, wouldUninstall: ['alpha'], wouldPurge: [] });
+  assert.ok(fs.existsSync(lock), 'the stale lock must be left untouched');
+  assert.ok(fs.existsSync(path.join(target, 'alpha')), 'no skill may be deleted');
+  assert.equal(fs.readFileSync(registryFile(target), 'utf8'), registryBefore, 'the registry must not be rewritten');
+});
+
+if (process.platform === 'win32') {
+  test('uninstallSkills dry-run refuses a junction target with INVALID_TARGET and writes nothing through it', t => {
+    const root = base(t), staging = path.join(root, 'staging');
+    fs.mkdirSync(staging);
+    stage(staging, 'alpha', ALPHA_V1);
+    const realTarget = path.join(root, 'real-target');
+    installSkills({ staging, target: realTarget, now: NOW });
+    const registryBefore = fs.readFileSync(registryFile(realTarget), 'utf8');
+    const junction = path.join(root, 'target-link');
+    fs.symlinkSync(realTarget, junction, 'junction');
+    assert.throws(() => uninstallSkills({ target: junction, now: NOW, dryRun: true }), /INVALID_TARGET/);
+    assert.ok(fs.existsSync(path.join(realTarget, 'alpha')), 'nothing may be removed through the junction');
+    assert.equal(fs.readFileSync(path.join(realTarget, 'alpha', 'SKILL.md'), 'utf8'), ALPHA_V1);
+    assert.equal(fs.readFileSync(registryFile(realTarget), 'utf8'), registryBefore);
+  });
+}
+
+if (process.platform !== 'win32') {
+  test('uninstallSkills dry-run refuses a symlinked target with INVALID_TARGET and writes nothing through it', t => {
+    const root = base(t), staging = path.join(root, 'staging');
+    fs.mkdirSync(staging);
+    stage(staging, 'alpha', ALPHA_V1);
+    const realTarget = path.join(root, 'real-target');
+    installSkills({ staging, target: realTarget, now: NOW });
+    const registryBefore = fs.readFileSync(registryFile(realTarget), 'utf8');
+    const linkedTarget = path.join(root, 'target-link');
+    fs.symlinkSync(realTarget, linkedTarget);
+    assert.throws(() => uninstallSkills({ target: linkedTarget, now: NOW, dryRun: true }), /INVALID_TARGET/);
+    assert.ok(fs.existsSync(path.join(realTarget, 'alpha')), 'nothing may be removed through the symlink');
+    assert.equal(fs.readFileSync(path.join(realTarget, 'alpha', 'SKILL.md'), 'utf8'), ALPHA_V1);
+    assert.equal(fs.readFileSync(registryFile(realTarget), 'utf8'), registryBefore);
+  });
+}
+
+test('uninstall --dry-run prints the report and removes nothing', async t => {
+  const root = base(t), staging = path.join(root, 'staging'), target = path.join(root, 'target');
+  fs.mkdirSync(staging);
+  stage(staging, 'alpha', ALPHA_V1);
+  installSkills({ staging, target, now: NOW });
+  const registryBefore = fs.readFileSync(registryFile(target), 'utf8');
+  const run = await execute(process.execPath, [CLI, 'uninstall', '--target', target, '--dry-run']);
+  assert.deepEqual(JSON.parse(run.stdout), { dryRun: true, wouldUninstall: ['alpha'], wouldPurge: [] });
+  assert.ok(fs.existsSync(path.join(target, 'alpha')), 'the CLI dry-run must not remove the skill');
+  assert.equal(fs.readFileSync(registryFile(target), 'utf8'), registryBefore, 'the CLI dry-run must not rewrite the registry');
+});
+
+test('uninstall --dry-run --purge prints the combined report without touching anything', async t => {
+  const root = base(t), target = path.join(root, 'target');
+  const v1 = path.join(root, 'v1'), v2 = path.join(root, 'v2');
+  fs.mkdirSync(v1); fs.mkdirSync(v2);
+  stage(v1, 'alpha', ALPHA_V1);
+  stage(v2, 'alpha', ALPHA_V2);
+  installSkills({ staging: v1, target, now: NOW });
+  installSkills({ staging: v2, target, now: NOW });
+  const [backup] = fs.readdirSync(path.join(target, BACKUPS));
+  const run = await execute(process.execPath, [CLI, 'uninstall', '--target', target, '--dry-run', '--purge']);
+  assert.deepEqual(JSON.parse(run.stdout), { dryRun: true, wouldUninstall: ['alpha'], wouldPurge: [backup], wouldEmptyBackupsRoot: true });
+  assert.deepEqual(fs.readdirSync(path.join(target, BACKUPS)), [backup], 'the drift backup must survive');
+  assert.ok(fs.existsSync(path.join(target, 'alpha')), 'the skill must stay installed');
+});

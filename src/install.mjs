@@ -381,11 +381,61 @@ function verifyOwned(dir, record) {
   return true;
 }
 
-export function uninstallSkills({ target, purge = false, now = () => new Date().toISOString() }) {
+/**
+ * The read-only listing both purge paths share: backup entries the real purge would
+ * remove — only our own <name>-<13-digit-ms-timestamp> directories whose manifest
+ * still proves our generator. User archives and tampered entries always stay,
+ * uncounted — ownership for deletion is proven by content, not by name alone.
+ */
+function purgeableEntries(backupsRoot) {
+  const purgeable = [];
+  for (const entry of fs.readdirSync(backupsRoot)) {
+    if (!OUR_BACKUP.test(entry)) continue;
+    const manifest = readJson(path.join(backupsRoot, entry, 'manifest.json'));
+    if (!object(manifest) || manifest.generator !== GENERATOR) continue;
+    purgeable.push(entry);
+  }
+  return purgeable;
+}
+
+/**
+ * The dry-run report: the read-only half of uninstallSkills' chain, inserted after
+ * the target validation and pointedly before the install lock. It mirrors the real
+ * sequence — registry presence, load + dedupe, phase-1 verifyOwned over every record
+ * (drift still refuses; an already-absent directory just verifies false and still
+ * counts, exactly like the real return) — then lists what a real run would remove
+ * instead of removing it, and with purge also lists the backup entries the real
+ * purge would delete and whether the backups root would then be rmdir'd empty. No
+ * lock is taken, so a live or stale one never fails the report with INSTALL_BUSY,
+ * and the report may describe a registry a concurrent writer is about to change
+ * (stale by design, like install's dry-run).
+ */
+function uninstallDryRunReport(target, purge) {
+  if (!regularFile(registryFile(target))) return { dryRun: true, wouldUninstall: [], wouldPurge: [] };
+  const recorded = new Map();
+  for (const entry of loadRegistry(target)) {
+    if (!recorded.has(entry.name)) recorded.set(entry.name, entry);
+  }
+  for (const [name, entry] of recorded) verifyOwned(path.join(target, name), entry);
+  const report = { dryRun: true, wouldUninstall: [...recorded.keys()], wouldPurge: [] };
+  if (purge) {
+    const backupsRoot = path.join(target, BACKUPS);
+    const backupsStat = fs.lstatSync(backupsRoot, { throwIfNoEntry: false });
+    if (backupsStat?.isDirectory() && !backupsStat.isSymbolicLink()) {
+      report.wouldPurge = purgeableEntries(backupsRoot);
+      // The real purge rmdir's the root exactly when nothing would remain in it.
+      if (fs.readdirSync(backupsRoot).length === report.wouldPurge.length) report.wouldEmptyBackupsRoot = true;
+    }
+  }
+  return report;
+}
+
+export function uninstallSkills({ target, purge = false, dryRun = false, now = () => new Date().toISOString() }) {
   if (typeof target !== 'string' || !path.isAbsolute(target)) fail('INVALID_TARGET');
   const stat = fs.lstatSync(target, { throwIfNoEntry: false });
-  if (!stat) return { uninstalled: [], backupsRemoved: 0 };
+  if (!stat) return dryRun ? { dryRun: true, wouldUninstall: [], wouldPurge: [] } : { uninstalled: [], backupsRemoved: 0 };
   if (!stat.isDirectory() || stat.isSymbolicLink()) fail('INVALID_TARGET');
+  if (dryRun) return uninstallDryRunReport(target, purge);
   return withInstallLock(target, () => {
     if (!regularFile(registryFile(target))) return { uninstalled: [], backupsRemoved: 0 };
     const recorded = new Map();
@@ -401,13 +451,7 @@ export function uninstallSkills({ target, purge = false, now = () => new Date().
     if (purge) {
       const backupsStat = fs.lstatSync(backupsRoot, { throwIfNoEntry: false });
       if (backupsStat?.isDirectory() && !backupsStat.isSymbolicLink()) {
-        // Only our own <name>-<13-digit-ms-timestamp> backup directories whose manifest
-        // still proves our generator; user archives and tampered entries always stay,
-        // uncounted — ownership for deletion is proven by content, not by name alone.
-        for (const entry of fs.readdirSync(backupsRoot)) {
-          if (!OUR_BACKUP.test(entry)) continue;
-          const manifest = readJson(path.join(backupsRoot, entry, 'manifest.json'));
-          if (!object(manifest) || manifest.generator !== GENERATOR) continue;
+        for (const entry of purgeableEntries(backupsRoot)) {
           fs.rmSync(path.join(backupsRoot, entry), { recursive: true });
           backupsRemoved += 1;
         }
