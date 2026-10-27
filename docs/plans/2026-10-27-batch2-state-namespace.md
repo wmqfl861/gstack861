@@ -20,7 +20,7 @@
 
 1. **命名空间必须完整**：file()、锁目录、list() 过滤、get() 全部走前缀；任何按旧文件名可寻址的残留路径都是漏洞。
 2. **fail-closed 不减弱**：把 task 记录改名为 `approval-*.json` 后 approvals 侧必须仍拒绝（校验内容，不信文件名）；反之亦然。
-3. **既有测试零修改**：现有 140 测试不得改动（它们引用 store.file()/路径吗？——需核查；若有测试直接构造文件路径，属值来源变更须逐条列出）。
+3. **既有测试零修改，两处例外为已核准的值来源变更**（计划审查核实全库仅此两处字面路径）：`test/tasks.test.mjs:126`（`${approvalId}.json`）与 `test/adapters.test.mjs:207`（`${id}.json`）改为前缀路径或 `store.file()`；断言强度不变，报告中列出新旧。其余全部经 `store.file()` 派生，前缀无关（审查者逐条核实）。
 4. **加固项不引入新放宽**：JSON.parse 包裹、INVALID_ACTION_FILE 扩展、blobHash 守卫、脚本泄漏修复全部为收紧方向。
 5. **脚本车道不破坏 exit 2 blocked 约定**。
 
@@ -35,11 +35,11 @@
 **Interfaces:**
 1. `TaskStore.file(id)` → `<dir>/task-<id>.json`；锁目录 `task-<id>.json.lock`；`list()` 只读 `task-` 前缀且 uuid 合法者；其余同构。`ApprovalStore.file(id)` → `approval-<id>.json`，同构。
 2. 共用目录回归测试：同一 `--state` 下 ApprovalStore.issue + TaskStore.create 并存；`tasks list` 只见任务、`approvals list` 只见审批；两店转移互不干扰；`approvals show` 的 CLI 冒烟。
-3. 伪装测试：把任务记录文件改名为 `approval-<uuid>.json` → `approvals list/get` 抛 `INVALID_APPROVAL_RECORD`（内容校验仍权威）；反向同理（`INVALID_TASK_RECORD`）。
-4. `ApprovalStore.transition/get` 的 `JSON.parse` 包裹 → 损坏 JSON（`{`）抛 `INVALID_APPROVAL_RECORD`（对齐 TaskStore.read）。
-5. CLI `--action-file` 全类错误（缺失 ENOENT、坏 JSON、深层嵌套 RangeError）→ `gstack861:INVALID_ACTION_FILE`；tests 覆盖缺失与坏 JSON 两类。
+3. 伪装测试：把任务记录文件改名为 `approval-<uuid>.json` → `approvals list/get` 抛 `INVALID_APPROVAL_RECORD`（内容校验仍权威）；反向同理（`INVALID_TASK_RECORD`）；另加双前缀/杂名文件（`task-task-<uuid>.json`、`approval-x.json`）被 list 忽略的解析边界用例。
+4. `ApprovalStore.transition/get` 的 `JSON.parse` 包裹 + `object(record)` 守卫（含 null/数组）→ 损坏 JSON（`{`）与非对象记录抛 `INVALID_APPROVAL_RECORD`（对齐 TaskStore.read，一并收口 transition 的 null 原始 TypeError 遗留）。
+5. CLI `--action-file` 错误收紧**限枚举类**：读取错误（含 ENOENT）、SyntaxError、RangeError → `gstack861:INVALID_ACTION_FILE`；`absolute()` 的 `ABSOLUTE_PATH_REQUIRED`（相对路径）保持原语义不被吞（实现方式：把 absolute() 移出 try 或按错误类型过滤）；tests 覆盖缺失与坏 JSON 两类。
 6. `blobHash(buffer)` 加 `Buffer.isBuffer` 守卫，非 Buffer 抛 `INVALID_BUFFER`；单测。
-7. 版本 0.3.1；README 安全边界新增一行破坏性变更声明（0.3.0 无前缀记录不再可见；无外部部署）。
+7. 版本 0.3.1；README 安全边界新增破坏性变更声明：0.3.0 无前缀记录升级后对 list/get 均不可见（等效丢失），需人工迁移；无外部部署。
 
 - [ ] 失败测试（2/3 为核心，先红）→ 确认失败 → 实现 → `npm test` 全绿 → 提交（分支 `lane-1`，≥3 提交：命名空间/parse 包裹与 CLI/守卫与版本）
 
