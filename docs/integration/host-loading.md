@@ -38,7 +38,8 @@ rendered/.zcode/skills/<dir>  ──►  staging/<盘点名>/             ──
 
 1. Node.js 22+、本仓库检出（`npm run check` 通过）。渲染产物来源二选一：CI artifacts 下载解包，或本地维护者复现（`CI=true GSTACK861_RENDER=ci node scripts/render-upstream.mjs --upstream ... --out ...`，须恰好 bun 1.4.2）。
 2. 一个**受控试验工作区**（fixture）。装载点是其工作区级技能目录 `<workspace>/.zcode/skills/`；**绝不写入用户级 `~/.zcode`**（本仓库硬约束：用户级目录禁改）。
-3. `--rendered`/`--staging`/`--target` 必须是绝对路径，相对路径一律拒绝（`INVALID_RENDERED`/`INVALID_STAGING`/`INVALID_TARGET`，`bin/gstack861.mjs`）。**[仓库已验证]** Windows（Git Bash）下建议直接写 `C:/...` 形式（正斜杠合法）；避免 `/c/...` 形式——Node 的 win32 路径语义把它解析为当前盘符根下的 `\c\...`，不是 Git Bash 挂载点。
+3. `--rendered`/`--staging`/`--target` 必须是绝对路径，相对值由 CLI 的路径包装层以 `gstack861:ABSOLUTE_PATH_REQUIRED` 拒绝（`bin/gstack861.mjs` 的 `absolute()`，退出码 1；同一包装层在 approvals 路径上有测试覆盖，`test/adapters.test.mjs`）。**[仓库已验证]** 库层的 `INVALID_RENDERED`/`INVALID_STAGING`/`INVALID_TARGET` 只出现在**绝对但非法**的值上（不存在、非目录、符号链接等，`src/stage.mjs`/`src/install.mjs`）。（`--manifest` 例外：允许相对，按 cwd 解析，`bin/gstack861.mjs`。）
+4. （操作建议，非断言）Windows（Git Bash）下路径参数建议直接写 `C:/...` 形式（Node 正斜杠合法）；避免 `/c/...` 形式——按 Node 的 win32 路径语义（`path.win32` 把无盘符的 `/...` 视为「当前盘符根下」），它会解析为当前盘符根下的 `\c\...`，不是 Git Bash 的挂载点含义。
 
 ### 2.2 第一步：stage-render（渲染树 → staging）「待实测」
 
@@ -68,7 +69,7 @@ node bin/gstack861.mjs stage-render \
 要点：
 
 - staging 下每技能一个目录，**目录名 = 盘点名**（根路由为 `gstack`）；目录内为 `SKILL.md` + 辅助文件（多文件技能的 `sections/` 等，按渲染树原样逐字节复制）+ `manifest.json`。
-- 任何校验失败——摘要不符、占位符残留、缺 AUTO-GENERATED 横幅、树与清单集合不一致、staging 非空、路径重叠——**零写入整体拒绝**，退出码 1，错误形如 `gstack861:RENDER_TREE_INVALID` / `gstack861:RENDER_MANIFEST_INVALID` / `gstack861:STAGING_NOT_EMPTY`。
+- 任何校验失败——摘要不符、占位符残留、缺 AUTO-GENERATED 横幅、树与清单集合不一致、staging 非空、路径重叠——**零写入整体拒绝**，退出码 1，错误码 `gstack861:RENDER_TREE_INVALID` / `gstack861:RENDER_MANIFEST_INVALID` / `gstack861:STAGING_NOT_EMPTY` / `gstack861:OVERLAPPING_PATHS`（路径重叠）等。
 
 ### 2.3 第二步：install（staging → 工作区技能目录）「待实测」
 
@@ -101,7 +102,7 @@ node bin/gstack861.mjs install \
 
 要点（全部 **[仓库已验证]**）：
 
-- 幂等：同内容重装返回 `skipped` 全量、零写入；版本漂移（SKILL.md 摘要或辅助文件表不一致）先备份再替换，旧目录移入 `.gstack861-backups/<name>-<13位毫秒时间戳>/`，`backedUp` 列出。
+- 幂等：同内容重装返回 `skipped` 全量、技能目录零写入（注册表文件仍会重写、`updatedAt` 刷新，`src/install.mjs`）；版本漂移（SKILL.md 摘要或辅助文件表不一致）先备份再替换，旧目录移入 `.gstack861-backups/<name>-<13位毫秒时间戳>/`，`backedUp` 列出。
 - 只动自己的名字：与 staging 名字不冲突的既有目录一律不读不写（与 fixture 工作区既有技能可共存）；名字冲突且目标非本项目产物 → `USER_FILE_REFUSED` 整体拒绝、零写入。
 - 互斥锁：安装/卸载期间 target 根短暂存在 `.gstack861-install.lock/`；崩溃残留的锁使后续操作以 `INSTALL_BUSY` 拒绝，须人工检查后删除，不自动清理。
 
@@ -132,12 +133,12 @@ node bin/gstack861.mjs uninstall --target <workspace>/.zcode/skills
 
 - **渲染树的形态**：上游渲染器以 `externalSkillName` 规则输出目录 `gstack-<name>`（已带 `gstack-` 前缀的名字直通，根路由为 `gstack`），而 ZCode overlay 使用 `defineHost` 默认 frontmatter（未设 `nameMatchesDirectory`），SKILL.md 的 `name:` 保持**裸盘点名**。**[固定提交源码]**（gstack `5755601`：`scripts/external-skill-names.ts`、`scripts/gen-skill-docs.ts` 的 `fmName` 分支、`hosts/define-host.ts` 默认 frontmatter）
 - **因此不要把 `rendered/.zcode/skills` 原样拷进宿主技能目录**：目录名会是 `gstack-review` 而 frontmatter 是 `name: review`，两者不一致；且没有逐技能 `manifest.json` 与注册表锚，无法走 `install` 的漂移备份与 `uninstall` 的所有权校验。
-- **stage-render 正是归一化步骤**：staging 目录名 = frontmatter name = 盘点名（三者一致），`install` 原样落盘到 target。**[仓库已验证]**（`src/stage.mjs` 按盘点名落盘；`test/stage.test.mjs` 断言 staging manifest `name`；批次 4 真实产物全链中树/清单集合相等门通过，即固定上游的模板 frontmatter name 与盘点名一致）
+- **stage-render 正是归一化步骤**：staging 目录名 = frontmatter name = 盘点名（三者一致），`install` 原样落盘到 target。此一致性按**源码链**成立：渲染目录名由 `externalSkillName` 从「frontmatter name（缺省回落到模板目录名）」派生，frontmatter `name:` 本身是模板原名（`gen-skill-docs.ts` 的 `fmName` 分支，ZCode 未设 `nameMatchesDirectory`），stage-render 又按同一盘点名落盘——**[固定提交源码]**（gstack `5755601`：`scripts/external-skill-names.ts`、`scripts/gen-skill-docs.ts`）+ **[仓库已验证]** 落盘部分（`src/stage.mjs` 按盘点名落盘；`test/stage.test.mjs` 断言 staging manifest `name`）。注意：本仓库测试用的是合成渲染树，**不解析 SKILL.md frontmatter**；批次 4 的树/清单集合相等门比对的是**渲染目录名**与清单键，通过结果与上述源码链一致（佐证），但三段一致本身的依据是源码而非仓库测试。
 - **上游 `nameMatchesDirectory` 注意点**：该 host 配置位（gstack `docs/ADDING_A_HOST.md` 的 `frontmatter.nameMatchesDirectory`）为「按 frontmatter name 索引/去重技能的宿主」把 `name:` 改写为 `gstack-<skill>`，避免裸名（如 `review`）被宿主内其他同名技能遮蔽。本项目 ZCode overlay **刻意未设**（无证据不虚报宿主行为，见 `hosts-overlay/zcode.ts` 头注）。若 2.4 的 A/B 项实测发现 ZCode 按 frontmatter name 索引且裸名会被遮蔽，应回到 overlay 增设该位并重渲染，而不是手工改已装载的 SKILL.md——当前对此不做断言。
 
 ## 4. DSH 侧（机制差异，如实）「待 DSH 侧验证」
 
-DSH **没有 gstack 式技能目录**：无目录自动扫描，技能/能力装载走 Cordis profile 插件机制。ZCode 的「目录装载」路径在 DSH 不存在对应物，本批**不提供 DSH 装载命令**，只如实记录：
+DSH **没有 gstack 式技能目录**：无目录自动扫描，技能/能力装载走 Cordis profile 插件机制。ZCode 的「目录装载」路径在 DSH 不存在对应物，本批**不提供 DSH 装载命令**，只如实记录。本节沿用调研文档的证据标记体系（**[源码]** = 从本机安装的 asar 内包源码读出未执行；**[实跑]** = 调研中真实执行的命令与输出），出处均指向该文档：
 
 1. **插件发现机制**（[DSH 本机调研](dsh-local-findings.md) 第 2 节）：profile 为 `$DSH_HOME/profiles/<name>/`，插件条目经 `cordis.patch.yml` 组合声明，无目录扫描。**[源码]**（本机 0.2.1-rc.3）
 2. **配置格式与隔离**（同调研第 3 节）：YAML patch 列表、`config` 整值替换不合并、`DSH_HOME` 环境变量整体隔离 harness home。**[实跑]**（调研冒烟）
