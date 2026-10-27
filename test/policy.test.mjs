@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import { execFileSync } from 'node:child_process';
 import { compilePolicy, evaluate, loadPolicy, inside } from '../src/policy.mjs';
 import { fixture } from './helpers.mjs';
 
@@ -131,4 +132,18 @@ test('nested repositories keep their VCS metadata protected', t => {
   fs.mkdirSync(path.join(f.workspace, 'vendor', 'lib', '.git', 'hooks'), { recursive: true });
   assert.equal(evaluate(policy, call(f, 'vendor/lib/.git/hooks/pre-commit')).code, 'PROTECTED_PATH');
   assert.equal(evaluate(policy, call(f, 'vendor/lib/.git')).code, 'PROTECTED_PATH');
+});
+
+test('writes through 8.3 short-name aliases of protected roots are blocked (win32)', t => {
+  if (process.platform !== 'win32') return t.skip('win32 only');
+  const f = fixture(t), longName = 'protected-long-directory-name';
+  fs.mkdirSync(path.join(f.workspace, longName));
+  const policy = compilePolicy({ ...f.raw, writeRoots: [f.workspace], protectedRoots: [path.join(f.workspace, longName)] });
+  // `dir /x` prints the 8.3 short name in the column before the long name (blank when none exists).
+  const listing = execFileSync('cmd', ['/c', 'dir', '/a', '/x', f.workspace], { encoding: 'utf8' });
+  const cols = listing.split(/\r?\n/).find(line => line.trimEnd().endsWith(` ${longName}`))?.trim().split(/\s+/) ?? [];
+  const short = cols.length >= 2 && cols.at(-2) !== '<DIR>' ? cols.at(-2) : null;
+  if (!short) return t.skip(`no 8.3 short name for ${longName} on this volume`);
+  assert.equal(evaluate(policy, call(f, path.join(f.workspace, short, 'secret.txt'))).code, 'PROTECTED_PATH');
+  assert.equal(evaluate(policy, call(f, 'src/new.txt')).decision, 'abstain');
 });

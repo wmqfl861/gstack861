@@ -18,7 +18,8 @@ function absolute(value) {
 }
 
 function directory(value) {
-  const resolved = fs.realpathSync(absolute(value));
+  // native realpath: on Windows it expands 8.3 short names and canonicalizes case; on POSIX it is equivalent.
+  const resolved = fs.realpathSync.native(absolute(value));
   if (!fs.statSync(resolved).isDirectory()) throw new Error('DIRECTORY_REQUIRED');
   return resolved;
 }
@@ -42,9 +43,25 @@ function targetPath(value, cwd) {
       current = parent;
       continue;
     }
-    const real = fs.realpathSync(current); // throws on a dangling symlink
+    // native realpath throws on a dangling symlink and also expands 8.3/case aliases of the existing prefix.
+    const real = fs.realpathSync.native(current);
     if (suffix.length && !fs.statSync(real).isDirectory()) throw new Error('NOT_A_DIRECTORY');
     return { path: path.join(real, ...suffix), exists: suffix.length === 0, stat: suffix.length ? null : fs.statSync(real) };
+  }
+}
+
+/**
+ * Filesystem identity (device/inode pair) of an existing path; null when the path is missing.
+ * Stable across 8.3 short names, case spellings and symlinks on NTFS, which is what makes
+ * alias-proof comparisons with protected roots possible. Other errors propagate (fail closed).
+ */
+function existingIdentity(p) {
+  try {
+    const { dev, ino } = fs.statSync(p, { bigint: true });
+    return `${dev}/${ino}`;
+  } catch (error) {
+    if (error.code === 'ENOENT' || error.code === 'ENOTDIR') return null;
+    throw error;
   }
 }
 
@@ -89,7 +106,8 @@ export function loadPolicy(filename) {
   if (!stat.isFile() || stat.isSymbolicLink() || stat.nlink !== 1 || stat.size > 65536) throw new Error('UNSAFE_POLICY_FILE');
   if (process.platform !== 'win32' && ((stat.mode & 0o022) || (process.getuid && stat.uid !== process.getuid()))) throw new Error('UNSAFE_POLICY_PERMISSIONS');
   const policy = compilePolicy(JSON.parse(fs.readFileSync(filename, 'utf8')));
-  if (inside(policy.workspace, fs.realpathSync(filename))) throw new Error('POLICY_MUST_BE_OUTSIDE_WORKSPACE');
+  // Same native normalization as directory(), so workspace and policy file compare in one canonical form.
+  if (inside(policy.workspace, fs.realpathSync.native(filename))) throw new Error('POLICY_MUST_BE_OUTSIDE_WORKSPACE');
   return policy;
 }
 
@@ -121,7 +139,18 @@ export function evaluate(policy, call) {
       if (path.relative(policy.workspace, target.path).split(path.sep).some(vcsComponent)) return deny('PROTECTED_PATH', hash);
       const gitRoot = targetPath(path.join(policy.workspace, '.git')).path;
       if ([...policy.protectedRoots, gitRoot].some(root => inside(root, target.path))) return deny('PROTECTED_PATH', hash);
-      if (target.exists && (!target.stat.isFile() || target.stat.nlink !== 1)) return deny('UNSAFE_WRITE_TARGET', hash);
+      // Identity comparison as defense in depth: spellings the string checks above cannot see
+      // (8.3 short names, case aliases) must not make a protected directory writable. The union
+      // with workspace/.git is deliberately redundant with compilePolicy's protectedRoots push.
+      const protectedIdentities = new Set(
+        [...policy.protectedRoots, gitRoot].map(existingIdentity).filter(id => id !== null),
+      );
+      for (let current = target.path; ; current = path.dirname(current)) {
+        const identity = existingIdentity(current);
+        if (identity !== null && protectedIdentities.has(identity)) return deny('PROTECTED_PATH', hash);
+        if (current === policy.workspace || current === path.dirname(current)) break;
+      }
+      if (target.exists && (!target.stat.isFile() || target.stat.nlink !== 1)) return deny('UNSAFE_WRITE_TARGET');
     }
     return { decision: 'abstain', code: 'IN_SCOPE', policyHash: hash };
   } catch { return deny('INVALID_PATH_OR_CALL', policy?.policyHash); }
