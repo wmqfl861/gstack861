@@ -70,10 +70,13 @@ if (args[0] === 'hook') {
       print(zcodeHookConfig({ nodePath: process.execPath, cliPath: fileURLToPath(import.meta.url),
         policyPath: absolute(options['--policy']), matcher: options['--matcher'] }));
     } else if (args[0] === 'generate') {
-      const options = flags(args.slice(1), ['--upstream', '--staging', '--host', '--commit']);
-      // --commit overrides the lock pin for fixtures only; production flows read the lock file.
-      const commit = options['--commit'] ?? lock().gstack.commit;
+      const options = flags(args.slice(1), ['--upstream', '--staging', '--host']);
+      // GSTACK861_TEST_COMMIT overrides the lock pin for fixtures only; production
+      // flows read the lock file. When the override is active it is announced on stderr.
+      const override = process.env.GSTACK861_TEST_COMMIT;
+      const commit = override ?? lock().gstack.commit;
       if (!/^[a-f0-9]{40}$/.test(commit)) throw new Error('FULL_COMMIT_REQUIRED');
+      if (override !== undefined) process.stderr.write(`gstack861: TEST_COMMIT_OVERRIDE active (${commit.slice(0, 12)})\n`);
       print(generateSkills({ upstream: absolute(options['--upstream']), commit,
         staging: absolute(options['--staging']), host: options['--host'] }));
     } else if (args[0] === 'install') {
@@ -137,8 +140,8 @@ if (args[0] === 'hook') {
       else print(store[args[1]](options['--id'], readSubject()));
     } else {
       process.stderr.write('Usage: gstack861 doctor | inventory --upstream PATH | zcode-config --policy ABS_PATH\n'
-        + '  generate --upstream PATH --staging DIR --host zcode|dsh [--commit 40-HEX]\n'
-        + '    (--commit is TEST-ONLY: overrides the upstream lock pin; default = upstream.lock.json)\n'
+        + '  generate --upstream PATH --staging DIR --host zcode|dsh\n'
+        + '    (env GSTACK861_TEST_COMMIT overrides the upstream lock pin for TESTS only; default = upstream.lock.json)\n'
         + '  install --staging DIR --target DIR | uninstall --target DIR [--purge]\n'
         + '  approvals list --state DIR | show --state DIR --id ID\n'
         + '  approvals issue --state DIR --host H --session S --run R --policy-hash HASH --action-file F [--ttl-ms N]\n'

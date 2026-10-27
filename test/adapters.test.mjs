@@ -95,9 +95,13 @@ test('ZCode hook config matcher refusals are a conservative emission choice', t 
 test('CLI generate, install and uninstall round-trip real skill packages', t => {
   const r = repository(t), staging = path.join(r.base, 'staging'), target = path.join(r.base, 'target');
   const run = (...a) => spawnSync(process.execPath, [cli, ...a], { encoding: 'utf8', timeout: 30000 });
-  const gen = run('generate', '--upstream', r.root, '--staging', staging, '--host', 'zcode', '--commit', r.commit);
+  // The fixture commit arrives via GSTACK861_TEST_COMMIT (was: --commit flag); the
+  // assertions below are unchanged in strength — only the value source moved.
+  const gen = spawnSync(process.execPath, [cli, 'generate', '--upstream', r.root, '--staging', staging, '--host', 'zcode'],
+    { encoding: 'utf8', timeout: 30000, env: { ...process.env, GSTACK861_TEST_COMMIT: r.commit } });
   assert.equal(gen.status, 0, gen.stderr);
   assert.equal(JSON.parse(gen.stdout).generated, 2);
+  assert.match(gen.stderr, new RegExp(`^gstack861: TEST_COMMIT_OVERRIDE active \\(${r.commit.slice(0, 12)}\\)`));
   assert.ok(fs.existsSync(path.join(staging, 'review', 'manifest.json')));
   const inst = run('install', '--staging', staging, '--target', target);
   assert.equal(inst.status, 0, inst.stderr);
@@ -108,6 +112,27 @@ test('CLI generate, install and uninstall round-trip real skill packages', t => 
   assert.deepEqual(JSON.parse(un.stdout).uninstalled.sort(), ['investigate', 'review']);
   assert.ok(!fs.existsSync(path.join(target, 'review')));
   assert.ok(!fs.existsSync(path.join(target, 'investigate')));
+});
+test('generate --commit is removed; GSTACK861_TEST_COMMIT drives the pin and announces itself on stderr', t => {
+  const r = repository(t), staging = path.join(r.base, 'staging');
+  // The flag itself is gone: passing it is now an argument error that writes nothing.
+  const refused = spawnSync(process.execPath, [cli, 'generate', '--upstream', r.root, '--staging', staging, '--host', 'zcode', '--commit', r.commit], { encoding: 'utf8' });
+  assert.equal(refused.status, 1);
+  assert.match(refused.stderr, /INVALID_ARGUMENTS/);
+  assert.ok(!fs.existsSync(staging));
+  // The env var is honored, announced with the first 12 chars, and the run succeeds.
+  const gen = spawnSync(process.execPath, [cli, 'generate', '--upstream', r.root, '--staging', staging, '--host', 'zcode'],
+    { encoding: 'utf8', env: { ...process.env, GSTACK861_TEST_COMMIT: r.commit } });
+  assert.equal(gen.status, 0, gen.stderr);
+  assert.equal(JSON.parse(gen.stdout).generated, 2);
+  assert.equal(gen.stderr, `gstack861: TEST_COMMIT_OVERRIDE active (${r.commit.slice(0, 12)})\n`);
+  // A value that is not a full 40-hex commit is refused without the notice.
+  const bad = spawnSync(process.execPath, [cli, 'generate', '--upstream', r.root, '--staging', path.join(r.base, 's2'), '--host', 'zcode'],
+    { encoding: 'utf8', env: { ...process.env, GSTACK861_TEST_COMMIT: 'short' } });
+  assert.equal(bad.status, 1);
+  assert.match(bad.stderr, /FULL_COMMIT_REQUIRED/);
+  assert.equal(bad.stderr.includes('TEST_COMMIT_OVERRIDE'), false);
+  assert.ok(!fs.existsSync(path.join(r.base, 's2')));
 });
 test('CLI rejects unknown commands and bad arguments with prefixed codes and non-zero exit', () => {
   const usage = spawnSync(process.execPath, [cli, 'nope'], { encoding: 'utf8' });
