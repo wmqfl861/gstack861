@@ -187,3 +187,19 @@ test('no error thrown on any path ever contains the key value', async () => {
     return true;
   });
 });
+
+test('mid-body abort during response.text() maps to GATEWAY_TIMEOUT', async () => {
+  // Headers arrive, the body stalls mid-stream; the abort signal errors the stream,
+  // and response.text() must surface as a structured GATEWAY_TIMEOUT (not a raw DOMException).
+  const fetchImpl = (url, init) => new Response(new ReadableStream({
+    start(controller) {
+      controller.enqueue(new TextEncoder().encode('{"choices":'));
+      init.signal.addEventListener('abort', () =>
+        controller.error(new DOMException('The operation was aborted due to timeout', 'TimeoutError')));
+    },
+  }), { status: 200 });
+  await assert.rejects(
+    runModelReview({ gateway: GATEWAY, target: { files: [{ path: 'a', diff: '+a' }] }, fetchImpl, timeoutMs: 80, env: { GSTACK861_MODEL_CALL: '1', [KEY_ENV]: 'k' } }),
+    /GATEWAY_TIMEOUT/,
+  );
+});

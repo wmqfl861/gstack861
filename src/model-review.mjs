@@ -104,7 +104,13 @@ export async function runModelReview({ gateway, target, prompt, fetchImpl = fetc
   if (response.status >= 300 && response.status < 400) throw fail('GATEWAY_ERROR', `(redirect refused; status ${response.status})`);
   if (!response.ok) throw fail('GATEWAY_ERROR', `(status ${response.status})`); // never echo the body
   // 5. Parse: choices[0].message.content -> { verdict, findings }.
-  const text = await response.text();
+  let text;
+  try { text = await response.text(); }
+  catch (error) {
+    // Mid-body abort/reset gets the same structured codes as the fetch phase.
+    if (error?.name === 'AbortError' || error?.name === 'TimeoutError' || error?.cause?.name === 'TimeoutError') throw fail('GATEWAY_TIMEOUT');
+    throw fail('GATEWAY_ERROR', `(body read: ${error?.cause?.code ?? error?.name ?? 'failed'})`);
+  }
   let payload;
   try { payload = JSON.parse(text); }
   catch { throw fail('REVIEW_OUTPUT_UNPARSEABLE', `(first 1KiB of raw body) ${text.slice(0, 1024)}`); }
