@@ -6,6 +6,7 @@ import { loadPolicy } from '../src/policy.mjs';
 import { handleZcode, denyZcode, zcodeHookConfig } from '../src/adapters/zcode.mjs';
 import { inventory } from '../src/inventory.mjs';
 import { generateSkills } from '../src/generate.mjs';
+import { stageRender } from '../src/stage.mjs';
 import { installSkills, uninstallSkills } from '../src/install.mjs';
 import { ApprovalStore, subjectDigest } from '../src/approvals.mjs';
 import { TaskStore } from '../src/tasks.mjs';
@@ -96,6 +97,16 @@ if (args[0] === 'hook') {
       if (override !== undefined) process.stderr.write(`gstack861: TEST_COMMIT_OVERRIDE active (${commit.slice(0, 12)})\n`);
       print(generateSkills({ upstream: absolute(options['--upstream']), commit,
         staging: absolute(options['--staging']), host: options['--host'] }));
+    } else if (args[0] === 'stage-render') {
+      const options = flags(args.slice(1), ['--rendered', '--manifest', '--host', '--staging']);
+      // All four flags are binding: a missing one must refuse before any render
+      // tree byte is read, same as the approvals ask guard.
+      for (const key of ['--rendered', '--manifest', '--host', '--staging'])
+        if (options[key] === undefined) throw new Error('INVALID_ARGUMENTS');
+      // --manifest may be relative to cwd (like inventory --upstream); the two
+      // directory flags stay strictly absolute, as stageRender itself enforces.
+      print(stageRender({ rendered: absolute(options['--rendered']), manifestFile: path.resolve(options['--manifest']),
+        host: options['--host'], staging: absolute(options['--staging']) }));
     } else if (args[0] === 'install') {
       const options = flags(args.slice(1), ['--staging', '--target']);
       print(installSkills({ staging: absolute(options['--staging']), target: absolute(options['--target']) }));
@@ -184,6 +195,8 @@ if (args[0] === 'hook') {
       process.stderr.write('Usage: gstack861 doctor | inventory --upstream PATH | zcode-config --policy ABS_PATH\n'
         + '  generate --upstream PATH --staging DIR --host zcode|dsh\n'
         + '    (env GSTACK861_TEST_COMMIT overrides the upstream lock pin for TESTS only; default = upstream.lock.json)\n'
+        + '  stage-render --rendered DIR --manifest FILE --host zcode|dsh --staging DIR\n'
+        + '    (converts CI render output + render-manifest into installable staging; GSTACK861_TEST_COMMIT as for generate)\n'
         + '  install --staging DIR --target DIR | uninstall --target DIR [--purge]\n'
         + '  approvals list --state DIR | show --state DIR --id ID\n'
         + '  approvals issue --state DIR --host H --session S --run R --policy-hash HASH --action-file F [--ttl-ms N]\n'
