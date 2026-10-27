@@ -63,7 +63,7 @@ function writeRegistry(target, skills, now) {
 }
 
 /** Parse and shape-check an existing registry; a corrupt or shadowed one is refused, never overwritten. */
-function loadRegistry(target) {
+export function loadRegistry(target) {
   if (!regularFile(registryFile(target))) return [];
   const registry = readJson(registryFile(target));
   if (!object(registry) || registry.schemaVersion !== 1 || !Array.isArray(registry.skills)) fail('REGISTRY_INVALID');
