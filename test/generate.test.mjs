@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import { execFileSync } from 'node:child_process';
-import { generateSkills } from '../src/generate.mjs';
+import { generateSkills, blobHash } from '../src/generate.mjs';
 import { textDigest } from '../src/json.mjs';
 
 const WHEN = '2026-10-26T00:00:00.000Z';
@@ -43,6 +43,21 @@ function repository(t) {
   return { root, base: path.dirname(root), commit: git('rev-parse', 'HEAD') };
 }
 
+test('blobHash computes git blob object ids and separates mismatched buffers', t => {
+  const r = repository(t);
+  const git = (file, input) => execFileSync('git', ['-C', r.root, ...file], { stdio: ['pipe', 'pipe', 'pipe'], ...(input === undefined ? {} : { input }) }).toString().trim();
+  // The known blob: what the manifest pins for investigate/SKILL.md at HEAD.
+  const known = git(['rev-parse', 'HEAD:investigate/SKILL.md']);
+  assert.match(known, /^[a-f0-9]{40}$/);
+  assert.equal(blobHash(INVESTIGATE), known, 'blobHash must equal the git blob object id');
+  // A mismatched buffer (one extra byte) must not equal the known blob...
+  const mutated = Buffer.concat([INVESTIGATE, Buffer.from(' tampered')]);
+  assert.notEqual(blobHash(mutated), known);
+  // ...and must itself hash to the correct git id for its own bytes (oracle: hash-object).
+  assert.equal(blobHash(mutated), git(['hash-object', '--stdin'], mutated));
+  // Length-header semantics: the digest depends on the byte length, not just content words.
+  assert.equal(blobHash(Buffer.alloc(0)), git(['hash-object', '--stdin'], Buffer.alloc(0)));
+});
 test('generateSkills writes verbatim SKILL.md copies and exact manifests', t => {
   const r = repository(t), staging = path.join(r.base, 'staging');
   const result = generateSkills({ upstream: r.root, commit: r.commit, staging, host: 'zcode', now: NOW });

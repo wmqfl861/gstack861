@@ -147,6 +147,40 @@ test('transitions update updatedAt from the injected clock', t => {
   assert.equal(store.get(id).createdAt, 5000);
   assert.equal(store.get(id).updatedAt, 6000);
 });
+test('interrupted tasks can be cancelled', t => {
+  const f = fixture(t), store = new TaskStore(path.join(f.base, 'tasks')), s = subject(f);
+  const id = store.create(s);
+  store.start(id, s);
+  store.interrupt(id, s);
+  assert.equal(store.cancel(id, s).state, 'cancelled');
+  assert.throws(() => store.start(id, s), /TASK_WRONG_STATE/);
+  assert.throws(() => store.resume(id, s), /TASK_WRONG_STATE/);
+});
+test('owner is recorded on create and start and survives reopening', t => {
+  const f = fixture(t), dir = path.join(f.base, 'tasks'), store = new TaskStore(dir), s = subject(f);
+  const id = store.create(s, { owner: 'operator-a' });
+  assert.equal(store.get(id).owner, 'operator-a');
+  assert.equal(store.start(id, s, { owner: 'operator-b' }).owner, 'operator-b');
+  assert.equal(store.get(id).owner, 'operator-b');
+  assert.equal(new TaskStore(dir).get(id).owner, 'operator-b');
+  const bare = store.create(s);
+  assert.equal('owner' in store.get(bare), false, 'records without an owner must not carry the key');
+  assert.equal(store.start(bare, s).owner, undefined);
+});
+test('owner must be a non-empty string of at most 256 characters', t => {
+  const f = fixture(t), store = new TaskStore(path.join(f.base, 'tasks')), s = subject(f);
+  assert.equal(store.create(s, { owner: 'x'.repeat(256) }).length > 0, true);
+  const id = store.create(s);
+  for (const owner of ['x'.repeat(257), '', 42, null]) assert.throws(() => store.create(s, { owner }), /INVALID_OWNER/);
+  for (const owner of ['x'.repeat(257), '', 42]) assert.throws(() => store.start(id, s, { owner }), /INVALID_OWNER/);
+});
+test('tampered owner fields fail closed as INVALID_TASK_RECORD', t => {
+  const f = fixture(t), store = new TaskStore(path.join(f.base, 'tasks')), s = subject(f);
+  const id = store.create(s, { owner: 'operator-a' });
+  fs.writeFileSync(store.file(id), JSON.stringify({ ...store.get(id), owner: 123 }) + '\n');
+  assert.throws(() => store.get(id), /INVALID_TASK_RECORD/);
+  assert.throws(() => store.start(id, s), /INVALID_TASK_RECORD/);
+});
 test('two real processes cannot both start one task', async t => {
   const f = fixture(t), dir = path.join(f.base, 'tasks'), store = new TaskStore(dir), s = subject(f);
   const id = store.create(s);

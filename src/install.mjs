@@ -7,9 +7,11 @@ const GENERATOR = 'gstack861';
 const NAME = /^[a-z0-9][a-z0-9-]*$/;
 const SHA256 = /^[a-f0-9]{64}$/;
 const COMMIT = /^[a-f0-9]{40}$/;
+const HOSTS = ['zcode', 'dsh'];
 const REGISTRY = '.gstack861-registry.json';
 const BACKUPS = '.gstack861-backups';
 const LOCK = '.gstack861-install.lock';
+const TMP_PREFIX = '.gstack861-tmp-';
 const OUR_BACKUP = /^[a-z0-9][a-z0-9-]*-\d{13,}$/;
 const fail = code => { throw new Error(code); };
 const byName = (a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0);
@@ -93,7 +95,10 @@ function prepareBackups(target) {
 
 /**
  * Phase 1a — verify every staging entry (structure, manifest fields, SKILL.md digest)
- * before a single byte is written anywhere. Sorted for deterministic result order.
+ * before a single byte is written anywhere. All manifests must also describe one
+ * coherent batch: a legal host and one shared host and commit, else the whole install
+ * is refused with STAGING_INCONSISTENT (still zero writes — this runs first).
+ * Sorted for deterministic result order.
  */
 function stagingPlan(staging) {
   if (typeof staging !== 'string' || !path.isAbsolute(staging)) fail('INVALID_STAGING');
@@ -102,6 +107,7 @@ function stagingPlan(staging) {
   const entries = fs.readdirSync(staging, { withFileTypes: true }).sort((a, b) => byName({ name: a.name }, { name: b.name }));
   if (entries.length === 0) fail('NO_SKILLS');
   const plan = [];
+  let batchHost, batchCommit;
   for (const entry of entries) {
     if (!entry.isDirectory() || entry.isSymbolicLink()) fail('STAGING_INVALID');
     const dir = path.join(staging, entry.name);
@@ -112,6 +118,11 @@ function stagingPlan(staging) {
       || typeof manifest.sha256 !== 'string' || !SHA256.test(manifest.sha256)
       || typeof manifest.commit !== 'string' || !COMMIT.test(manifest.commit)
       || manifest.name !== entry.name || !NAME.test(entry.name)) fail('STAGING_INVALID');
+    if (!HOSTS.includes(manifest.host)) fail('STAGING_INCONSISTENT');
+    if (batchHost === undefined) batchHost = manifest.host;
+    else if (manifest.host !== batchHost) fail('STAGING_INCONSISTENT');
+    if (batchCommit === undefined) batchCommit = manifest.commit;
+    else if (manifest.commit !== batchCommit) fail('STAGING_INCONSISTENT');
     const skillFile = path.join(dir, 'SKILL.md');
     const statSkill = regularFile(skillFile);
     if (!statSkill) fail('STAGING_INVALID');
@@ -162,6 +173,12 @@ export function installSkills({ staging, target, now = () => new Date().toISOStr
   const plan = stagingPlan(staging);
   prepareTarget(target);
   return withInstallLock(target, () => {
+    // Inside the lock only: clear temp entries a previously crashed run may have left
+    // (build-beside-then-rename orphans). The TMP_PREFIX namespace is exclusively ours;
+    // every other entry in the target is never touched by this sweep.
+    for (const name of fs.readdirSync(target)) {
+      if (name.startsWith(TMP_PREFIX)) fs.rmSync(path.join(target, name), { recursive: true, force: true });
+    }
     assertRegistryPathSafe(target);
     // Read-modify-write inside the lock: a concurrent installer can never lose updates.
     const previous = loadRegistry(target);
@@ -173,7 +190,7 @@ export function installSkills({ staging, target, now = () => new Date().toISOStr
       if (item.action !== 'skip') {
         // Build the new directory completely beside the old one, then swap with renames:
         // a failure leaves either the old skill or the new one in place, never a half-written dir.
-        const temp = path.join(target, `.gstack861-tmp-${randomUUID()}`);
+        const temp = path.join(target, `${TMP_PREFIX}${randomUUID()}`);
         try {
           fs.mkdirSync(temp, { mode: 0o755 });
           fs.writeFileSync(path.join(temp, 'SKILL.md'), item.skillBytes, { flag: 'wx', mode: 0o644 });

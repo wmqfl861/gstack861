@@ -225,6 +225,61 @@ test('installSkills refuses invalid staging and target paths', t => {
   }
 });
 
+test('installSkills refuses staging with mixed hosts or commits and writes nothing', t => {
+  const root = base(t), target = path.join(root, 'target');
+  const mixedHost = path.join(root, 'mixed-host');
+  fs.mkdirSync(mixedHost);
+  stage(mixedHost, 'alpha', ALPHA_V1);
+  stage(mixedHost, 'beta', BETA_V1, { host: 'dsh' });
+  assert.throws(() => installSkills({ staging: mixedHost, target, now: NOW }), /STAGING_INCONSISTENT/);
+  assert.ok(!fs.existsSync(target), 'refused staging must leave the target uncreated');
+
+  const mixedCommit = path.join(root, 'mixed-commit');
+  fs.mkdirSync(mixedCommit);
+  stage(mixedCommit, 'alpha', ALPHA_V1);
+  stage(mixedCommit, 'beta', BETA_V1, { commit: 'c'.repeat(40) });
+  assert.throws(() => installSkills({ staging: mixedCommit, target, now: NOW }), /STAGING_INCONSISTENT/);
+  assert.ok(!fs.existsSync(target));
+});
+
+test('installSkills refuses staging manifests carrying an illegal host value', t => {
+  const root = base(t), staging = path.join(root, 'staging'), target = path.join(root, 'target');
+  fs.mkdirSync(staging);
+  stage(staging, 'alpha', ALPHA_V1, { host: 'claude' });
+  assert.throws(() => installSkills({ staging, target, now: NOW }), /STAGING_INCONSISTENT/);
+  assert.ok(!fs.existsSync(target));
+  const hostless = path.join(root, 'hostless');
+  fs.mkdirSync(hostless);
+  const manifest = JSON.parse(fs.readFileSync(path.join(staging, 'alpha', 'manifest.json'), 'utf8'));
+  delete manifest.host;
+  fs.mkdirSync(path.join(hostless, 'alpha'));
+  fs.copyFileSync(path.join(staging, 'alpha', 'SKILL.md'), path.join(hostless, 'alpha', 'SKILL.md'));
+  fs.writeFileSync(path.join(hostless, 'alpha', 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
+  assert.throws(() => installSkills({ staging: hostless, target, now: NOW }), /STAGING_INCONSISTENT/);
+  assert.ok(!fs.existsSync(target));
+});
+
+test('installSkills cleans leftover .gstack861-tmp-* entries under the lock and touches nothing else', t => {
+  const root = base(t), staging = path.join(root, 'staging'), target = path.join(root, 'target');
+  fs.mkdirSync(staging);
+  stage(staging, 'alpha', ALPHA_V1);
+  fs.mkdirSync(target);
+  const orphan = path.join(target, '.gstack861-tmp-deadbeef-1111');
+  fs.mkdirSync(orphan);
+  fs.writeFileSync(path.join(orphan, 'SKILL.md'), 'half-written orphan');
+  fs.writeFileSync(path.join(target, '.gstack861-tmp-2222'), 'a plain leftover file with our prefix');
+  fs.mkdirSync(path.join(target, 'user-dir'));
+  fs.writeFileSync(path.join(target, 'user-dir', 'keep.txt'), 'user data');
+  fs.writeFileSync(path.join(target, 'user-file.txt'), 'user file');
+  const result = installSkills({ staging, target, now: NOW });
+  assert.deepEqual(result, { installed: ['alpha'], skipped: [], backedUp: [] });
+  assert.ok(!fs.existsSync(orphan), 'a crashed run\'s temp directory must be cleaned inside the lock');
+  assert.ok(!fs.existsSync(path.join(target, '.gstack861-tmp-2222')));
+  assert.equal(fs.readFileSync(path.join(target, 'user-dir', 'keep.txt'), 'utf8'), 'user data');
+  assert.equal(fs.readFileSync(path.join(target, 'user-file.txt'), 'utf8'), 'user file');
+  assert.deepEqual(fs.readdirSync(target).sort(), [REGISTRY, 'alpha', 'user-dir', 'user-file.txt']);
+});
+
 test('uninstallSkills removes only registry skills and keeps foreign directories', t => {
   const root = base(t), staging = path.join(root, 'staging'), target = path.join(root, 'target');
   fs.mkdirSync(staging);

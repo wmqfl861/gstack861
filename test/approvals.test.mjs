@@ -79,6 +79,17 @@ test('get keeps NOT_FOUND for missing ids and refuses tampered record shapes', t
   fs.writeFileSync(store.file(stateId), JSON.stringify({ ...store.get(stateId), state: 'invented-state' }) + '\n');
   assert.throws(() => store.get(stateId), /INVALID_APPROVAL_RECORD/);
 });
+test('verify is read-only: reports binding without transitioning or storing payloads', t => {
+  const f = fixture(t), store = new ApprovalStore(path.join(f.base, 'approvals')), s = subject(f);
+  const id = store.issue(s);
+  assert.deepEqual(store.verify(id, s), { id, state: 'pending', binding: 'match' });
+  assert.deepEqual(store.verify(id, { ...s, sessionId: 's2' }), { id, state: 'pending', binding: 'mismatch' });
+  assert.equal(store.get(id).state, 'pending', 'verify must never transition the record');
+  assert.equal(Object.isFrozen(store.verify(id, s)), true);
+  assert.throws(() => store.verify(id, { ...s, extra: true }), /INVALID_SUBJECT/);
+  assert.throws(() => store.verify('00000000-0000-4000-8000-000000000000', s), /NOT_FOUND/);
+  for (const wrong of ['../policy', '', 'constructor']) assert.throws(() => store.verify(wrong, s), /INVALID_APPROVAL_ID/);
+});
 test('two real processes cannot both consume one approval', async t => {
   const f = fixture(t), dir = path.join(f.base, 'approvals'), store = new ApprovalStore(dir), s = subject(f);
   const id = store.issue(s); store.approve(id, s);

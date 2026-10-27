@@ -54,11 +54,21 @@ test('real hook subprocess accepts a valid request and refuses an out-of-scope r
 });
 test('real hook subprocess denies invalid JSON, missing policy, and oversized payloads', t => {
   const f = fixture(t);
-  for (const [p, input] of [[f.policyPath, '{'], [f.policyPath + '.missing', '{}'], [f.policyPath, 'x'.repeat(1048577)]]) {
-    const child = spawnSync(process.execPath, [cli, 'hook', 'zcode', '--policy', p], { input, encoding: 'utf8', timeout: 5000 });
+  for (const [p, input] of [[f.policyPath, '{'], [f.policyPath + '.missing', '{}'], [f.policyPath, 'x'.repeat(4 * 1024 * 1024 + 1)]]) {
+    const child = spawnSync(process.execPath, [cli, 'hook', 'zcode', '--policy', p], { input, encoding: 'utf8', timeout: 15000 });
     assert.equal(child.status, 2);
     assert.equal(JSON.parse(child.stdout).hookSpecificOutput.permissionDecision, 'deny');
   }
+});
+test('real hook subprocess accepts valid payloads above 1 MiB and below the 4 MiB cap', t => {
+  const f = fixture(t);
+  // Hosts embed file contents in tool_input: a >1 MiB valid request must pass the cap
+  // (the old limit) and be policy-evaluated normally, not refused by size alone.
+  const big = JSON.stringify({ ...event(f), tool_input: { file_path: 'src/new', content: 'x'.repeat(2 * 1024 * 1024) } });
+  assert.ok(big.length > 1024 * 1024 && big.length < 4 * 1024 * 1024);
+  const child = spawnSync(process.execPath, [cli, 'hook', 'zcode', '--policy', f.policyPath], { input: big, encoding: 'utf8', timeout: 15000 });
+  assert.equal(child.status, 0, child.stderr);
+  assert.deepEqual(JSON.parse(child.stdout), {});
 });
 test('CLI config generation does not modify existing files', t => {
   const f = fixture(t), before = fs.readFileSync(f.policyPath, 'utf8');
@@ -85,9 +95,13 @@ test('ZCode hook config matcher refusals are a conservative emission choice', t 
 test('CLI generate, install and uninstall round-trip real skill packages', t => {
   const r = repository(t), staging = path.join(r.base, 'staging'), target = path.join(r.base, 'target');
   const run = (...a) => spawnSync(process.execPath, [cli, ...a], { encoding: 'utf8', timeout: 30000 });
-  const gen = run('generate', '--upstream', r.root, '--staging', staging, '--host', 'zcode', '--commit', r.commit);
+  // The fixture commit arrives via GSTACK861_TEST_COMMIT (was: --commit flag); the
+  // assertions below are unchanged in strength — only the value source moved.
+  const gen = spawnSync(process.execPath, [cli, 'generate', '--upstream', r.root, '--staging', staging, '--host', 'zcode'],
+    { encoding: 'utf8', timeout: 30000, env: { ...process.env, GSTACK861_TEST_COMMIT: r.commit } });
   assert.equal(gen.status, 0, gen.stderr);
   assert.equal(JSON.parse(gen.stdout).generated, 2);
+  assert.match(gen.stderr, new RegExp(`^gstack861: TEST_COMMIT_OVERRIDE active \\(${r.commit.slice(0, 12)}\\)`));
   assert.ok(fs.existsSync(path.join(staging, 'review', 'manifest.json')));
   const inst = run('install', '--staging', staging, '--target', target);
   assert.equal(inst.status, 0, inst.stderr);
@@ -98,6 +112,27 @@ test('CLI generate, install and uninstall round-trip real skill packages', t => 
   assert.deepEqual(JSON.parse(un.stdout).uninstalled.sort(), ['investigate', 'review']);
   assert.ok(!fs.existsSync(path.join(target, 'review')));
   assert.ok(!fs.existsSync(path.join(target, 'investigate')));
+});
+test('generate --commit is removed; GSTACK861_TEST_COMMIT drives the pin and announces itself on stderr', t => {
+  const r = repository(t), staging = path.join(r.base, 'staging');
+  // The flag itself is gone: passing it is now an argument error that writes nothing.
+  const refused = spawnSync(process.execPath, [cli, 'generate', '--upstream', r.root, '--staging', staging, '--host', 'zcode', '--commit', r.commit], { encoding: 'utf8' });
+  assert.equal(refused.status, 1);
+  assert.match(refused.stderr, /INVALID_ARGUMENTS/);
+  assert.ok(!fs.existsSync(staging));
+  // The env var is honored, announced with the first 12 chars, and the run succeeds.
+  const gen = spawnSync(process.execPath, [cli, 'generate', '--upstream', r.root, '--staging', staging, '--host', 'zcode'],
+    { encoding: 'utf8', env: { ...process.env, GSTACK861_TEST_COMMIT: r.commit } });
+  assert.equal(gen.status, 0, gen.stderr);
+  assert.equal(JSON.parse(gen.stdout).generated, 2);
+  assert.equal(gen.stderr, `gstack861: TEST_COMMIT_OVERRIDE active (${r.commit.slice(0, 12)})\n`);
+  // A value that is not a full 40-hex commit is refused without the notice.
+  const bad = spawnSync(process.execPath, [cli, 'generate', '--upstream', r.root, '--staging', path.join(r.base, 's2'), '--host', 'zcode'],
+    { encoding: 'utf8', env: { ...process.env, GSTACK861_TEST_COMMIT: 'short' } });
+  assert.equal(bad.status, 1);
+  assert.match(bad.stderr, /FULL_COMMIT_REQUIRED/);
+  assert.equal(bad.stderr.includes('TEST_COMMIT_OVERRIDE'), false);
+  assert.ok(!fs.existsSync(path.join(r.base, 's2')));
 });
 test('CLI rejects unknown commands and bad arguments with prefixed codes and non-zero exit', () => {
   const usage = spawnSync(process.execPath, [cli, 'nope'], { encoding: 'utf8' });
@@ -157,6 +192,111 @@ test('approvals CLI rejects unknown subcommands, invented states and malformed a
     '--session', 's1', '--run', 'r1', '--policy-hash', subject.policyHash, '--action-file', badAction], { encoding: 'utf8' });
   assert.equal(approve.status, 1);
   assert.match(approve.stderr, /gstack861: INVALID_ACTION_FILE/);
+});
+test('approvals CLI issue→verify→approve→consume chain; verify mismatch stays read-only; replay refused', t => {
+  const f = fixture(t), state = path.join(f.base, 'approvals');
+  const action = { tool: 'Write', input: { file_path: 'src/a' } };
+  const actionFile = path.join(f.base, 'action.json');
+  fs.writeFileSync(actionFile, JSON.stringify(action));
+  const run = (...a) => spawnSync(process.execPath, [cli, 'approvals', ...a], { encoding: 'utf8', timeout: 10000 });
+  const subject = ['--host', 'zcode', '--session', 's1', '--run', 'r1', '--policy-hash', f.policy.policyHash, '--action-file', actionFile];
+  const issue = run('issue', '--state', state, ...subject, '--ttl-ms', '60000');
+  assert.equal(issue.status, 0, issue.stderr);
+  const id = JSON.parse(issue.stdout);
+  assert.match(id, /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+  const recordFile = path.join(state, `${id}.json`);
+  const verifyMatch = run('verify', '--state', state, '--id', id, ...subject);
+  assert.equal(verifyMatch.status, 0, verifyMatch.stderr);
+  assert.deepEqual(JSON.parse(verifyMatch.stdout), { id, state: 'pending', binding: 'match' });
+  const mismatch = run('verify', '--state', state, '--id', id, '--host', 'zcode', '--session', 'other-session',
+    '--run', 'r1', '--policy-hash', f.policy.policyHash, '--action-file', actionFile);
+  assert.equal(mismatch.status, 0, mismatch.stderr);
+  assert.deepEqual(JSON.parse(mismatch.stdout), { id, state: 'pending', binding: 'mismatch' });
+  // Read-only proof: two verifies plus the issue leave the record bytes and state untouched,
+  // and the record still contains a digest only — never the action payload (red line).
+  const issued = fs.readFileSync(recordFile, 'utf8');
+  run('verify', '--state', state, '--id', id, ...subject);
+  assert.equal(fs.readFileSync(recordFile, 'utf8'), issued);
+  assert.equal(JSON.parse(issued).state, 'pending');
+  assert.equal(issued.includes('src/a'), false);
+  const approve = run('approve', '--state', state, '--id', id, ...subject);
+  assert.equal(approve.status, 0, approve.stderr);
+  assert.equal(JSON.parse(approve.stdout).state, 'approved');
+  const consume = run('consume', '--state', state, '--id', id, ...subject);
+  assert.equal(consume.status, 0, consume.stderr);
+  assert.equal(JSON.parse(consume.stdout).state, 'consumed');
+  const replay = run('consume', '--state', state, '--id', id, ...subject);
+  assert.equal(replay.status, 1);
+  assert.match(replay.stderr, /APPROVAL_WRONG_STATE/);
+});
+test('approvals CLI issue validates ttl-ms and refuses unknown subcommands before creating state', t => {
+  const f = fixture(t);
+  const actionFile = path.join(f.base, 'action.json');
+  fs.writeFileSync(actionFile, JSON.stringify({ kind: 'publish' }));
+  const subject = ['--host', 'zcode', '--session', 's1', '--run', 'r1', '--policy-hash', f.policy.policyHash, '--action-file', actionFile];
+  const run = dir => spawnSync(process.execPath, [cli, 'approvals', 'issue', '--state', dir, ...subject, '--ttl-ms', '0'], { encoding: 'utf8', timeout: 10000 });
+  const refused = run(path.join(f.base, 'never-created'));
+  assert.equal(refused.status, 1);
+  assert.match(refused.stderr, /INVALID_TTL/);
+  assert.equal(fs.existsSync(path.join(f.base, 'never-created')), false, 'a refused ttl must not leave a state directory behind');
+  const badNumber = spawnSync(process.execPath, [cli, 'approvals', 'issue', '--state', path.join(f.base, 'never-created2'),
+    ...subject, '--ttl-ms', 'abc'], { encoding: 'utf8', timeout: 10000 });
+  assert.equal(badNumber.status, 1);
+  assert.match(badNumber.stderr, /INVALID_TTL/);
+});
+test('tasks CLI create→start→interrupt→resume→complete smoke records owner and states', t => {
+  const f = fixture(t), state = path.join(f.base, 'tasks');
+  const actionFile = path.join(f.base, 'action.json');
+  fs.writeFileSync(actionFile, JSON.stringify({ tool: 'Write', input: { file_path: 'src/a' } }));
+  const run = (...a) => spawnSync(process.execPath, [cli, 'tasks', ...a], { encoding: 'utf8', timeout: 10000 });
+  const subject = ['--host', 'zcode', '--session', 's1', '--run', 'r1', '--policy-hash', f.policy.policyHash, '--action-file', actionFile];
+  const create = run('create', '--state', state, ...subject, '--owner', 'operator-a');
+  assert.equal(create.status, 0, create.stderr);
+  const id = JSON.parse(create.stdout);
+  assert.match(id, /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+  const shown = () => JSON.parse(run('show', '--state', state, '--id', id).stdout);
+  assert.equal(shown().state, 'planned');
+  assert.equal(shown().owner, 'operator-a');
+  const step = sub => {
+    const child = run(sub, '--state', state, '--id', id, ...subject);
+    assert.equal(child.status, 0, `${sub}: ${child.stderr}`);
+    return JSON.parse(child.stdout);
+  };
+  assert.equal(step('start').state, 'running');
+  assert.equal(step('interrupt').state, 'interrupted');
+  assert.equal(step('resume').state, 'running');
+  assert.equal(step('complete').state, 'completed');
+  const final = shown();
+  assert.equal(final.state, 'completed');
+  assert.equal(final.owner, 'operator-a');
+  assert.equal(final.attempts, 2);
+  const list = JSON.parse(run('list', '--state', state).stdout);
+  assert.deepEqual(list.map(r => r.id), [id]);
+  assert.equal(list[0].state, 'completed');
+});
+test('tasks CLI cancels interrupted tasks and refuses unknown subcommands without creating state', t => {
+  const f = fixture(t), state = path.join(f.base, 'tasks');
+  const actionFile = path.join(f.base, 'action.json');
+  fs.writeFileSync(actionFile, JSON.stringify({ tool: 'Write', input: { file_path: 'src/a' } }));
+  const run = (...a) => spawnSync(process.execPath, [cli, 'tasks', ...a], { encoding: 'utf8', timeout: 10000 });
+  const subject = ['--host', 'zcode', '--session', 's1', '--run', 'r1', '--policy-hash', f.policy.policyHash, '--action-file', actionFile];
+  const absent = path.join(f.base, 'never-created');
+  const bogus = run('bogus', '--state', absent);
+  assert.equal(bogus.status, 1);
+  assert.match(bogus.stderr, /UNKNOWN_SUBCOMMAND/);
+  assert.equal(fs.existsSync(absent), false, 'unknown subcommand must not leave a state directory behind');
+  const id = JSON.parse(run('create', '--state', state, ...subject).stdout);
+  const step = sub => {
+    const child = run(sub, '--state', state, '--id', id, ...subject);
+    assert.equal(child.status, 0, `${sub}: ${child.stderr}`);
+    return JSON.parse(child.stdout);
+  };
+  step('start'); step('interrupt');
+  assert.equal(step('cancel').state, 'cancelled');
+  const tooLongOwner = run('create', '--state', path.join(f.base, 'also-never'), ...subject, '--owner', 'x'.repeat(257));
+  assert.equal(tooLongOwner.status, 1);
+  assert.match(tooLongOwner.stderr, /INVALID_OWNER/);
+  assert.equal(fs.existsSync(path.join(f.base, 'also-never')), false);
 });
 test('DSH registers a monotonic guard, not a permissive waterfall', t => {
   const f = fixture(t);
