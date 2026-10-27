@@ -33,7 +33,7 @@
 - `docs/integration/host-loading.md`：
   1. **ZCode 工作区装载（本批实测）**：`stage-render`（真实 CI 产物或本地维护者渲染）→ `install --staging S --target <workspace>/.zcode/skills`——注意 target 即技能目录本身（每技能一个子目录，含 SKILL.md+sections+manifest.json+注册表 `.gstack861-registry.json`；ZCode 对多余文件的容忍度=未知，列为新会话验收观察项）→ 新会话自动拾取的预期与验收方法（引用 zcode-acceptance.md 的清单风格，标注「自动拾取未验证」）。
   2. **目录名=frontmatter name** 的一致性说明（stage 后均为盘点名）与上游 `nameMatchesDirectory` 注意点。
-  3. **DSH 侧**：如实写「无 gstack 式技能目录；渲染内容可作为上下文/文档注入；插件式技能装载机制待 DSH 侧验证（调研文档第 5/6 节）」。
+  3. **DSH 侧**：如实写「无 gstack 式技能目录；渲染内容可作为上下文/文档注入；插件式技能装载机制待 DSH 侧验证（调研文档第 2 节插件发现机制 / 第 3 节配置格式与隔离）」。
   4. 卸载/回滚经 `uninstall --target <workspace>/.zcode/skills`。
 - README：补 batch3/batch4 验证 JSON 链接（两轮终审都点过名）；渲染节加「装载见 host-loading.md」。
 
@@ -46,7 +46,7 @@
 - Test: `test/install.test.mjs`、`test/adapters.test.mjs`
 
 **Interfaces:**
-1. `stagingPlan` 跨键冲突预校验：同一 staging manifest 的 files 键两两检查——小写化后冲突（`A.md`+`a.md`）或一键为另一键的路径前缀（`a` 与 `a/b.md`）→ `STAGING_INVALID`（原先 Windows 写入期 EEXIST / POSIX ENOTDIR 的场景提前为干净拒绝；写入期行为不变，纯收紧）。
+1. `stagingPlan` 跨键冲突预校验：同一 manifest 的 files 键两两比较（`toLowerCase()` 归一后）：(i) 相等，或 (ii) 一方以另一方 + `/` 开头（**逐段前缀**，绝不用裸 startsWith——`a.md` 与 `a.md2` 不冲突）→ `STAGING_INVALID`。覆盖大小写对、`a`/`a/b.md`、`sections`/`sections/x.md`。放置于 listedKey 循环后；O(n²) 可接受。注意：POSIX 上大小写对原先可成功安装，本变更为跨平台一致性的**有意收紧**（测试注释说明）；registry 侧维持 listedKey-only（其 files 只能源自已校验 manifest）。
 2. `approvals ask --prompt-file` 读取错误（缺失 ENOENT 等）与解析错误 → `gstack861:INVALID_PROMPT_FILE`（限枚举类，与 action-file 同款实现；`ABSOLUTE_PATH_REQUIRED` 语义保留）。
 - 测试：冲突两例（大小写/前缀）拒绝且零写入；POSIX 与 win32 语义一致（冲突检查在两层都触发，不需平台包裹）；prompt-file 缺失/坏内容 exit 1 + 错误码；相对路径仍 ABSOLUTE_PATH_REQUIRED。
 
@@ -55,7 +55,7 @@
 ### Task 3 (协调者): 渲染技能宿主消费流程 + 证据 + 终审 + 推送
 
 - [ ] 临时 fixture 工作区：`stage-render`（真实渲染产物）→ `install --target <fixture>/.zcode/skills`；断言技能目录/文件/frontmatter
-- [ ] **消费流程**：由本 ZCode 会话按已装载的 `careful`（或 `review`）渲染技能指令，对 fixture 仓库的一个含危险命令变更执行技能要求的安全审查，产出技能规定的输出物；全程 `tasks` CLI 记账；结果与边界（上下文注入式消费；自动拾取待新会话）写入 `docs/verification-2026-10-27-render-consumption.md`
+- [ ] **消费流程**：由本 ZCode 会话按已装载的 `review` 渲染技能指令（review 含明文 Degraded mode 条款，文档渲染无 bin/ 时按安全默认继续；careful 的 analytics 前置会硬失败于缺失的 ~/.zcode 路径，故不选），对 fixture 仓库的一个含危险命令变更执行技能要求的安全审查，产出技能规定的输出物；全程 `tasks` CLI 记账；结果与边界（上下文注入式消费；自动拾取待新会话）写入 `docs/verification-2026-10-27-render-consumption.md`
 - [ ] 回填 runbook「已实测」标注；VERIFICATION 第十轮 + 证据 JSON + 摘要（协议顺序）+ 版本 0.4.2
 - [ ] 终审（独立子代理）→ 修复轮 → 推送 main → CI 绿确认
 
