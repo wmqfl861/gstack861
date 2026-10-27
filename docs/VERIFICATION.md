@@ -230,3 +230,32 @@ Lane 1（命名空间+收紧）approved——两处豁免测试修改经 git dif
 ## 下一验收
 
 批次 3：defineHost 方向裁定与实施（专项计划）；原生询问接线；DSH 纵向（待 DEEPSEEK_API_KEY）；ZCode guard 层（待用户受控新会话）。
+
+# 第八轮验证记录：批次 3（上游渲染复用 + 原生询问桥，2026-10-27）
+
+范围：0.4.0。按 `docs/plans/2026-10-27-batch3-render-ask.md`（先经只读调研建立事实基础，再经独立子代理审计划——否决了错误锚点与 push 式注册、纠正门禁为 AND、补根路由断言）交付。
+
+## 交付与验证
+
+环境：真实 Windows 本机（win32 10.0.22624 x64），Node.js v24.21.0。
+
+| 项 | 结果 |
+|---|---|
+| `npm test` | 161/161（新增 15：编排器 11+1 前缀回归、ask 3） |
+| `npm run check` / `doctor` | 通过；版本 0.4.0 |
+| `node scripts/render-upstream.mjs`（本地，无 CI 变量） | `RENDER_NOT_ALLOWED` exit 1，零残留，子模块 pristine |
+| `node scripts/verify-dsh-guard.mjs` | exit 2 blocked（密钥仍缺） |
+| 渲染编排器审查修复轮 | 审查者静态证明两处 CI 必败缺陷（`gstack-upgrade` 前缀错配；artifact 隐藏目录排除），TDD 红线复现后修复，范围化复审接受（复审者独立换装旧代码复现红灯） |
+| **渲染 CI 首跑** | 推送后以 Actions 实际运行结果为准，此处不预填 |
+
+## 上游渲染红线放宽的精确边界（R1，README 全文）
+
+仅 `gen:skill-docs` 渲染路径；`CI=true && GSTACK861_RENDER=ci` 双门；bun 恰 1.4.2；子模块 `git archive` 副本 + overlay 字面量拼接（锚点全行断言防漂移）；子模块本体渲染前后 pristine 断言；零 npm/零网络（审查复核 107 文件导入闭包）；产物 rendered-experimental，不宣称 conformance/full。
+
+## 车道审查结论
+
+Lane A（渲染）：初审 Needs fixes（2 Critical）→ 修复轮 → 复审接受。Lane B（ask 桥）：一次通过——阻塞语义、摘要红线、退出码 3 唯一性均实证。
+
+## 下一验收
+
+渲染 CI 首跑结果回填与（若绿）产物接入 install 链（批次 4）；DSH 待密钥；ZCode guard 层待受控会话。

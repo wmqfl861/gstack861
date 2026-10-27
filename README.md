@@ -2,7 +2,7 @@
 
 将 gstack 原生适配到 **ZCode** 与 **DeepSeek Harness（DSH）**。一套核心，两套独立宿主适配，不隐藏调用 Claude Code，不把提示词复制当作功能对等。
 
-**当前版本：0.3.1 / foundation。不是完整可用的 gstack 双宿主发行版。**
+**当前版本：0.4.0 / foundation。不是完整可用的 gstack 双宿主发行版。**
 
 ## 开发文档
 
@@ -10,6 +10,7 @@
 - [功能与证据矩阵](docs/FEATURE_MATRIX.md)
 - [本轮测试说明及限制](docs/VERIFICATION.md)
 - [精确测试文件摘要](docs/verification-2026-10-26.json)（首轮 Linux）；[Windows 轮](docs/verification-2026-10-26-windows.json)；[M2 基础批次](docs/verification-2026-10-26-m2.json)
+- [后续轮次](docs/verification-2026-10-27-review-fixes.json)：[Windows 验收](docs/verification-2026-10-27-windows-acceptance.json)、[M2 纵向](docs/verification-2026-10-27-m2-vertical.json)、[纵向流程证据](docs/verification-2026-10-27-vertical-zcode.md)、[批次 2](docs/verification-2026-10-27-batch2.json)
 - [M2 基础批次实施计划](docs/plans/2026-10-26-m2-foundation.md)
 - [本机 DSH 真实加载调研](docs/integration/dsh-local-findings.md)
 - [ZCode 受控接入验收手册](docs/integration/zcode-acceptance.md)
@@ -22,7 +23,7 @@ DSH 管线级 guard 验证（真实工具调用拒绝路径）待 `DEEPSEEK_API_
 1. 宿主中立策略核心：显式文件工具绑定（0.3.0 起支持 `parser: 'apply-patch'` V4A 补丁解析与 `effectKey`/`readWhen` 按参数区分读写）、读写范围分离、符号链接和路径越界检查、未知工具默认拒绝、配置摘要。
 2. ZCode 同步 PreToolUse 协议适配与配置片段生成（支持按绑定工具收窄 matcher）；实际 Node Hook 子进程回归。
 3. DSH 原生 `ctx.tools.guard` 插件入口；协议测试通过；并已在本机真实 DSH 0.2.1-rc.3 隔离配置中完成加载/激活冒烟（见调研文档），guard 工具执行级拒绝路径仍未验证。
-4. 持久审批状态核心：等待人工批准、会话/操作/配置绑定、过期、拒绝、单次消费、跨进程竞争保护；操作员 CLI（`approvals issue/verify/approve/reject/consume/list/show`）已接通完整审批闭环（含只读绑定校验），宿主内询问 UI 仍未接通。
+4. 持久审批状态核心：等待人工批准、会话/操作/配置绑定、过期、拒绝、单次消费、跨进程竞争保护；操作员 CLI（`approvals issue/verify/approve/reject/consume/list/show`）已接通完整审批闭环（含只读绑定校验），原生询问桥 `approvals ask`（阻塞式 stdin 应答，无答案 exit 3 绝不自动同意）已接通；宿主内嵌 UI 仍未接通。
 5. 固定提交的上游源技能盘点器：模板去重、文件摘要、宿主依赖提示；不执行上游代码，不自动宣布兼容。
 6. 持久任务日志：planned/running/completed/failed/cancelled/interrupted 状态机、断点恢复与 interrupted→cancelled、owner 标记、跨进程转移锁、防篡改记录校验；`tasks` CLI（create/start/resume/complete/fail/cancel/interrupt/show/list）已接通。
 7. 固定上游技能生成器：从盘点结果生成宿主技能包（逐字节复制的 SKILL.md + manifest，含占位符与宿主依赖提示、`generated-not-host-verified` 标记），不解析模板、不执行上游代码。
@@ -62,6 +63,14 @@ node bin/gstack861.mjs zcode-config --policy /absolute/private/policy.json
 `src/adapters/dsh.mjs` 导出原生 Cordis `name`、`inject` 和 `apply`。将此模块通过 DSH 的本地插件机制加载，配置 `policyPath` 为工作区外绝对路径；插件依赖 `tools` 服务的单调 guard API，缺失时拒绝激活。
 
 策略中的 `bindings.dsh` 默认为空。应先检查该安装实际注册的文件工具名和参数，再显式绑定；本项目不会猜工具名。此阶段 DSH **只接受绝对文件路径**，相对路径会拒绝，直到 Session cwd 语义与继承在真实宿主中验收。没有使用部分兼容的 Claude Hook 桥。
+
+## 上游渲染（CI 受限执行）
+
+为产出可直接使用的宿主技能（而非含 `{{占位符}}` 的骨架），本项目自 0.4.0 起以**受限放宽**方式复用固定上游的 `gen:skill-docs` 渲染管线（蓝图第 1 节「先复用上游工具」）：
+
+- 执行仅限 `scripts/render-upstream.mjs`，且仅当 `CI=true` **且** `GSTACK861_RENDER=ci` 同时成立（后者是维护者在 CI 同等断言下的受控复现通道）；bun 版本必须恰为 1.4.2。
+- 在 `git archive` 生成的**子模块副本**上执行 overlay（`hosts-overlay/zcode.ts`、`dsh.ts`，注册表字面量拼接），`upstream/gstack` 工作树渲染前后断言 pristine；不运行 `setup`、不安装 Claude Code、不调用模型；渲染路径经审查为零 npm 依赖、零网络。
+- 产物落 `rendered/.zcode` 与 `rendered/.dsh`（每宿主 57 技能 + 根路由 `gstack`），零未解析占位符，附 `render-manifest-<host>.json`；状态为 **rendered-experimental**——不构成上游 conformance/full 认证，安装链接入待后续批次。产物经 CI artifacts（30 天）获取。
 
 ## 安全与状态边界
 
