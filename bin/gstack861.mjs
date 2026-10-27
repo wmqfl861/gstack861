@@ -31,6 +31,14 @@ const absolute = value => {
   if (typeof value !== 'string' || !path.isAbsolute(value)) throw new Error('ABSOLUTE_PATH_REQUIRED');
   return value;
 };
+/** Rebuild a subject from operator flags plus the action file; only its digest is ever persisted. */
+const subjectFrom = options => {
+  let action;
+  try { action = JSON.parse(fs.readFileSync(absolute(options['--action-file']), 'utf8')); }
+  catch (error) { if (error instanceof SyntaxError) throw new Error('INVALID_ACTION_FILE'); throw error; }
+  return { host: options['--host'], sessionId: options['--session'], runId: options['--run'],
+    policyHash: options['--policy-hash'], action };
+};
 const version = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version;
 const lock = () => JSON.parse(fs.readFileSync(new URL('../upstream.lock.json', import.meta.url), 'utf8'));
 
@@ -96,22 +104,13 @@ if (args[0] === 'hook') {
       // leave a freshly created state directory behind.
       if (ttlMs !== undefined && (!Number.isSafeInteger(ttlMs) || ttlMs < 1 || ttlMs > 86400000)) throw new Error('INVALID_TTL');
       const store = new ApprovalStore(absolute(options['--state']));
-      // The subject is rebuilt from operator-supplied flags plus the action file; only its
-      // digest ever touches a record, so the payload itself is never persisted (verify included).
-      const readSubject = () => {
-        let action;
-        try { action = JSON.parse(fs.readFileSync(absolute(options['--action-file']), 'utf8')); }
-        catch (error) { if (error instanceof SyntaxError) throw new Error('INVALID_ACTION_FILE'); throw error; }
-        return { host: options['--host'], sessionId: options['--session'], runId: options['--run'],
-          policyHash: options['--policy-hash'], action };
-      };
       if (args[1] === 'list') print(store.list().map(({ id, state, issuedAt, expiresAt }) => ({ id, state, issuedAt, expiresAt })));
       else if (args[1] === 'show') print(store.get(options['--id']));
       else if (args[1] === 'issue') {
-        print(store.issue(readSubject(), ttlMs === undefined ? {} : { ttlMs }));
-      } else if (args[1] === 'verify') print(store.verify(options['--id'], readSubject()));
+        print(store.issue(subjectFrom(options), ttlMs === undefined ? {} : { ttlMs }));
+      } else if (args[1] === 'verify') print(store.verify(options['--id'], subjectFrom(options)));
       else {
-        const subject = readSubject();
+        const subject = subjectFrom(options);
         print(args[1] === 'approve' ? store.approve(options['--id'], subject)
           : args[1] === 'consume' ? store.consume(options['--id'], subject)
           : store.reject(options['--id'], subject));
@@ -126,18 +125,11 @@ if (args[0] === 'hook') {
       // Same shape as TaskStore.create/start, checked before any directory is created.
       if (owner !== undefined && (owner.length < 1 || owner.length > 256)) throw new Error('INVALID_OWNER');
       const store = new TaskStore(absolute(options['--state']));
-      const readSubject = () => {
-        let action;
-        try { action = JSON.parse(fs.readFileSync(absolute(options['--action-file']), 'utf8')); }
-        catch (error) { if (error instanceof SyntaxError) throw new Error('INVALID_ACTION_FILE'); throw error; }
-        return { host: options['--host'], sessionId: options['--session'], runId: options['--run'],
-          policyHash: options['--policy-hash'], action };
-      };
       if (args[1] === 'list') print(store.list());
       else if (args[1] === 'show') print(store.get(options['--id']));
-      else if (args[1] === 'create') print(store.create(readSubject(), owner === undefined ? {} : { owner }));
-      else if (args[1] === 'start') print(store.start(options['--id'], readSubject(), owner === undefined ? {} : { owner }));
-      else print(store[args[1]](options['--id'], readSubject()));
+      else if (args[1] === 'create') print(store.create(subjectFrom(options), owner === undefined ? {} : { owner }));
+      else if (args[1] === 'start') print(store.start(options['--id'], subjectFrom(options), owner === undefined ? {} : { owner }));
+      else print(store[args[1]](options['--id'], subjectFrom(options)));
     } else {
       process.stderr.write('Usage: gstack861 doctor | inventory --upstream PATH | zcode-config --policy ABS_PATH\n'
         + '  generate --upstream PATH --staging DIR --host zcode|dsh\n'
