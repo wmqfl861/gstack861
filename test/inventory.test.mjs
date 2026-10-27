@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { inventory } from '../src/inventory.mjs';
+import { textDigest } from '../src/json.mjs';
 import { fixture } from './helpers.mjs';
 
 function repository(t, empty = false) {
@@ -44,4 +45,31 @@ test('inventory refuses dirty upstream and untracked additions', t => {
 test('empty source inventory is not a vacuous parity pass', t => {
   const r = repository(t, true);
   assert.throws(() => inventory(r.root, r.commit), /NO_SOURCE_SKILLS/);
+});
+test('inventory reads the verified commit even when HEAD moves after the dirty check', t => {
+  const f = fixture(t), root = path.join(f.base, 'upstream'); fs.mkdirSync(root);
+  const git = (...args) => execFileSync('git', ['-C', root, ...args], { encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }).trim();
+  const commitFiles = (...args) => git('-c', 'user.name=gstack861 test', '-c', 'user.email=test@example.invalid', '-c', 'commit.gpgsign=false', 'commit', ...args);
+  git('init', '--initial-branch=main');
+  fs.mkdirSync(path.join(root, 'review'));
+  fs.writeFileSync(path.join(root, 'review', 'SKILL.md'), 'pinned review body');
+  git('add', '.');
+  commitFiles('-m', 'pinned');
+  const pinned = git('rev-parse', 'HEAD');
+  fs.writeFileSync(path.join(root, 'review', 'SKILL.md'), 'newer review body');
+  git('add', '.');
+  commitFiles('-m', 'newer');
+  const newer = git('rev-parse', 'HEAD');
+  git('checkout', pinned); // verification starts from the pinned checkout
+  let switched = false;
+  const result = inventory(root, pinned, {
+    betweenSteps: () => { switched = true; git('checkout', newer); }, // HEAD drifts after the dirty check
+  });
+  assert.ok(switched, 'the betweenSteps hook must actually run');
+  assert.equal(git('rev-parse', 'HEAD'), newer, 'the fixture must really have moved HEAD mid-run');
+  assert.equal(result.commit, pinned);
+  assert.equal(result.skills.length, 1);
+  assert.equal(result.skills[0].name, 'review');
+  assert.equal(result.skills[0].source, 'review/SKILL.md');
+  assert.equal(result.skills[0].sha256, textDigest('pinned review body'), 'content must come from the pinned commit, not HEAD');
 });
