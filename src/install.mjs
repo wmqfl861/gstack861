@@ -7,6 +7,8 @@ const GENERATOR = 'gstack861';
 const NAME = /^[a-z0-9][a-z0-9-]*$/;
 const SHA256 = /^[a-f0-9]{64}$/;
 const COMMIT = /^[a-f0-9]{40}$/;
+const FILE_SEGMENT = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
+const RESERVED_FILES = new Set(['skill.md', 'manifest.json']);
 const HOSTS = ['zcode', 'dsh'];
 const REGISTRY = '.gstack861-registry.json';
 const BACKUPS = '.gstack861-backups';
@@ -15,6 +17,26 @@ const TMP_PREFIX = '.gstack861-tmp-';
 const OUR_BACKUP = /^[a-z0-9][a-z0-9-]*-\d{13,}$/;
 const fail = code => { throw new Error(code); };
 const byName = (a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0);
+
+/**
+ * A listed-file key from the optional manifest/registry `files` map: a relative
+ * POSIX sub-path whose every segment is `[A-Za-z0-9][A-Za-z0-9._-]*`, at most 4
+ * segments deep, and never a reserved top-level name in any case. The segment
+ * alphabet alone rejects `..` segments, absolute paths, backslashes and empty
+ * segments; `__proto__`-style keys cannot pass either (must start alphanumeric).
+ */
+function listedKey(key) {
+  if (typeof key !== 'string') return false;
+  const segments = key.split('/');
+  if (segments.length > 4 || RESERVED_FILES.has(key.toLowerCase())) return false;
+  return segments.every(segment => FILE_SEGMENT.test(segment));
+}
+
+/** Key set + digest equality of two optional files maps (both normalized: empty means absent). */
+const filesEqual = (a, b) => {
+  const ka = a ? Object.keys(a) : [], kb = b ? Object.keys(b) : [];
+  return ka.length === kb.length && ka.every(k => a[k] === b[k]);
+};
 
 function readJson(filename) {
   try { return JSON.parse(fs.readFileSync(filename, 'utf8')); } catch { return null; }
@@ -48,7 +70,15 @@ function loadRegistry(target) {
   return registry.skills.map(entry => {
     if (!object(entry) || typeof entry.name !== 'string' || !NAME.test(entry.name)
       || typeof entry.sha256 !== 'string' || !SHA256.test(entry.sha256)) fail('REGISTRY_INVALID');
-    return { name: entry.name, sha256: entry.sha256 };
+    let files;
+    if (entry.files !== undefined) {
+      if (!object(entry.files)) fail('REGISTRY_INVALID');
+      for (const [key, value] of Object.entries(entry.files)) {
+        if (!listedKey(key) || typeof value !== 'string' || !SHA256.test(value)) fail('REGISTRY_INVALID');
+      }
+      if (Object.keys(entry.files).length > 0) files = { ...entry.files };
+    }
+    return files ? { name: entry.name, sha256: entry.sha256, files } : { name: entry.name, sha256: entry.sha256 };
   });
 }
 
@@ -94,11 +124,11 @@ function prepareBackups(target) {
 }
 
 /**
- * Phase 1a — verify every staging entry (structure, manifest fields, SKILL.md digest)
- * before a single byte is written anywhere. All manifests must also describe one
- * coherent batch: a legal host and one shared host and commit, else the whole install
- * is refused with STAGING_INCONSISTENT (still zero writes — this runs first).
- * Sorted for deterministic result order.
+ * Phase 1a — verify every staging entry (structure, manifest fields, SKILL.md and
+ * listed-file digests) before a single byte is written anywhere. All manifests must
+ * also describe one coherent batch: a legal host and one shared host and commit,
+ * else the whole install is refused with STAGING_INCONSISTENT (still zero writes —
+ * this runs first). Sorted for deterministic result order.
  */
 function stagingPlan(staging) {
   if (typeof staging !== 'string' || !path.isAbsolute(staging)) fail('INVALID_STAGING');
@@ -123,14 +153,35 @@ function stagingPlan(staging) {
     else if (manifest.host !== batchHost) fail('STAGING_INCONSISTENT');
     if (batchCommit === undefined) batchCommit = manifest.commit;
     else if (manifest.commit !== batchCommit) fail('STAGING_INCONSISTENT');
+    // The optional files map (auxiliary files like sections/scope.md) is shape-checked
+    // here: a malformed map is a malformed manifest. An empty map means "no files".
+    if (manifest.files !== undefined) {
+      if (!object(manifest.files)) fail('STAGING_INVALID');
+      for (const [key, value] of Object.entries(manifest.files)) {
+        if (!listedKey(key) || typeof value !== 'string' || !SHA256.test(value)) fail('STAGING_INVALID');
+      }
+    }
+    const files = manifest.files !== undefined && Object.keys(manifest.files).length > 0 ? { ...manifest.files } : undefined;
     const skillFile = path.join(dir, 'SKILL.md');
     const statSkill = regularFile(skillFile);
     if (!statSkill) fail('STAGING_INVALID');
     // Digest the raw Buffer: the staged copy is byte-exact, so verification must be too.
     const skillBytes = fs.readFileSync(skillFile);
     if (textDigest(skillBytes) !== manifest.sha256) fail('TAMPERED_STAGING');
+    // Every listed file gets the same tamper proof: a plain regular file whose bytes
+    // hash to the manifest's recorded digest; missing or mismatched is TAMPERED_STAGING.
+    const filesBytes = new Map();
+    if (files) {
+      for (const key of Object.keys(files)) {
+        const listed = path.join(dir, ...key.split('/'));
+        if (!regularFile(listed)) fail('TAMPERED_STAGING');
+        const bytes = fs.readFileSync(listed);
+        if (textDigest(bytes) !== files[key]) fail('TAMPERED_STAGING');
+        filesBytes.set(key, bytes);
+      }
+    }
     // Write exactly the bytes that were verified: no second read, no staging TOCTOU.
-    plan.push({ name: entry.name, dir, sha256: manifest.sha256, skillBytes, manifestBytes });
+    plan.push({ name: entry.name, dir, sha256: manifest.sha256, skillBytes, manifestBytes, files, filesBytes });
   }
   return plan;
 }
@@ -152,7 +203,7 @@ function prepareTarget(target) {
  * aborts the whole install with USER_FILE_REFUSED and zero files written.
  */
 function classify(plan, target, previous) {
-  const recorded = new Map(previous.map(entry => [entry.name, entry.sha256]));
+  const recorded = new Map(previous.map(entry => [entry.name, entry]));
   for (const item of plan) {
     const dest = path.join(target, item.name);
     const stat = fs.lstatSync(dest, { throwIfNoEntry: false });
@@ -164,8 +215,14 @@ function classify(plan, target, previous) {
     const manifest = readJson(path.join(dest, 'manifest.json'));
     if (!object(manifest) || manifest.generator !== GENERATOR) fail('USER_FILE_REFUSED');
     // Same proof as uninstall: a user-edited or extended skill is never moved into purgeable backups.
-    if (recorded.has(item.name)) verifyOwned(dest, recorded.get(item.name));
-    item.action = manifest.sha256 === item.sha256 ? 'skip' : 'backup';
+    const record = recorded.get(item.name);
+    if (record) verifyOwned(dest, record);
+    // Files-aware skip: an identical SKILL.md digest alone is not enough — the staged
+    // files map (key set + digests) must also agree with the registry record (or,
+    // without one, with the on-disk manifest's own map). Any disagreement routes to
+    // backup-and-replace so a re-render never leaves stale files under a stale record.
+    const known = record ? record.files : (object(manifest.files) ? manifest.files : undefined);
+    item.action = manifest.sha256 === item.sha256 && filesEqual(known, item.files) ? 'skip' : 'backup';
   }
 }
 
@@ -195,6 +252,12 @@ export function installSkills({ staging, target, now = () => new Date().toISOStr
           fs.mkdirSync(temp, { mode: 0o755 });
           fs.writeFileSync(path.join(temp, 'SKILL.md'), item.skillBytes, { flag: 'wx', mode: 0o644 });
           fs.writeFileSync(path.join(temp, 'manifest.json'), item.manifestBytes, { flag: 'wx', mode: 0o644 });
+          // Listed files land in freshly created subdirectories (0755) as plain wx files (0644).
+          for (const [key, bytes] of item.filesBytes) {
+            const listed = path.join(temp, ...key.split('/'));
+            fs.mkdirSync(path.dirname(listed), { recursive: true, mode: 0o755 });
+            fs.writeFileSync(listed, bytes, { flag: 'wx', mode: 0o644 });
+          }
           if (item.action === 'backup') {
             let stamp = Date.now();
             while (fs.existsSync(path.join(backupsRoot, `${item.name}-${stamp}`))) stamp += 1;
@@ -206,9 +269,21 @@ export function installSkills({ staging, target, now = () => new Date().toISOStr
           fs.rmSync(temp, { recursive: true, force: true });
         }
         installed.push(item.name);
-      } else skipped.push(item.name);
+        // The registry entry carries the files map exactly when the manifest listed files.
+        const entry = { name: item.name, sha256: item.sha256 };
+        if (item.files) entry.files = item.files;
+        merged.set(item.name, entry);
+      } else {
+        skipped.push(item.name);
+        // A skipped skill keeps its recorded entry byte-for-byte; only an unrecorded
+        // one (e.g. after the registry was lost) is newly committed to the registry.
+        if (!merged.has(item.name)) {
+          const entry = { name: item.name, sha256: item.sha256 };
+          if (item.files) entry.files = item.files;
+          merged.set(item.name, entry);
+        }
+      }
       // Commit each skill to the registry as soon as it is in place.
-      merged.set(item.name, { name: item.name, sha256: item.sha256 });
       writeRegistry(target, [...merged.values()].sort(byName), now);
     }
     return { installed, skipped, backedUp };
@@ -216,21 +291,44 @@ export function installSkills({ staging, target, now = () => new Date().toISOStr
 }
 
 /**
- * Uninstall ownership is proven by content, not markers: a directory may only be
- * deleted when its manifest is parseable and generated by us at the registry's
- * recorded sha256, the SKILL.md bytes still hash to that same sha256, and the
- * directory holds nothing besides those two files. Any drift — a user edit, an
- * extra file, a forged registry — refuses the entire uninstall with zero deletions.
+ * Uninstall ownership and classify drift share one proof, anchored entirely on the
+ * REGISTRY record — never the target's own manifest. A recursive walk of the
+ * directory must find exactly SKILL.md, manifest.json and the record's listed files
+ * (path separators normalized to '/'), with every subdirectory on a listed file's
+ * path; the manifest and SKILL.md bytes must still match the recorded sha256 and
+ * every listed file must still hash to its recorded digest. A record without files
+ * facing extra files on disk (or the reverse) is a trust-anchor disagreement and
+ * refuses: a forged in-dir manifest must never nominate files for deletion. Any
+ * drift — a user edit, an extra or missing file, a forged registry — refuses the
+ * whole operation with zero deletions; only an already-absent directory returns false.
  */
-function verifyOwned(dir, sha256) {
+function verifyOwned(dir, record) {
   const dirStat = fs.lstatSync(dir, { throwIfNoEntry: false });
   if (!dirStat) return false; // already removed: nothing of ours is left to delete
   if (!dirStat.isDirectory() || dirStat.isSymbolicLink()) fail('USER_FILE_REFUSED');
-  const entries = fs.readdirSync(dir).sort();
-  if (entries.length !== 2 || entries[0] !== 'SKILL.md' || entries[1] !== 'manifest.json') fail('USER_FILE_REFUSED');
+  const listed = record.files ? Object.keys(record.files) : [];
+  const found = [], dirs = [];
+  const walk = (rel, abs) => {
+    for (const entry of fs.readdirSync(abs, { withFileTypes: true })) {
+      const child = rel === '' ? entry.name : `${rel}/${entry.name}`;
+      if (entry.isSymbolicLink() || (!entry.isFile() && !entry.isDirectory())) fail('USER_FILE_REFUSED');
+      if (entry.isDirectory()) {
+        dirs.push(child);
+        walk(child, path.join(abs, entry.name));
+      } else found.push(child);
+    }
+  };
+  walk('', dir);
+  const expected = new Set(['SKILL.md', 'manifest.json', ...listed]);
+  if (found.length !== expected.size || found.some(file => !expected.has(file))) fail('USER_FILE_REFUSED');
+  const onPath = new Set(listed.flatMap(key => key.split('/').slice(0, -1)));
+  if (dirs.some(dir => !onPath.has(dir))) fail('USER_FILE_REFUSED'); // no empty or stray subdirectories
   const manifest = readJson(path.join(dir, 'manifest.json'));
-  if (!object(manifest) || manifest.generator !== GENERATOR || manifest.sha256 !== sha256) fail('USER_FILE_REFUSED');
-  if (textDigest(fs.readFileSync(path.join(dir, 'SKILL.md'))) !== sha256) fail('USER_FILE_REFUSED');
+  if (!object(manifest) || manifest.generator !== GENERATOR || manifest.sha256 !== record.sha256) fail('USER_FILE_REFUSED');
+  if (textDigest(fs.readFileSync(path.join(dir, 'SKILL.md'))) !== record.sha256) fail('USER_FILE_REFUSED');
+  for (const key of listed) {
+    if (textDigest(fs.readFileSync(path.join(dir, ...key.split('/')))) !== record.files[key]) fail('USER_FILE_REFUSED');
+  }
   return true;
 }
 
@@ -243,10 +341,10 @@ export function uninstallSkills({ target, purge = false, now = () => new Date().
     if (!regularFile(registryFile(target))) return { uninstalled: [], backupsRemoved: 0 };
     const recorded = new Map();
     for (const entry of loadRegistry(target)) {
-      if (!recorded.has(entry.name)) recorded.set(entry.name, entry.sha256);
+      if (!recorded.has(entry.name)) recorded.set(entry.name, entry);
     }
     // Phase 1 — every registered directory must still be entirely ours before anything is deleted.
-    const present = [...recorded].filter(([name, sha256]) => verifyOwned(path.join(target, name), sha256)).map(([name]) => name);
+    const present = [...recorded].filter(([name, entry]) => verifyOwned(path.join(target, name), entry)).map(([name]) => name);
     // Phase 2 — delete, then rewrite the registry atomically.
     for (const name of present) fs.rmSync(path.join(target, name), { recursive: true });
     let backupsRemoved = 0;
