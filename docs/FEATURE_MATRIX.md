@@ -1,6 +1,6 @@
 # 功能与证据矩阵
 
-状态：2026-10-27，0.4.8：M2 前置 + 纵向批次 + 批次 2–10b（状态目录命名空间、上游渲染 CI 复用 rendered-experimental、原生询问桥 approvals ask、apply-patch/参数 effect、approvals/tasks CLI 全量、ZCode 工作流层纵向流程已实证、渲染产物 stage-render→install→uninstall 装载链全链实测、宿主装载 runbook 实测回填、渲染技能宿主消费 15 例已实证、install --dry-run 零写入预检；DSH 管线就绪脚本待密钥）；离线空间已尽（2026-10-27），剩余项均受阻于用户解锁或环境（README 离线边界节 13 项）。两个宿主均未获得 `host_verified` 或 `full`。
+状态：2026-10-27，0.4.9：M2 前置 + 纵向批次 + 批次 2–11（状态目录命名空间、上游渲染 CI 复用 rendered-experimental、原生询问桥 approvals ask、apply-patch/参数 effect、approvals/tasks CLI 全量、ZCode 工作流层纵向流程已实证、渲染产物 stage-render→install→uninstall 装载链全链实测、宿主装载 runbook 实测回填、渲染技能宿主消费 15 例已实证、install --dry-run 零写入预检；DSH 管线就绪脚本待密钥）；离线空间已尽（2026-10-27），剩余项均受阻于用户解锁或环境（README 离线边界节 13 项）。两个宿主均未获得 `host_verified` 或 `full`。
 
 | 范围 | ZCode | DSH | 已有证据 / 剩余工作 |
 |---|---|---|---|
@@ -23,7 +23,7 @@
 | 纵向流程（spec→ship） | workflow-evidence | planned | ZCode 侧六阶段+审批+交付已真实跑通（见 verification-2026-10-27-vertical-zcode.md，非 host_verified）；DSH 侧待密钥 |
 | 开发/调查/review | planned | planned | 尚未用真实宿主执行纵向任务 |
 | 子 Agent 与工作流恢复 | planned | planned | 核心日志已就绪；执行器、取消、恢复接线未做 |
-| 独立模型复核 | planned | planned | 显式模型配置、隔离上下文、授权 |
+| 独立模型复核 | mechanism-ready | mechanism-ready | 配置加载/黑名单/单次封顶/开关红线全部实测（批次 11，五段就绪验证）；runtime 真调用待解锁-⑨（用户手放网关配置+开关+键） | 显式模型配置、隔离上下文、授权 |
 | 浏览器/QA/设计 | planned | planned | 复用上游工具并迁移依赖 |
 | ship/部署/监控 | planned | planned | 审批、测试证据与幂等边界 |
 | 文档/记忆/GBrain | planned | planned | 对应原生工具与会话路径 |

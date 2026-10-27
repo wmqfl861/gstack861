@@ -1,6 +1,6 @@
 {
   "name": "@gstack861/native-core",
-  "version": "0.4.8",
+  "version": "0.4.9",
   "private": true,
   "type": "module",
   "description": "Native ZCode and DeepSeek Harness adaptation foundation for pinned gstack workflows",
@@ -19,7 +19,9 @@
     "./install": "./src/install.mjs",
     "./zcode": "./src/adapters/zcode.mjs",
     "./dsh": "./src/adapters/dsh.mjs",
-    "./stage": "./src/stage.mjs"
+    "./stage": "./src/stage.mjs",
+    "./gateway": "./src/gateway.mjs",
+    "./model-review": "./src/model-review.mjs"
   },
   "scripts": {
     "test": "node --test test/*.test.mjs",

@@ -389,3 +389,17 @@ Lane A（渲染）：初审 Needs fixes（2 Critical）→ 修复轮 → 复审�
 ## 下一验收
 
 边界①（DEEPSEEK_API_KEY）与③（受控 ZCode 会话）不变；边界②运行时半边随①解锁。
+
+# 第十七轮验证记录：批次 11（边界⑨机制半边：模型网关显式配置 + 独立模型复核接线，2026-10-27）
+
+范围：0.4.9。按 `docs/plans/2026-10-27-batch11-model-review.md`（计划审查九组修正并入：重定向封堵、workspace 比较器、https/回环规则、超时可注入、结构化网络错误、黑名单语义、Lane 时序、事实修正、解锁-⑨ 命名）。
+
+| 项 | 结果 |
+|---|---|
+| `npm test` | 249 pass + 2 POSIX skip（新增 13+1 修复回归：gateway 11+2skip、model-review 14 含中途体中止回归） |
+| **无密钥就绪验证** | `node scripts/verify-model-review.mjs` 五段全过（exit 0）：配置正/负、官方端点黑名单、dry 拒绝零调用、本地回声冒烟（断言请求形状+Bearer 来自 apiKeyEnv 所指变量；超时 157ms@150ms 注入） |
+| 车道审查 | A 一次通过（loadPolicy 逐行镜像、种键不泄漏实证）；B 一次通过+1 Important（中途体中止结构化）——已修复并加回归测试 |
+
+## 下一验收
+
+解锁清单现为三项：① DEEPSEEK_API_KEY（DSH 管线+纵向+toolRewrites+边界②运行时）；③ 受控 ZCode 会话（guard 层+自动拾取）；**解锁-⑨**（网关配置文件+开关+键→独立模型复核真调用）。均为用户侧一步动作。

@@ -2,7 +2,7 @@
 
 将 gstack 原生适配到 **ZCode** 与 **DeepSeek Harness（DSH）**。一套核心，两套独立宿主适配，不隐藏调用 Claude Code，不把提示词复制当作功能对等。
 
-**当前版本：0.4.8 / foundation。不是完整可用的 gstack 双宿主发行版。**
+**当前版本：0.4.9 / foundation。不是完整可用的 gstack 双宿主发行版。**
 
 ## 开发文档
 
@@ -85,7 +85,7 @@ node bin/gstack861.mjs zcode-config --policy /absolute/private/policy.json
 6. ⑥ 浏览器 QA/scrape/qa 组（浏览器栈）。
 7. ⑦ iOS 组（设备）。
 8. ⑧ ship/canary/deploy（远端）。
-9. ⑨ 独立模型复核（显式网关配置，0 付费红线内不跑）。
+9. ⑨ 独立模型复核——机制就绪（2026-10-27 批次 11：`loadGateway` 显式网关配置（键只引用环境变量名、官方端点黑名单、https 强制）+ 单次封顶调用执行器（GSTACK861_MODEL_CALL 开关默认关）+ 无密钥就绪验证器 `node scripts/verify-model-review.mjs` 五段实测）。运行时真调用待**解锁-⑨**：亲手放置网关配置文件（工作区外、0600）+ 设 GSTACK861_MODEL_CALL=1 + 设 apiKeyEnv 所指键（注意：自定义网关反向代理官方端点在配置层不可检测，属已知残余）。解锁助具性质的重开，同 10a/10b 先例。
 10. ⑩ 子 Agent 执行器/取消/恢复接线与纵向真实执行（待①③后按批推进）。
 11. ⑪ 宿主级自动安装/升级/卸载（待③）。
 12. ⑫ make-pdf/diagram 完整产物链（重二进制/浏览器，本批以降级/BLOCKED 如实消费）。
