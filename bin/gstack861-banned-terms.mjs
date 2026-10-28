@@ -3,12 +3,14 @@
 // repository forbids outside their named allowed locations.
 //
 // Port of upstream/gstack bin/gstack-banned-terms (90 lines) +
-// lib/banned-terms.ts (167 lines) plus the ship-policy.ts helpers the
-// scanner leans on — containedRelative / globToRegExp / matchesAny
-// (upstream lines 190-227) and resolveBaseBranch (lines 420-431) — at
-// pinned submodule commit 5755601. One standalone zero-dependency Node
-// executable: the upstream lib/bin split is inlined here (repo precedent
-// for standalone bins).
+// lib/banned-terms.ts (167 lines) plus resolveBaseBranch (ship-policy.ts
+// lines 420-431) at pinned submodule commit 5755601. The ship-policy
+// helpers the scanner leans on — containedRelative / globToRegExp /
+// matchesAny (upstream lines 190-227) — were inlined here since the b20
+// port and are lifted into the shared src/ship-policy.mjs as of batch 23;
+// this bin now imports them (behavior-preserving refactor, the 29 tests
+// below are the regression gate). One standalone zero-dependency Node
+// executable apart from that intra-repo import.
 //
 // CLI (upstream shape):
 //   gstack861-banned-terms.mjs [check] [--base <ref>] [--diff-base <sha>] [--files <csv>] [--policy-from base|head] [--json]
@@ -83,76 +85,44 @@
 //      directory that is itself a symlink out of the repo would be read
 //      through here where upstream refuses; unreachable through any CLI
 //      input, recorded for honesty.
-//   4. containedRelative absoluteness is platform-stable: upstream tests
+//   4. containedRelative absoluteness is platform-stable — now carried by
+//      src/ship-policy.mjs (the b20 note, lifted verbatim): upstream tests
 //      `path.isAbsolute(p) || /^[A-Za-z]:[\\/]/.test(p) ||
 //      p.startsWith('\\\\')`, and path.isAbsolute('\foo') is false on
-//      POSIX (true on win32); this port rejects a leading '/', a leading
+//      POSIX (true on win32); the port rejects a leading '/', a leading
 //      '\' (which also covers UNC `\\srv\share`), and `X:[/\\]` drive
 //      forms explicitly, so behavior is identical on every platform
 //      (win32 behavior unchanged, POSIX tightened to match win32).
-//   5. Structural: three upstream files inlined into one zero-dependency
-//      .mjs; `#!/usr/bin/env -S bun --no-env-file --config=/dev/null` →
-//      `#!/usr/bin/env node`; TypeScript types erased. spawnSync git
-//      timeouts (15s rev-parse, 30s show/merge-base, 120s diff) and the
-//      256 MiB diff maxBuffer are ported verbatim. `process.exitCode =`
-//      (not process.exit) as upstream.
+//   5. Structural: the upstream lib/bin split is inlined into one
+//      zero-dependency .mjs except the three shared ship-policy helpers
+//      (src/ship-policy.mjs, re-exported below so the module surface is
+//      unchanged); `#!/usr/bin/env -S bun --no-env-file
+//      --config=/dev/null` → `#!/usr/bin/env node`; TypeScript types
+//      erased. spawnSync git timeouts (15s rev-parse, 30s
+//      show/merge-base, 120s diff) and the 256 MiB diff maxBuffer are
+//      ported verbatim. `process.exitCode =` (not process.exit) as
+//      upstream.
 
 import { spawnSync } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+// The three shared ship-policy helpers, lifted (batch 23) from their b20
+// inlining here into src/ship-policy.mjs — re-exported so this bin's module
+// surface (and the divergence-4 ledger) is unchanged.
+import { containedRelative, globToRegExp, matchesAny } from '../src/ship-policy.mjs';
+export { containedRelative, globToRegExp, matchesAny };
 
 const BANNED_TERMS_PATH = '.gstack/banned-terms.json';
 const BANNED_TERMS_SCHEMA = 'https://github.com/garrytan/gstack/docs/ship-policy.md#banned-terms';
 const MAX_TERMS = 200;
 const MAX_TERM = 80;
 const MAX_PATHS = 200;
-const MAX_PATTERN = 256; // ship-policy.ts line 183
-const MAX_REGEX = 512; // ship-policy.ts line 184
 const EXIT = { ok: 0, fail: 1, usage: 2, refused: 3 }; // headless-artifacts.ts line 102
 const EXIT_TABLE_HELP = 'Exit codes: 0 ok · 1 fail · 2 usage · 3 refused or needs a flag'; // headless-artifacts.ts line 104, verbatim
 
 // ---------------------------------------------------------------------------
-// ship-policy.ts helpers (upstream lines 191-227, 420-431)
+// ship-policy.ts resolveBaseBranch (upstream lines 420-431)
 // ---------------------------------------------------------------------------
-
-function hasDotDot(p) {
-  return p.split(/[\\/]+/).some((seg) => seg === '..');
-}
-
-/** A repo-relative path or glob: no absolute paths, drive letters, `..` segments, NULs or control bytes. */
-export function containedRelative(p) {
-  if (typeof p !== 'string' || p.length === 0) return 'must be a non-empty string';
-  if (p.length > MAX_PATTERN) return `longer than ${MAX_PATTERN} characters`;
-  if (/[\0\r\n]/.test(p)) return 'contains a control character';
-  // Divergence 4: explicit platform-stable absoluteness (leading '/', leading '\' incl. UNC, drive letters).
-  if (p.startsWith('/') || p.startsWith('\\') || /^[A-Za-z]:[\\/]/.test(p)) return 'must be repo-relative, not absolute';
-  if (p.startsWith('~')) return 'must not start with ~';
-  if (hasDotDot(p)) return 'must not contain a `..` segment';
-  return null;
-}
-
-/** Glob → anchored RegExp. `**` spans directories, `*` and `?` stay inside one segment. Size-capped. */
-export function globToRegExp(glob) {
-  let out = '^';
-  for (let i = 0; i < glob.length; i++) {
-    const ch = glob[i];
-    if (ch === '*') {
-      if (glob[i + 1] === '*') {
-        i += 1;
-        if (glob[i + 1] === '/') { i += 1; out += '(?:.*/)?'; } else out += '.*';
-      } else out += '[^/]*';
-    } else if (ch === '?') out += '[^/]';
-    else out += ch.replace(/[.+^${}()|[\]\\]/g, '\\$&');
-  }
-  out += '$';
-  if (out.length > MAX_REGEX) throw new Error(`pattern expands past ${MAX_REGEX} characters`);
-  return new RegExp(out);
-}
-
-export function matchesAny(globs, rel) {
-  const norm = rel.replace(/\\/g, '/').replace(/^\.\//, '');
-  return globs.some((g) => globToRegExp(g).test(norm));
-}
 
 function git30(repoRoot, args) {
   const r = spawnSync('git', args, { cwd: repoRoot, encoding: 'utf8', timeout: 30_000 });
