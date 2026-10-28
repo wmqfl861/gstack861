@@ -1,0 +1,209 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-29",
+  "round": "batch25-zcode-headless-acceptance",
+  "environment": {
+    "kind": "real-windows-machine",
+    "os": "win32-10.0.22624-x64",
+    "node": "v24.21.0",
+    "shell": "git-bash"
+  },
+  "plan": "docs/plans/2026-10-29-batch25-zcode-headless-acceptance.md",
+  "process": "mechanism discovery: ZCode headless CLI (ELECTRON_RUN_AS_NODE=1 + zcode.cjs --prompt/--cwd/--json) makes ③ agent-verifiable at the same standard as DSH keyed runs; plan review caught 2 blocking errors (config.json not settings.json; 0.17.0 workspace-hook trust gate) + 3 honesty RCs; single-lane coordinator implementation with 3 honest fail-fix cycles (all caught at zero-cost phase gates or post-smoke); result review with-fixes: 6 findings all landed (dead code, strongest-hypothesis wording, --pack-root trust reuse, smoke cap, count/doc sync, hosts.zcode deviation reasoned)",
+  "commands": [
+    {
+      "command": "npm test",
+      "result": "passed",
+      "tests": 1004,
+      "failed": 0,
+      "skipped": 20,
+      "added": "8 offline (config.json merge target, HOOK_TRUST_PENDING classification, summary verdicts, prompts, host=zcode vectors, keyless gate)"
+    },
+    {
+      "command": "ZCODE_ACCEPTANCE_KEY=1 node scripts/zcode-acceptance-vertical.mjs [--pack-root DIR]",
+      "result": "zero-cost: skills list DISCOVERED marker (project scope) + hook triple-probe pass/deny/deny; keyed: smoke PASS (sessionId+response OK, 39.5k tokens), task P PASS (marker verbatim, zero guard codes), task G HOOK_TRUST_PENDING (out-of-scope created, no deny relayed — trust gate strongest hypothesis; never a guard failure, never a PASS)"
+    }
+  ],
+  "boundaryMovement": [
+    {
+      "item": "③ ZCode pickup half",
+      "from": "user-locked (assumed to need a manual UI session)",
+      "to": "host-level proven via real headless session: workspace skill discovery + Skill-tool load (marker verbatim); auto-context-injection/UI-session still unclaimed"
+    },
+    {
+      "item": "③ ZCode guard half",
+      "from": "user-locked",
+      "to": "precisely blocked on ONE gesture: client trust of a --pack-root workspace hook (persistence unverified caveat); HOOK_TRUST_PENDING honestly classified"
+    }
+  ],
+  "paidModelCalls": 5,
+  "capExtension": "budget 3 -> 5 (two zero-cost phase-gate catches + one post-smoke journal bug; honest record, DSH b13 precedent); zcode-calls 5 on user account",
+  "hostCertification": {
+    "zcode": "pickup half host-proven (headless real session); guard half pending one trust gesture",
+    "dsh": "ship+recovery-vertical-verified single keyed runs"
+  },
+  "macOS": "not-run",
+  "digestMethod": "git ls-tree/show at HEAD commit (repository blob bytes, LF); independent of platform autocrlf",
+  "testedFiles": [
+    {
+      "path": "hosts-overlay/dsh.ts",
+      "gitBlobSha1": "03cb22e35660f13fa662b8dc63dbbf8a0b8c16bc",
+      "sha256": "82387cc8b6bd80e577f0be472e6e5a922d1ada3b75e9b10a9d21d0b0c4705aaf"
+    },
+    {
+      "path": "hosts-overlay/zcode.ts",
+      "gitBlobSha1": "2e7351c355993e65ccb42b636c72e4d8c1a5f66c",
+      "sha256": "e42a31f23a11a415e4b73e2096302e00972ad3ee0e2735f6717b23cb3c5b6ab4"
+    },
+    {
+      "path": "scripts/render-upstream.mjs",
+      "gitBlobSha1": "7e13e88bc463be61e827fd92f62b51b36d28272e",
+      "sha256": "aafd00a2e082195201042dad6efb9d07a956fb86db6147e43d00aeefa4028722"
+    },
+    {
+      "path": "src/gateway.mjs",
+      "gitBlobSha1": "efbe7d5eba92577c2af4e0d42af924615a32ac7b",
+      "sha256": "06d937d990b4156cc096ab573e954a93d20e9da68a81ca48d8d5f057876059e2"
+    },
+    {
+      "path": "src/model-review.mjs",
+      "gitBlobSha1": "7eb897e652962ef2e9035d60304f1f5df608cc70",
+      "sha256": "09edc9af8c7fa6d4c8f084c70d5c30f938402664ec9606742b8f407b34b7bff6"
+    },
+    {
+      "path": "src/stage.mjs",
+      "gitBlobSha1": "7f2cf73759b0885c652b89e28d3e3da59689080a",
+      "sha256": "58036e95958ee0d3798fcc8f441d22d7a76425298493e2c58e9b1480c2c46b63"
+    },
+    {
+      "path": "bin/gstack861.mjs",
+      "gitBlobSha1": "ec8e6886879b9c6d8b0dee26c26f5ed94be8f46b",
+      "sha256": "757f880f37a4d1d3a689451d6cfaaeb1d385acf560ba2099f69b7b2e2a7476b6"
+    },
+    {
+      "path": "package.json",
+      "gitBlobSha1": "ee2e1c301fd92e75f5ca9e3bb4dc7bceee56834c",
+      "sha256": "d2c24f42a00612bcb693e1cf897cfbe983cd2e100cbe6ce1664f07dd1b6b47fc"
+    },
+    {
+      "path": "scripts/check.mjs",
+      "gitBlobSha1": "aa764e9f32aebebdf63b7839a2d0292d08815d05",
+      "sha256": "3f26d7c520847d1497f7386ec75265a2aa620fb782057105810799c43f09092c"
+    },
+    {
+      "path": "src/adapters/dsh.mjs",
+      "gitBlobSha1": "92b2188912f2781ca414fa8e8ba5078597ee907e",
+      "sha256": "44caf2c956880e0a2b9ca18403ddb9c079e5c287801d206a07d8a6a0bc0d8951"
+    },
+    {
+      "path": "src/adapters/zcode.mjs",
+      "gitBlobSha1": "b7114814e96673bcbd976ecf8041300ed2bef584",
+      "sha256": "9c0a2816d566f5fcde05ad0ced1f4dfb2d4e00216d268e39bfd001adf52dc41d"
+    },
+    {
+      "path": "src/approvals.mjs",
+      "gitBlobSha1": "34e6b3755e4f9f4b9e078ab34d83a6b30e60ebf5",
+      "sha256": "dcb2bf689df1cb48ef90651750b57f5e0d280f16ce335b8d4272503f1dbf56c0"
+    },
+    {
+      "path": "src/generate.mjs",
+      "gitBlobSha1": "9bd6e9e7cb094813229fcc4b8bdea2aaf783bc63",
+      "sha256": "80d699020e3341115231ca6d7f7c0b1894cb56d9dd06d71d37f47f96dfbb45b9"
+    },
+    {
+      "path": "src/install.mjs",
+      "gitBlobSha1": "8cbf9194883ff7eb2e9693dada3ed30e52065af4",
+      "sha256": "d081e489caf3f07a830e63dd11ee588df6e9e3fa865a0a6df79c09693c302280"
+    },
+    {
+      "path": "src/inventory.mjs",
+      "gitBlobSha1": "4b85abf4b2ded7869cd4651ad97f2cf00d27740a",
+      "sha256": "9cd67419fad067a5726e93d1d2c33f76a79f6e66253d4ce3051c23a25e8d2545"
+    },
+    {
+      "path": "src/json.mjs",
+      "gitBlobSha1": "e8723b9857ef3b044a38d13f225d85e71cce81a6",
+      "sha256": "f1865cee2953f68fe6330544b3f0ce7db8f6b00d5a55327d59de2f348c83bb8e"
+    },
+    {
+      "path": "src/policy.mjs",
+      "gitBlobSha1": "788610f8e3cdc65fedfe104623a40f37d4e2cd83",
+      "sha256": "0cd21cc1abaf17d6f09b18936e70ac741b0c93c8d4a8ab262f156225860507e0"
+    },
+    {
+      "path": "src/tasks.mjs",
+      "gitBlobSha1": "ddacd5a43c89e4a9934fe9abba9c915e39fd0e60",
+      "sha256": "895fed41767b05cf805d1759d18154822da82dc06d3c414a28feda0089a7aeb9"
+    },
+    {
+      "path": "test/adapters.test.mjs",
+      "gitBlobSha1": "c1a06cd6a73d1280b3546c2ae14c5593cbebd6f1",
+      "sha256": "706781de0577ee4d128b40b9f4c7a02a202c96b68fd0ee353e2e4fcbe79ee069"
+    },
+    {
+      "path": "test/approvals.test.mjs",
+      "gitBlobSha1": "4cdeb487dc16357d7ed525a54c6f1a91977ce7e6",
+      "sha256": "22e47bb49bf62bb20218b602e788d762756616bd680e71d7463bd656b5c762dc"
+    },
+    {
+      "path": "test/generate.test.mjs",
+      "gitBlobSha1": "7e912a99e831858b53ce0ea139f0d70c4c2bd3f5",
+      "sha256": "3825d43fb1811c66998c6ef06a1eb09b52e1bfe4e34a03f856c6f558e308a3ee"
+    },
+    {
+      "path": "test/helpers.mjs",
+      "gitBlobSha1": "a9f9eb6a69043bf912e489f559fa70320031e6bc",
+      "sha256": "a1e0661b4bff12311dbe334ca86b03d71523c551d0fc2c7a6fa8e62f1d26aea7"
+    },
+    {
+      "path": "test/install.test.mjs",
+      "gitBlobSha1": "a2c118ba066cbae898f525908f4b38a571bdfa37",
+      "sha256": "23d7ca246194b1eaab63c98f8331349c64c19443a6570c589dc0ed10f1a943ed"
+    },
+    {
+      "path": "test/inventory.test.mjs",
+      "gitBlobSha1": "78a3d8c034452611553d31106d25b5a02fa6dfc9",
+      "sha256": "d638c5bfc0d926056b05a5ccae28647d2b05d2139c3069b373d97acc81f932c2"
+    },
+    {
+      "path": "test/json.test.mjs",
+      "gitBlobSha1": "2cc1b0f2b5b93fd457e017a257db450be7d0cf0f",
+      "sha256": "576fea350051d411e460fb2eb0bd45467c34120ac5b39f072f2060a9af54ac39"
+    },
+    {
+      "path": "test/policy.test.mjs",
+      "gitBlobSha1": "15ce5297b06c51982ccb76b26455b5e460a47b79",
+      "sha256": "cae6d00abb2d03b3a9a357bee1ec703ae1355e101fd85360e8a79ceb4c309daa"
+    },
+    {
+      "path": "test/render-upstream.test.mjs",
+      "gitBlobSha1": "f063b784d2079424fe8df2de4c98656444ea8a6f",
+      "sha256": "5f7c08f6a85f6bf60835d225031ffe5b533fa74e119deb4d3227385f4ab40256"
+    },
+    {
+      "path": "test/gateway.test.mjs",
+      "gitBlobSha1": "bd3bc1068ff4cb1beb7e11138bee9ea28ed44329",
+      "sha256": "e6eeee57325bae633be8f60f77ff1dddad9e1789f302d46eee31510d97d92d49"
+    },
+    {
+      "path": "test/model-review.test.mjs",
+      "gitBlobSha1": "4388cc4dc6c4489590142225f215fb6dbb8c7d67",
+      "sha256": "4941f53273bacfa660cf233835660b9043d16739d9f555fb12d2e509b4168ddf"
+    },
+    {
+      "path": "test/stage.test.mjs",
+      "gitBlobSha1": "eef209f6399ab5b9d1cec252b011b9cb622036d3",
+      "sha256": "9a1a349ad3d7791f9c584ccadb1674543eb523a21afb0b3e768a4d0c08b5b7c4"
+    },
+    {
+      "path": "test/tasks.test.mjs",
+      "gitBlobSha1": "bb4233ae67d173414d850a1fed879efecbba8d95",
+      "sha256": "245622a0fc19594fd918fdff6fd5c78ee2b7ea4820ee73750d36878d10131929"
+    },
+    {
+      "path": "upstream.lock.json",
+      "gitBlobSha1": "31332137cf1bf980b25ca044208a9c53adb70edc",
+      "sha256": "160e2ca165946815dbec63ed39df1cc3be6c756536282012546b97d2fbf483dc"
+    }
+  ]
+}
