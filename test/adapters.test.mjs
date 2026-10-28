@@ -352,7 +352,7 @@ test('doctor makes no claim of host or full-parity certification', () => {
   assert.equal(child.status, 0);
   const info = JSON.parse(child.stdout);
   assert.equal(info.hosts.zcode, 'not-host-verified');
-  assert.equal(info.hosts.dsh, 'vertical-verified-single-keyed-runs');
+  assert.equal(info.hosts.dsh, 'ship-vertical-verified-single-keyed-runs'); // batch 14: ship stage + approvals integrated
   assert.equal(info.modelCalls, 0);
 });
 test('doctor reports the rendered-skill consumption count and user unlock actions', () => {

@@ -75,7 +75,7 @@ if (args[0] === 'hook') {
   try {
     if (args[0] === 'doctor' && args.length === 1) {
       print({ version, node: process.version, platform: process.platform, baseline: lock(),
-        hosts: { zcode: 'not-host-verified', dsh: 'vertical-verified-single-keyed-runs' },
+        hosts: { zcode: 'not-host-verified', dsh: 'ship-vertical-verified-single-keyed-runs' },
         networkCalls: 0, modelCalls: 0,
         safety: 'guard-protocol foundation; not an OS sandbox; no full-parity certification',
         // count and evidence update together per batch; the 15 count lands only
