@@ -50,21 +50,21 @@
 
 ## 二、离线余量（批次 19 起逐项收口，不宣称已尽）
 
-批次 19 对固定子模块（5755601）`bin/` 实名二进制完成全量前提审计并落盘如下。判定口径：**ported**=已移植；**covered**=本项目已有等价实现；**N/A**=前提属本项目不支持的宿主；**mapped**=语义映射为本项目原生工具；**deferred**=留独立批次集中做。**5 项 deferred 仍是离线余量——本清单不宣称"离线已尽"。**
+批次 19 对固定子模块（5755601）`bin/` 实名二进制完成全量前提审计并落盘如下；批次 20 收口其中两项（banned-terms → ported、team-init → mapped，双 lane 并行）。判定口径：**ported**=已移植；**covered**=本项目已有等价实现；**N/A**=前提属本项目不支持的宿主；**mapped**=语义映射为本项目原生工具；**deferred**=留独立批次集中做。**3 项 deferred 仍是离线余量——本清单不宣称"离线已尽"。**
 
 | 二进制 | 规模 | 判定 | 依据（一句话） |
 |---|---|---|---|
-| `gstack-jsonl-merge` | 105 行 bash | **ported**（本批 Lane B） | 零前提、宿主无关的 git merge driver（拼接去重 + ts 排序 + sha256 兜底）；移植为 `bin/gstack861-jsonl-merge.mjs`（零依赖 Node，侧对称逐字节钉死于 `test/jsonl-merge.test.mjs`）；上游内嵌 python3 前提由移植消除 |
+| `gstack-jsonl-merge` | 105 行 bash | **ported**（批次 19 Lane B） | 零前提、宿主无关的 git merge driver（拼接去重 + ts 排序 + sha256 兜底）；移植为 `bin/gstack861-jsonl-merge.mjs`（零依赖 Node，侧对称逐字节钉死于 `test/jsonl-merge.test.mjs`）；上游内嵌 python3 前提由移植消除 |
 | `gstack-patch-names` | 34 行 | **covered** | name: 前缀改写已在渲染链解决（`src/stage.mjs` renderedDir 前缀映射，render 链实测）；其 unprefix 方向对本项目是死路径 |
 | `gstack-paths` | 160 行 | **N/A** | 前提=Claude 插件运行时环境（CLAUDE_PLUGIN_DATA / ~/.claude/plans 链）；本项目状态根为显式绝对 `--state`（安全设计：模型不可写工作区外），移植=为不支持的宿主发明需求 |
-| `gstack-migrate-claude-code` | 20+270 | **mapped** | 语义属上游安装域（重命名上游在其他宿主的技能安装）；映射为本项目原生 `migrate-state`（本批 Lane A，偿还本项目自己的 0.3.1 状态命名空间断裂债务） |
-| `gstack-slug` | 880 行 | deferred | 纯工具但体量大，独立批次移植（批次 20 候选） |
-| `gstack-redact` | 341+817（引擎） | deferred | bun+TS，移植须连 `lib/redact-engine.ts`，独立批次（批次 20 候选） |
-| `gstack-issue-links` | 202 行 | deferred | 依赖 `gstack-issue-guard` 等上游内部件，待其依赖面审计后定 |
-| `gstack-banned-terms` | 90 行 | deferred | 宿主无关、可移植，但非必需；留二进制批次集中做避免碎片化 |
-| `gstack-team-init` | 269 行 | deferred | bash 团队引导模板，依赖上游模板内容审计后定 |
+| `gstack-migrate-claude-code` | 20+270 | **mapped** | 语义属上游安装域（重命名上游在其他宿主的技能安装）；映射为本项目原生 `migrate-state`（批次 19 Lane A，偿还本项目自己的 0.3.1 状态命名空间断裂债务） |
+| `gstack-slug` | 880 行 | deferred | 项目身份 slug/分支解析器 + checkpoint 桶簿记（env→标记上溯→canonical-remote slug→v2 缓存；`--classify-checkpoints`/`--adopt-legacy` 等；仅 `--adopt-legacy` 一处 /dev/tty 确认；无 TUI）——独立批次，建议按解析器/簿记两段移植 |
+| `gstack-redact` | 341+817（引擎） | deferred | bun+TS，移植须连 `lib/redact-engine.ts`，独立批次；另依赖 lib/fs-utils (mkdirpSync) |
+| `gstack-issue-links` | 202 行 | deferred | 依赖 `gstack-issue-guard` 等上游内部件，待其依赖面审计后定；lib/issue-links.ts 188 行纯分类零导入；闭包边界在 bin 的 gstack-issue-guard/gh 调用——先审 gh 前提 |
+| `gstack-banned-terms` | 90 行 | **ported**（批次 20 Lane A） | 宿主无关、零依赖 Node 移植为 `bin/gstack861-banned-terms.mjs`（`check|init|validate` 三命令；`.gstack/banned-terms.json` 词表在 diff 新增行扫描 + 允许路径豁免；退出码 0/1/2/3 对齐上游 ok/fail/usage/refused） |
+| `gstack-team-init` | 269 行 | **mapped**（批次 20 Lane B） | Claude 专属面（CLAUDE.md、.claude/settings.json+check-gstack.cjs、vendored 迁移）不逐字移植：映射为 `gstack861 team-init {optional|required} [--root DIR]`——AGENTS.md 段（宿主侧约定[验收项]标注）+ 复用既有 zcode PreToolUse 接线（zcode-config）与 DSH guard profile 指引，不发明新 hook 文件；幂等 grep-skip；`--root` 显式绕过 git（记录在案的映射差异） |
 
-原清单其余两条随本表收口：原生迁移工具即上行 **mapped**（`migrate-state` 本批落地）；命令别名（蓝图 M3 生命周期组）不在二进制审计面内，仍为离线余量，可随装载/迁移先例离线先行。
+原清单其余两条随本表收口：原生迁移工具即上行 **mapped**（`migrate-state` 批次 19 落地）；命令别名（蓝图 M3 生命周期组）不在二进制审计面内，仍为离线余量，可随装载/迁移先例离线先行。
 
 ## 三、环境受阻（每项一句"缺什么"）
 

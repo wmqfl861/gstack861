@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import fs from 'node:fs';
 import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { loadPolicy } from '../src/policy.mjs';
 import { handleZcode, denyZcode, zcodeHookConfig } from '../src/adapters/zcode.mjs';
@@ -254,6 +255,71 @@ if (args[0] === 'hook') {
       const report = migrateStateFiles({ stateDir: absolute(options['--state']), dryRun: options['--dry-run'] === true });
       print(report);
       if (report.refused.length > 0) process.exitCode = 1;
+    } else if (args[0] === 'team-init') {
+      // ── Native mapping of upstream bin/gstack-team-init (bash, 269 lines) — NOT a verbatim port. ──
+      // Mapping table (every divergence deliberate; upstream semantics in parentheses):
+      //   CLAUDE.md snippet       → AGENTS.md section. AGENTS.md is a ZCode host-side
+      //                             convention — 宿主侧约定[验收项] (host-loading.md §0): the
+      //                             generated text labels it as such; the repo never asserts
+      //                             the host reads it (RC6 provenance rule).
+      //   optional|required modes → kept: "(recommended)" vs "(REQUIRED)" section wording.
+      //   grep "## gstack" skip   → grep "## gstack861" skip, mode-agnostic, exit stays 0
+      //                             (upstream idempotence: remove the section and re-run).
+      //   check-gstack.cjs + .claude/settings.json hook generation
+      //                           → dropped as file generation; required mode points at
+      //                             EXISTING entry points only (no new hook files invented):
+      //                             zcode PreToolUse wiring `gstack861 zcode-config --policy
+      //                             <ABS_PATH>` (only --policy/--matcher flags exist) plus a
+      //                             one-line DSH guard profile pointer
+      //                             (docs/integration/dsh-local-findings.md).
+      //   vendored-copy migration → dropped (Claude-specific ~/.claude/skills semantics).
+      //   "Commit the generated files" tail → reshaped: this tool prints, never git-adds.
+      //   root resolution         → DIVERGENCE: upstream always requires a git repository;
+      //                             --root DIR bypasses git (explicit root), otherwise
+      //                             `git rev-parse --show-toplevel`, else NOT_A_GIT_REPO.
+      //   output                  → upstream-style plain text (`TEAM_INIT: <mode>` + generated
+      //                             list), not this bin's JSON habit: required mode's wiring
+      //                             commands must be copy-pasteable from stdout.
+      const mode = args[1];
+      if (mode !== 'optional' && mode !== 'required') {
+        process.stderr.write('Usage: gstack861 team-init {optional|required} [--root DIR]\n'
+          + '  optional  — append a "## gstack861 (recommended)" section to AGENTS.md (gentle)\n'
+          + '  required  — append a "## gstack861 (REQUIRED)" section and print host wiring commands\n'
+          + '  --root DIR — explicit repository root (absolute), bypasses the git requirement\n');
+        process.exitCode = 1;
+      } else {
+        const options = flags(args.slice(2), ['--root']);
+        let root;
+        if (options['--root'] !== undefined) root = absolute(options['--root']);
+        else {
+          // No git at all (missing binary or non-repo cwd) is the same refusal, via the
+          // bin catch-all: usage and not-a-repo both exit 1.
+          const probe = spawnSync('git', ['rev-parse', '--show-toplevel'], { encoding: 'utf8' });
+          if (probe.error || probe.status !== 0) throw new Error('NOT_A_GIT_REPO');
+          root = probe.stdout.trim();
+        }
+        const agentsMd = path.join(root, 'AGENTS.md');
+        const existing = fs.existsSync(agentsMd) ? fs.readFileSync(agentsMd, 'utf8') : null;
+        const provenance = '(AGENTS.md is a ZCode host-side convention — 宿主侧约定[验收项]: this repo does not assert\n'
+          + 'the host reads it; confirm in a controlled host session per docs/integration/host-loading.md §0.)';
+        const wiring = ['gstack861 zcode-config --policy <ABS_PATH>', 'DSH guard profile: docs/integration/dsh-local-findings.md'];
+        const snippet = mode === 'optional'
+          ? `## gstack861 (recommended)\n\nThis project uses gstack861 — the native ZCode / DeepSeek Harness adaptation of pinned gstack workflows.\nInstall and verify before starting:\n\n    node bin/gstack861.mjs doctor\n\nControlled-session acceptance package: node scripts/acceptance-pack.mjs --out <ABS_DIR>\n${provenance}\n`
+          : `## gstack861 (REQUIRED)\n\n**Before doing ANY work in this repo, verify the guard setup:**\n\n    node bin/gstack861.mjs doctor\n\nIf the hosts status looks wrong: STOP. Do not proceed and do not work around it.\n\nHost wiring uses EXISTING entry points only (this generator writes no hook files):\n\n    ${wiring[0]}\n    (zcode-config flags: --policy required, --matcher optional — no others exist)\n    ${wiring[1]}\n\n${provenance}\n`;
+        process.stdout.write(`TEAM_INIT: ${mode}\n`);
+        if (existing !== null && existing.includes('## gstack861')) {
+          process.stdout.write('AGENTS.md already has a gstack861 section. Skipping AGENTS.md update.\n'
+            + '  To replace it, remove the existing ## gstack861 section and re-run.\n'
+            + 'generated: (none)\n');
+        } else {
+          // Upstream append semantics: exactly one separating newline when the file
+          // already exists, none when it is created fresh.
+          if (existing !== null) fs.appendFileSync(agentsMd, `\n${snippet}`);
+          else fs.writeFileSync(agentsMd, snippet);
+          process.stdout.write(`  + AGENTS.md — added gstack861 ${mode} section\ngenerated: AGENTS.md\n`);
+        }
+        if (mode === 'required') process.stdout.write(`Host wiring for immediate use:\n  ${wiring[0]}\n  ${wiring[1]}\n`);
+      }
     } else {
       process.stderr.write('Usage: gstack861 doctor | inventory --upstream PATH | zcode-config --policy ABS_PATH\n'
         + '  generate --upstream PATH --staging DIR --host zcode|dsh\n'
@@ -272,7 +338,8 @@ if (args[0] === 'hook') {
         + '  tasks heartbeat --state DIR --id ID --host H --session S --run R --policy-hash HASH --action-file F --lease-ms N\n'
         + '  tasks reap|requeue|complete|fail|cancel|interrupt --state DIR --id ID --host H --session S --run R --policy-hash HASH --action-file F\n'
         + '  tasks show --state DIR --id ID | tasks list --state DIR\n'
-        + '  migrate-state --state DIR [--dry-run]  (rename 0.3.0 unprefixed <uuid>.json into the prefixed namespaces; refuses instead of guessing)\n');
+        + '  migrate-state --state DIR [--dry-run]  (rename 0.3.0 unprefixed <uuid>.json into the prefixed namespaces; refuses instead of guessing)\n'
+        + '  team-init {optional|required} [--root DIR]  (native mapping of upstream gstack-team-init: AGENTS.md section + existing wiring entry points; not a verbatim port)\n');
       process.exitCode = 1;
     }
   } catch (error) {
