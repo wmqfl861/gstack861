@@ -71,6 +71,11 @@ function readFileText(file) {
 }
 
 function realpathOr(p, fallback) {
+  // Deliberately plain realpathSync (NOT .native): pointer JSON keeps the
+  // caller's path spelling, byte-matching the live upstream script (lane-B
+  // parity evidence). Known cosmetic edge (ledgered, result review minor 1):
+  // mixed 8.3/long spellings of one root can double-print a checkpoint in
+  // checkpointsBelow's POINTER + BELOW_CWD phases — display only, no data harm.
   try { return fs.realpathSync(p); } catch { return fallback; }
 }
 
@@ -595,6 +600,9 @@ function adoptFrom({ stateRoot, slug, from }) {
       continue;
     }
     let dstExists = true;
+    // lstat (not upstream's -e which follows symlinks): a BROKEN symlink at the
+    // destination counts as existing here → conflict, nothing written —
+    // safety-favoring divergence from upstream's write-through (result review minor 2).
     try { fs.lstatSync(dst); } catch { dstExists = false; }
     if (!dstExists) {
       try {

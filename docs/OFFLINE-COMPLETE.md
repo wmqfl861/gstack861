@@ -58,7 +58,7 @@
 | `gstack-patch-names` | 34 行 | **covered** | name: 前缀改写已在渲染链解决（`src/stage.mjs` renderedDir 前缀映射，render 链实测）；其 unprefix 方向对本项目是死路径 |
 | `gstack-paths` | 160 行 | **N/A** | 前提=Claude 插件运行时环境（CLAUDE_PLUGIN_DATA / ~/.claude/plans 链）；本项目状态根为显式绝对 `--state`（安全设计：模型不可写工作区外），移植=为不支持的宿主发明需求 |
 | `gstack-migrate-claude-code` | 20+270 | **mapped** | 语义属上游安装域（重命名上游在其他宿主的技能安装）；映射为本项目原生 `migrate-state`（批次 19 Lane A，偿还本项目自己的 0.3.1 状态命名空间断裂债务） |
-| `gstack-slug` | 880 行 | deferred | 项目身份 slug/分支解析器 + checkpoint 桶簿记（env→标记上溯→canonical-remote slug→v2 缓存；`--classify-checkpoints`/`--adopt-legacy` 等；仅 `--adopt-legacy` 一处 /dev/tty 确认；无 TUI）——独立批次，建议按解析器/簿记两段移植 |
+| `gstack-slug → **ported（批次 21，两段+薄 CLI；活体上游对照 41/41 原语字节相等+27 身份向量）**
 | `gstack-redact` | 341+817（引擎） | deferred | bun+TS，移植须连 `lib/redact-engine.ts`，独立批次；另依赖 lib/fs-utils (mkdirpSync) |
 | `gstack-issue-links` | 202 行 | deferred | 依赖 `gstack-issue-guard` 等上游内部件，待其依赖面审计后定；lib/issue-links.ts 188 行纯分类零导入；闭包边界在 bin 的 gstack-issue-guard/gh 调用——先审 gh 前提 |
 | `gstack-banned-terms` | 90 行 | **ported**（批次 20 Lane A） | 宿主无关、零依赖 Node 移植为 `bin/gstack861-banned-terms.mjs`（`check|init|validate` 三命令；`.gstack/banned-terms.json` 词表在 diff 新增行扫描 + 允许路径豁免；退出码 0/1/2/3 对齐上游 ok/fail/usage/refused） |

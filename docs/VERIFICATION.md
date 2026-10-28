@@ -545,3 +545,17 @@ Lane A（渲染）：初审 Needs fixes（2 Critical）→ 修复轮 → 复审�
 | 独立审查 | 审计划 6 必改（policy 源默认/自豁免/退出矩阵/base 链/slug 特征证伪/AGENTS.md 出处）全部落实；审成果 Yes（逐函数比对+活体 fixture，git<2.28 回退 Minor 已补） |
 
 证据：`docs/verification-2026-10-28-batch20.json`。过程插曲如实记录：批次中段子代理配额受限一次，恢复后重跑计划审查席（结论不受影响，席位完整）。
+
+# 第二十九轮验证记录：批次 21——gstack-slug 两段移植 + 薄 CLI（2026-10-28）
+
+| 项 | 结果 |
+|---|---|
+| `npm test` | 426→493/488+5skip（Lane A +19 身份解析；Lane B +37 簿记；Lane C +11 CLI；67 条新增全绿） |
+| Lane A（21c5a35） | `remote-identity.mjs` TS 孪生逐字（审计划 6 分支全含；上游 27 向量金样回放）+ `slug.mjs` 规则 0-4/STRONG-WEAK 两层 allow-list/v2 缓存零 git spawn（计数证明）/#3003 升级+一次性 LEGACY_NOTICE/双键写/两自愈形状/former-slugs；9 条差异账本 |
+| Lane B（629930e） | `slug-checkpoints.mjs` 11 个纯函数（身份/拓扑全注入，导入面纯度有测试断言）；**活体上游脚本对照**：41/41 原语字节相等、24/24 分类矩阵、三模式端到端一致；6 条差异账本 |
+| Lane C（f76f1a3） | `bin/gstack861-slug.mjs` 九模式薄 CLI（--get 白名单 exit 2、%q 对等决策、tty→stdin、GSTACK861_STATE_ROOT 隔离——真实 home 快照断言未触碰 ~/.gstack 与 ~/.gstack861）；10 条差异账本 |
+| 独立审查 | 审计划 6 必改（API 形状/win 分支/两层标记/#3003 升级方向/四字段刷新/模式契约）；审成果 Yes：审查者独立对**活体上游**复测——27 fixture+15 自选向量字节相等、7 种 CLI 模式端到端一致、6 项必改逐一活体验证；2 Minor（8.3 拼写装饰性双显、断链符号链接目的地方安全偏向）已按建议处理（realpath 保持字节对等+账本；lstat 差异入账本）+ exports 补三模块 |
+| 协调者插曲 | 一次过度修复被测试当场拦截：把 realpathSync 换 .native 致 5 条保真测试红（Lane B 的字节对等证据建立在原实现上）——回退并改为账本记录（审查者的最低建议）；教训如实入账 |
+| 密钥用量 | 本批 0；项目累计 12 不变 |
+
+证据：`docs/verification-2026-10-28-batch21.json`。离线余量剩 redact（341+817+fs-utils）与 issue-links（202+闭包）两项。
