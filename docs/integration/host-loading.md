@@ -12,7 +12,7 @@
 - **[固定提交源码]**：从固定提交上游源码读出、未执行的结论（gstack `5755601`；ZCode 宿主 `3c5b227`）。
 - **[验收项]**：宿主侧行为，本仓库不断言结果，须由操作员在新会话中实测确认并回填。
 
-**「待实测」标注约定**：本手册由批次 5 Lane A 先行成稿；ZCode 装载路径的每个命令节成稿时标「待实测」，由批次 5 Task 3 在临时 fixture 工作区实跑后回填为「已实测」并附证据。**合并而未回填 = 未验证**——只要任一「待实测」标注还在，宿主侧装载就不得视为已验证，宿主状态保持 `not-host-verified`（`npm run doctor`）。
+**「待实测」标注约定**：本手册由批次 5 Lane A 先行成稿；ZCode 装载路径的每个命令节成稿时标「待实测」，由批次 5 Task 3 在临时 fixture 工作区实跑后回填为「已实测」并附证据。**合并而未回填 = 未验证**——只要任一「待实测」标注还在，宿主侧装载就不得视为已验证，宿主状态保持非 host-verified（`npm run doctor` 中 ZCode 自批次 17 起显示 `workflow-harness-verified-offline`——离线工作流证据，仍非宿主认证）。
 
 付费模型调用：装载命令本身 0 次（纯文件操作，不经过模型）；新会话验收对话产生的宿主调用按宿主自身计费规则，与本项目无关。
 
@@ -149,4 +149,4 @@ DSH **没有 gstack 式技能目录**：无目录自动扫描，技能/能力装
 
 - 本手册 ZCode 命令节（2.2/2.3/2.5）已由批次 5 Task 3 于 2026-10-27 在 fixture 工作区实跑并回填「已实测」；证据见 `docs/verification-*.json` 与渲染技能消费流程文档。
 - DSH 节保持「待 DSH 侧验证」，不随批次 5 回填。
-- 宿主认证状态不因本手册合并而改变：在 2.4 观察项全部实测回填前，ZCode/DSH 保持 `not-host-verified`（`npm run doctor`）。
+- 宿主认证状态不因本手册合并而改变：在 2.4 观察项全部实测回填前，ZCode/DSH 均保持非 host-verified——doctor（`npm run doctor`）中 ZCode 为 `workflow-harness-verified-offline`（离线 harness 证据，非宿主认证）、DSH 为 `ship-and-recovery-vertical-verified-single-keyed-runs`。

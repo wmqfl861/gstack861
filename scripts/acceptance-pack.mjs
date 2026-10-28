@@ -116,7 +116,7 @@ function stepsMd({ out, workspace, srcDir, policyPath, hookPath, staging, skills
 
 由 \`${fwd(SCRIPT)}\` 生成。**所有路径均为生成时的绝对路径（正斜杠 C:/ 形式）；移动本包目录会使全部烘焙路径失效**（policy.json、hook-snippet.json、本文件中的命令与清单）——请用原参数重新生成，勿手工改路径（同 [zcode-acceptance.md](${M1}) 第 4 节第 4 点：信任摘要绑定命令内容，移动仓库/策略文件或换 node 后须重新合并并重新确认）。
 
-**验收方法：在 \`${W}\` 新开 ZCode 会话 → 按第 4/5 节清单逐项核对 → 把结果逐项记录到 \`${RESULTS}\`（自行创建）并连同本包交回项目。**在此之前宿主认证状态保持 \`not-host-verified\`（\`npm run doctor\`）。
+**验收方法：在 \`${W}\` 新开 ZCode 会话 → 按第 4/5 节清单逐项核对 → 把结果逐项记录到 \`${RESULTS}\`（自行创建）并连同本包交回项目。**在此之前宿主认证状态保持非 host-verified（\`npm run doctor\` 中 ZCode 显示 \`workflow-harness-verified-offline\`——离线工作流证据，仍非宿主认证）。
 
 ## 0. 本包含什么
 
@@ -186,7 +186,7 @@ ${skillsRollback}- 收尾：验收结果记录交回后，本包目录 \`${O}\` 
 
 ## 7. 记录结果并交回
 
-把第 2/4/5 节逐项结果（命令、输出摘要、时间、环境）记录到 \`${RESULTS}\`（自行创建），连同本包交回项目——在此之前 ZCode 宿主层保持 \`not-host-verified\`（手册第 9 节）。
+把第 2/4/5 节逐项结果（命令、输出摘要、时间、环境）记录到 \`${RESULTS}\`（自行创建），连同本包交回项目——在此之前 ZCode 宿主层保持非 host-verified（doctor 显示 \`workflow-harness-verified-offline\`，仍非宿主认证；手册第 9 节）。
 
 ## 手册原文
 

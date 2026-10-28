@@ -351,9 +351,26 @@ test('doctor makes no claim of host or full-parity certification', () => {
   const child = spawnSync(process.execPath, [cli, 'doctor'], { encoding: 'utf8' });
   assert.equal(child.status, 0);
   const info = JSON.parse(child.stdout);
-  assert.equal(info.hosts.zcode, 'not-host-verified');
-  assert.equal(info.hosts.dsh, 'ship-vertical-verified-single-keyed-runs'); // batch 14: ship stage + approvals integrated
+  // batch 17: six-stage workflow evidence + offline journal harness — still deliberately
+  // not the string 'host-verified', which stays reserved for controlled-session acceptance.
+  assert.equal(info.hosts.zcode, 'workflow-harness-verified-offline');
+  assert.equal(info.hosts.dsh, 'ship-and-recovery-vertical-verified-single-keyed-runs'); // batch 16: ship + reap->resume recovery verticals
+  assert.equal(info.networkCalls, 0); // pinned here for the first time (batch 17)
   assert.equal(info.modelCalls, 0);
+});
+test('doctor verticals inventory lists all ten verification scripts with existing evidence', () => {
+  const child = spawnSync(process.execPath, [cli, 'doctor'], { encoding: 'utf8' });
+  assert.equal(child.status, 0);
+  const info = JSON.parse(child.stdout);
+  assert.deepEqual(Object.keys(info.verticals).sort(), ['dsh-mini-vertical', 'dsh-recovery-vertical',
+    'dsh-ship-vertical', 'verify-8dot3', 'verify-dsh-guard', 'verify-dsh-robustness',
+    'verify-dsh-skills', 'verify-dsh-vertical', 'verify-model-review', 'zcode-workflow-vertical']);
+  const repoRoot = fileURLToPath(new URL('..', import.meta.url));
+  for (const [name, entry] of Object.entries(info.verticals)) {
+    assert.equal(typeof entry.keyed, 'boolean', `${name}.keyed is boolean`);
+    assert.equal(typeof entry.status, 'string', `${name}.status is string`);
+    assert.ok(fs.existsSync(path.join(repoRoot, entry.evidence)), `${name} evidence exists: ${entry.evidence}`);
+  }
 });
 test('doctor reports the rendered-skill consumption count and user unlock actions', () => {
   const child = spawnSync(process.execPath, [cli, 'doctor'], { encoding: 'utf8' });

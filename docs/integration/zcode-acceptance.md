@@ -4,7 +4,7 @@
 
 ## 0. 状态与出处约定（先读）
 
-本项目**尚未在任何真实 ZCode 会话中执行过本手册**（`npm run doctor` 输出两宿主均为 `not-host-verified`；`upstream.lock.json` 中 ZCode `3c5b227649371507ddc4eb46ac5133afe6db1cab` 为 `source-inspected` / `not-run`）。因此本文每条断言标注出处，分三类：
+本项目**尚未在任何真实 ZCode 会话中执行过本手册**（`npm run doctor` 输出 ZCode 为 `workflow-harness-verified-offline`、DSH 为 `ship-and-recovery-vertical-verified-single-keyed-runs`——两者均非 host-verified；`upstream.lock.json` 中 ZCode `3c5b227649371507ddc4eb46ac5133afe6db1cab` 为 `source-inspected` / `not-run`）。因此本文每条断言标注出处，分三类：
 
 - **[仓库已验证]**：本仓库测试（`npm test`，含真实 Node Hook 子进程）已覆盖的行为，标注测试文件/用例名。
 - **[固定提交源码]**：固定提交 ZCode `3c5b227` 的源码/文档结论，出处为 [Claude 审查报告](../reviews/2026-10-27-claude-review.md) 附录 C 核对过的文件位置（本文不复制宿主源码）。
@@ -164,4 +164,4 @@ echo '{"hook_event_name":"PreToolUse","tool_name":"Write","tool_input":{"file_pa
 
 ## 9. 验收后的证据
 
-把第 6 节逐项结果（含命令、输出摘要、时间、环境）记录进 `docs/verification-*.md` 对应轮次；在此之前，ZCode 宿主层保持 `not-host-verified`（`npm run doctor`），不得升级为 `host_verified`。
+把第 6 节逐项结果（含命令、输出摘要、时间、环境）记录进 `docs/verification-*.md` 对应轮次；在此之前，ZCode 宿主层保持非 host-verified（`npm run doctor` 显示 `workflow-harness-verified-offline`——离线工作流证据，仍非宿主认证），不得升级为 `host_verified`。
