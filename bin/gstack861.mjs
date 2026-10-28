@@ -203,20 +203,30 @@ if (args[0] === 'hook') {
           : store.reject(options['--id'], subject));
       }
     } else if (args[0] === 'tasks') {
-      const options = flags(args.slice(2), ['--state', '--id', '--host', '--session', '--run', '--policy-hash', '--action-file', '--owner']);
+      const options = flags(args.slice(2), ['--state', '--id', '--host', '--session', '--run', '--policy-hash', '--action-file', '--owner', '--lease-ms']);
       // Validate before constructing the store: a rejected subcommand or argument
       // must not leave a state directory behind.
-      if (!['create', 'start', 'resume', 'complete', 'fail', 'cancel', 'interrupt', 'show', 'list'].includes(args[1])) throw new Error('UNKNOWN_SUBCOMMAND');
+      if (!['create', 'start', 'resume', 'heartbeat', 'reap', 'requeue', 'complete', 'fail', 'cancel', 'interrupt', 'show', 'list'].includes(args[1])) throw new Error('UNKNOWN_SUBCOMMAND');
       const owner = options['--owner'];
       if (owner !== undefined && !['create', 'start'].includes(args[1])) throw new Error('INVALID_ARGUMENTS');
       if (options['--id'] !== undefined && args[1] === 'create') throw new Error('INVALID_ARGUMENTS');
       // Same shape as TaskStore.create/start, checked before any directory is created.
       if (owner !== undefined && (owner.length < 1 || owner.length > 256)) throw new Error('INVALID_OWNER');
+      // --lease-ms arms a lease: only the leasing subcommands accept it, and heartbeat
+      // requires one — a heartbeat must re-arm, never just touch updatedAt.
+      if (options['--lease-ms'] !== undefined && !['start', 'resume', 'heartbeat'].includes(args[1])) throw new Error('INVALID_ARGUMENTS');
+      if (args[1] === 'heartbeat' && options['--lease-ms'] === undefined) throw new Error('INVALID_ARGUMENTS');
+      const leaseMs = options['--lease-ms'] === undefined ? undefined : Number(options['--lease-ms']);
+      // Same bounds as TaskStore.start/heartbeat, checked here so a refused value cannot
+      // leave a freshly created state directory behind.
+      if (leaseMs !== undefined && (!Number.isSafeInteger(leaseMs) || leaseMs < 1 || leaseMs > 86400000)) throw new Error('INVALID_LEASE');
       const store = new TaskStore(absolute(options['--state']));
       if (args[1] === 'list') print(store.list());
       else if (args[1] === 'show') print(store.get(options['--id']));
       else if (args[1] === 'create') print(store.create(subjectFrom(options), owner === undefined ? {} : { owner }));
-      else if (args[1] === 'start') print(store.start(options['--id'], subjectFrom(options), owner === undefined ? {} : { owner }));
+      else if (args[1] === 'start') print(store.start(options['--id'], subjectFrom(options), { owner, leaseMs }));
+      else if (args[1] === 'heartbeat') print(store.heartbeat(options['--id'], subjectFrom(options), { leaseMs }));
+      else if (args[1] === 'resume') print(store.resume(options['--id'], subjectFrom(options), leaseMs === undefined ? {} : { leaseMs }));
       else print(store[args[1]](options['--id'], subjectFrom(options)));
     } else {
       process.stderr.write('Usage: gstack861 doctor | inventory --upstream PATH | zcode-config --policy ABS_PATH\n'
@@ -231,8 +241,10 @@ if (args[0] === 'hook') {
         + '  approvals verify --state DIR --id ID --host H --session S --run R --policy-hash HASH --action-file F\n'
         + '  approvals ask --state DIR --id ID --host H --session S --run R --policy-hash HASH --action-file F [--prompt-file ABS]\n'
         + '  tasks create --state DIR --host H --session S --run R --policy-hash HASH --action-file F [--owner O]\n'
-        + '  tasks start --state DIR --id ID --host H --session S --run R --policy-hash HASH --action-file F [--owner O]\n'
-        + '  tasks resume|complete|fail|cancel|interrupt --state DIR --id ID --host H --session S --run R --policy-hash HASH --action-file F\n'
+        + '  tasks start --state DIR --id ID --host H --session S --run R --policy-hash HASH --action-file F [--owner O] [--lease-ms N]\n'
+        + '  tasks resume --state DIR --id ID --host H --session S --run R --policy-hash HASH --action-file F [--lease-ms N]\n'
+        + '  tasks heartbeat --state DIR --id ID --host H --session S --run R --policy-hash HASH --action-file F --lease-ms N\n'
+        + '  tasks reap|requeue|complete|fail|cancel|interrupt --state DIR --id ID --host H --session S --run R --policy-hash HASH --action-file F\n'
         + '  tasks show --state DIR --id ID | tasks list --state DIR\n');
       process.exitCode = 1;
     }
