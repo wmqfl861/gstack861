@@ -1,5 +1,7 @@
 #!/usr/bin/env node
-// gstack861-redact — scan-path CLI over src/redact-engine.mjs (batch 22, Lane C).
+// gstack861-redact — scan-path CLI over src/redact-engine.mjs (batch 22, Lane C),
+// plus the pre-push hook install/uninstall subcommands backfilled in batch 23,
+// Lane C once bin/gstack861-redact-prepush.mjs landed (see ledger 2 below).
 //
 // Upstream lineage: gstack bin/gstack-redact @ upstream.lock.json commit
 // 5755601dac5d35ebd7dde181fdefe52a023c73d9 (341 lines). That file is the
@@ -13,13 +15,21 @@
 //     runtime from ambient config files; node has no equivalent here. The
 //     engine's by-value scan of credential-named environment variables sees
 //     the inherited environment under both runtimes.
-//  2. The install-prepush-hook / uninstall-prepush-hook subcommands are NOT
-//     in this port: the 790-line pre-push guardrail is its own later batch
-//     (batch 22 scope audit, docs/OFFLINE-COMPLETE.md §二), so their bodies
-//     and the mkdirpSync/spawnSync/path imports they alone consumed are
-//     dropped rather than carried dead. Usage says so. The unknown-subcommand
-//     guard is unaffected: `install-prepush-hooks` (the plural typo upstream
-//     fixed this class of bug for) still lands on the generic rejection in
+//  2. The install-prepush-hook / uninstall-prepush-hook subcommands were
+//     deferred from the batch 22 port (the pre-push guardrail was not here
+//     yet) and are BACKFILLED verbatim in batch 23, Lane C, now that
+//     bin/gstack861-redact-prepush.mjs exists. Backfill divergences, all
+//     inside these two subcommands: `../lib/fs-utils` → `../src/fs-utils.mjs`;
+//     the managed marker `# gstack-redact pre-push (managed)` →
+//     `# gstack861-redact pre-push (managed)`; and the wrapper's final line
+//     `bun "${prepushBin}"` → `node "${prepushBin}"`, where prepushBin is
+//     bin/gstack861-redact-prepush.mjs resolved from import.meta.url
+//     (upstream: import.meta.dir + "gstack-redact-prepush"). The stdin
+//     single-capture with the `printf x` sentinel, the chained
+//     pre-push.local, the idempotent/stale-refresh split and the uninstall
+//     restore are ported word-for-word. The unknown-subcommand guard is
+//     unaffected: `install-prepush-hooks` (the plural typo upstream fixed
+//     this class of bug for) still lands on the generic rejection in
 //     main() and exits 1 — a guard that no-ops must never exit 0.
 //  3. `../lib/redact-engine` → `../src/redact-engine.mjs`; TS type-only
 //     imports (RepoVisibility, ScanOptions, Finding) dropped with the types.
@@ -58,9 +68,105 @@
  * user can always bypass it (direct gh/git). It catches accidents.
  */
 import * as fs from "node:fs";
+import * as path from "node:path";
+import { spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import { scan, applyRedactions, exitCodeFor } from "../src/redact-engine.mjs";
+import { mkdirpSync } from "../src/fs-utils.mjs";
 
 const MAX_STDIN_BYTES = 16 * 1024 * 1024; // hard ceiling before the engine cap
+
+// ── pre-push hook install/uninstall (chains any existing hook) ────────────────
+
+const MANAGED_MARKER = "# gstack861-redact pre-push (managed)";
+
+function hooksPath() {
+  const r = spawnSync("git", ["rev-parse", "--git-path", "hooks"], { encoding: "utf8" });
+  if (r.status !== 0) {
+    process.stderr.write("gstack861-redact: not in a git repo\n");
+    process.exit(1);
+  }
+  return r.stdout.trim();
+}
+
+function installPrepushHook() {
+  const dir = hooksPath();
+  // mkdirpSync, not bare mkdirSync: bun on Windows throws EEXIST from a
+  // recursive mkdir when .git/hooks already exists (#2635).
+  mkdirpSync(dir);
+  const hookPath = path.join(dir, "pre-push");
+  const prepushBin = fileURLToPath(new URL("./gstack861-redact-prepush.mjs", import.meta.url));
+
+  // stdin is single-consume: capture it once, feed both the chained hook and ours.
+  // The `printf x` sentinel preserves the trailing newline that `$(cat)` strips.
+  // Without it, a chained shell pre-push.local built on `while read` silently
+  // drops the final (often only) ref line and exits 0 — the guard reports
+  // success having scanned nothing, i.e. it fails OPEN.
+  const wrapper = `#!/usr/bin/env bash
+${MANAGED_MARKER}
+set -euo pipefail
+_input="$(cat; printf x)"
+_input="\${_input%x}"
+_local="$(git rev-parse --git-path hooks/pre-push.local)"
+if [ -x "$_local" ]; then
+  printf '%s' "$_input" | "$_local" "$@" || exit $?
+fi
+printf '%s' "$_input" | node "${prepushBin}" "$@"
+`;
+
+  // If a non-managed hook exists, preserve it as pre-push.local and chain it.
+  if (fs.existsSync(hookPath)) {
+    const existing = fs.readFileSync(hookPath, "utf8");
+    if (existing.split("\n").includes(MANAGED_MARKER)) {
+      // A hook we already own. Returning here unconditionally froze every
+      // existing install on whatever wrapper it first received: the `printf x`
+      // fail-open fix landed in v1.64.0.0 and still had not reached a single
+      // repo that got the hook before it, because the only writer is gated on
+      // this branch. A wrapper naming a gstack that has since been moved or
+      // removed stays pointed at that dead path for the same reason.
+      //
+      // Rewrite when the body has drifted from what this version generates;
+      // stay a no-op when it has not, so the command is still idempotent. The
+      // chained pre-push.local is never touched on either path — it is the
+      // user's, not ours.
+      if (existing === wrapper) {
+        process.stdout.write("gstack861-redact: pre-push hook already installed.\n");
+        return;
+      }
+      fs.writeFileSync(hookPath, wrapper, { mode: 0o755 });
+      fs.chmodSync(hookPath, 0o755);
+      process.stdout.write(
+        `gstack861-redact: refreshed stale managed pre-push hook at ${hookPath}\n`,
+      );
+      return;
+    }
+    const localPath = path.join(dir, "pre-push.local");
+    fs.renameSync(hookPath, localPath);
+    fs.chmodSync(localPath, 0o755);
+    process.stdout.write("gstack861-redact: preserved existing hook as pre-push.local (chained).\n");
+  }
+
+  fs.writeFileSync(hookPath, wrapper, { mode: 0o755 });
+  fs.chmodSync(hookPath, 0o755);
+  process.stdout.write(`gstack861-redact: installed pre-push hook at ${hookPath}\n`);
+}
+
+function uninstallPrepushHook() {
+  const dir = hooksPath();
+  const hookPath = path.join(dir, "pre-push");
+  const localPath = path.join(dir, "pre-push.local");
+  if (!fs.existsSync(hookPath) || !fs.readFileSync(hookPath, "utf8").includes(MANAGED_MARKER)) {
+    process.stdout.write("gstack861-redact: no managed pre-push hook to remove.\n");
+    return;
+  }
+  if (fs.existsSync(localPath)) {
+    fs.renameSync(localPath, hookPath); // restore the chained original
+    process.stdout.write("gstack861-redact: removed managed hook, restored pre-push.local.\n");
+  } else {
+    fs.unlinkSync(hookPath);
+    process.stdout.write("gstack861-redact: removed managed pre-push hook.\n");
+  }
+}
 
 function arg(name) {
   const i = process.argv.indexOf(name);
@@ -180,9 +286,9 @@ function printUsage(code) {
       "  git diff | gstack861-redact --repo-visibility private\n" +
       "  gstack861-redact --from-file notes.md --json\n" +
       "\n" +
-      "Subcommands: none — install-prepush-hook / uninstall-prepush-hook are\n" +
-      "deferred to the pre-push batch in this port; the scan path is the whole\n" +
-      "CLI here.\n" +
+      "Subcommands:\n" +
+      "  install-prepush-hook     install the managed git pre-push credential guard\n" +
+      "  uninstall-prepush-hook   remove it\n" +
       "\n" +
       "Flags: --json --repo-visibility V --from-file PATH --allowlist PATH\n" +
       "       --self-email EMAIL --repo-public-emails PATH --auto-redact IDS\n" +
@@ -194,16 +300,17 @@ function printUsage(code) {
 }
 
 function main() {
+  // Subcommands (positional, not flags).
   const sub = process.argv[2];
+  if (sub === "install-prepush-hook") return installPrepushHook();
+  if (sub === "uninstall-prepush-hook") return uninstallPrepushHook();
   if (sub === "--help" || sub === "-h" || sub === "help") return printUsage(0);
 
   // An unrecognized POSITIONAL is a typo, not input. This used to fall through
   // to the stdin scan, which on empty stdin prints "(no findings)" and exits 0
   // — so `install-prepush-hooks` (plural) installed nothing and still looked
   // like success, leaving the credential guard absent while the operator
-  // believed it was armed. A guard that no-ops must never exit 0. (In this
-  // port there are no real subcommands to typo — ledger 2 — but the guard
-  // stays: any bare word is still a mistake worth exit 1.)
+  // believed it was armed. A guard that no-ops must never exit 0.
   //
   // "scan" is exempt: the human output header reads "gstack861-redact scan —
   // repo …", so people reasonably type it. It stays an alias for the default.
