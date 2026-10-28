@@ -11,10 +11,10 @@
 //   result is written to OURS (the %A file in git's work area);
 //   exit 0 = merge succeeded, exit 1 = failure (git treats as conflict).
 //
-// Semantics (upstream-exact):
+// Semantics (upstream-exact where this port says so; every deviation is in
+// the divergence ledger below):
 //   - Concatenate lines base → ours → theirs. Split on '\n'; a trailing empty
-//     piece from a final newline is a terminator, not a line. Only the line's
-//     '\n' terminator is stripped — a CRLF line keeps its '\r' as content.
+//     piece from a final newline is a terminator, not a line.
 //   - Empty lines are skipped entirely (upstream `if not line: continue`).
 //   - Dedup exact byte-equal lines.
 //   - Sort by composite key: JSON-parse the line; if it is a non-array object
@@ -35,7 +35,9 @@
 // the order total so both sides converge. Pinned by
 // test/jsonl-merge.test.mjs.
 //
-// Recorded divergences from upstream (batch 19 lane B):
+// Recorded divergences from upstream (batch 19 lane B; result review
+// corrected this ledger in both directions — one false "exact" and two
+// unrecorded real divergences):
 //   1. Empty-line skip is NOT a divergence — upstream-exact, recorded here
 //      because the batch-19 plan draft originally said to preserve them.
 //   2. Direct write to OURS replaces upstream's mktemp + trap + mv. Git
@@ -46,6 +48,26 @@
 //      so no interpreter beyond the Node that runs the rest of gstack861.
 //   4. Upstream's bash 3.2/5.2 compat hack (BASH_COMPAT=50 heredoc-pipe guard)
 //      is N/A — there is no bash and no heredoc.
+//   5. CRLF handling DIVERGES: upstream reads text-mode Python (universal
+//      newlines), so '\r\n' arrives as '\n' (the CR is gone before dedup/sort)
+//      and a lone '\r' separates lines; this port is byte-oriented — a line's
+//      '\r' stays content (an LF/CRLF twin pair survives as TWO lines) and
+//      '\r' never separates. Pinned as the port's chosen behavior in test 5.
+//   6. Falsy-ts fallthrough DIVERGES: upstream `obj.get('ts') or
+//      obj.get('timestamp')` falls through on ANY falsy ts ('' / 0 / false)
+//      to the alias then to hash; this port uses `??`, so ts='' is a VALID
+//      string key sorting first in the ts group. Deliberate: empty-string
+//      timestamps are pathological and the `??` reading matches the field
+//      semantics documented for GBrain logs.
+//   7. Top-level JSON arrays/scalars/null DIVERGE: upstream crashes to exit 1
+//      (AttributeError escapes its except clause → git conflict); this port
+//      guards with Array.isArray/typeof and hash-sorts such lines (exit 0).
+//      Deliberate: a merge driver resolving a line-shaped conflict beats
+//      crashing on one junk line.
+//   8. Invalid UTF-8 input DIVERGES (edge): upstream crashes exit 1
+//      (UnicodeDecodeError uncaught); Node's utf8 decode substitutes U+FFFD,
+//      so this port exits 0 with replaced bytes in OURS. Accepted as an
+//      obscure edge; callers are expected to feed UTF-8 JSONL.
 
 import fs from 'node:fs';
 import { createHash } from 'node:crypto';

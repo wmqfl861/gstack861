@@ -519,3 +519,16 @@ Lane A（渲染）：初审 Needs fixes（2 Critical）→ 修复轮 → 复审�
 | 独立审查 | 审计划 4 必改（TASK_BUSY 断言集/盘点洞/⑨ 真入口/措辞限定）→ 批次扩三 lane；审成果 with-fixes：2 Important（L29 事实错误、已尽矛盾）+2 Minor 全部由协调者在终稿落实；已知残留：REVIEW_OUTPUT_UNPARSEABLE 详情含网关控制的前 1KiB 响应体（批次 11 既有行为，记为加固项非本批缺陷） |
 
 证据：`docs/verification-2026-10-28-batch18.json`。结论修正：**离线空间未"已尽"——余量=纯工具二进制移植+原生迁移工具（后续批次）；其余待用户解锁（OFFLINE-COMPLETE §一精确触发方式）或环境受阻（§三）。**
+
+# 第二十七轮验证记录：批次 19——migrate-state + jsonl-merge 移植 + 二进制审计（2026-10-28）
+
+| 项 | 结果 |
+|---|---|
+| `npm test` | 370→389/384+5skip（Lane A +10 迁移测试；Lane B +9 merge-driver 测试；均为真实子进程） |
+| migrate-state（Lane A） | **0.3.1 文档化债务关闭**：无前缀 0.3.0 记录自动迁移（内容分类 attempts/expiresAt、歧义拒绝绝不猜、只 rename 不动字节、目标冲突拒绝、dry-run 零写入、笔误 --state 零目录创建）；端到端证明=迁移后新 TaskStore/ApprovalStore `get(id)` 读出完整记录。0.3.0 形状经 git dc2280f^ 逐字段核实。开发插曲如实记录：首次写盘 uuid 正则被工具异常损坏（v4 组丢失），测试当场暴露，重写后与 src/tasks.mjs 逐字节比对一致 |
+| jsonl-merge 移植（Lane B） | 零依赖 Node git merge driver（上游内嵌 python3 前提消除）；复合键两群全序+行决胜；**侧对称钉死**（merge(base,ours,theirs) ≡ merge(base,theirs,ours)）；ENOENT=空输入；4 项审计划语义修正全部落实 |
+| 二进制审计落盘 | OFFLINE-COMPLETE §二 9 行表：ported 1（jsonl-merge）/ covered 1（patch-names→render 链 renderedDir）/ N/A 1（paths→Claude 插件环境前提）/ mapped 1（migrate→本项目 0.3.1 债务）/ deferred 5（slug 880、redact 341+817、issue-links 202、banned-terms 90、team-init 269，各注理由） |
+| 密钥用量 | 本批 0；项目累计 12 不变 |
+| 独立审查 | 审计划 4 必改（空行丢弃/ts 别名/两群键/ENOENT）全部落实；审成果 with-fixes：**差异账本双向纠错**——CRLF 行为非 upstream-exact（上游 python 文本模式剥 \r，本移植字节导向保留 \r，记为分歧 5）；空串 ts（`??` vs `or`）与顶层数组护栏（上游崩溃退出 vs 本移植哈希群排序）两处真实分歧补记 6/7；UTF-8 边缘记 8。账本已修正后落盘。README 0.3.1 段落同步（人工改名→提供 migrate-state） |
+
+证据：`docs/verification-2026-10-28-batch19.json`。诚实边界：merge driver 与 GBrain（⑤）的集成未发生（无消费方）；migrate-state 针对的 0.3.0 记录在真实部署中不存在（债务是文档性的，工具按形状防御性实现并全矩阵测试）。

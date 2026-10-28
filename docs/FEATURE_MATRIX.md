@@ -1,6 +1,6 @@
 # 功能与证据矩阵
 
-状态：2026-10-28，0.4.17：M2 前置 + 纵向批次 + 批次 2–18（doctor verticals 清单 + verify-offline 统一离线回归入 CI + 脚本族文档收口 + 终版盘点 OFFLINE-COMPLETE + gateway 真调用入口 + 双进程租约竞争实证）（状态目录命名空间、上游渲染 CI 复用 rendered-experimental、原生询问桥 approvals ask、apply-patch/参数 effect、approvals/tasks CLI 全量、ZCode 工作流层纵向流程已实证、渲染产物 stage-render→install→uninstall 装载链全链实测、宿主装载 runbook 实测回填、渲染技能宿主消费 15 例已实证、install --dry-run 零写入预检）；除纯工具二进制移植/原生迁移工具等离线余量（OFFLINE-COMPLETE §二，后续批次）外，其余受阻于用户解锁或环境（OFFLINE-COMPLETE 三分类）。两个宿主均未获得 `host_verified` 或 `full`。
+状态：2026-10-28，0.4.18：M2 前置 + 纵向批次 + 批次 2–19（+ migrate-state 关闭 0.3.1 命名空间债务 + jsonl-merge 零依赖移植 + 二进制全量前提审计落盘）（状态目录命名空间、上游渲染 CI 复用 rendered-experimental、原生询问桥 approvals ask、apply-patch/参数 effect、approvals/tasks CLI 全量、ZCode 工作流层纵向流程已实证、渲染产物 stage-render→install→uninstall 装载链全链实测、宿主装载 runbook 实测回填、渲染技能宿主消费 15 例已实证、install --dry-run 零写入预检）；除纯工具二进制移植/原生迁移工具等离线余量（OFFLINE-COMPLETE §二：第一波已于批次 19 落地——migrate-state+jsonl-merge；余 slug/redact 等 5 项 deferred，后续批次）外，其余受阻于用户解锁或环境（OFFLINE-COMPLETE 三分类）。两个宿主均未获得 `host_verified` 或 `full`。
 
 | 范围 | ZCode | DSH | 已有证据 / 剩余工作 |
 |---|---|---|---|

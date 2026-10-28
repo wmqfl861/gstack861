@@ -106,7 +106,7 @@ node bin/gstack861.mjs zcode-config --policy /absolute/private/policy.json
 - 消费在执行之前发生，崩溃可能导致任务未执行但批准已消费；不能自动重发。当前没有断电持久性保证和远端业务幂等保证。
 - 任务租约（`--lease-ms` + `heartbeat`/`reap`）是单机文件时钟语义：收割者时钟超前超过租约长度即可误判刚续租的任务为崩溃（跨进程时钟偏差固有）；无租约的崩溃任务不会被自动收割（fail-closed），操作员手工路径为 `interrupt` → `resume`/`start`。`cancelWorkflow`（`./workflow` 导出）以"先拒审批后取消任务"的顺序提供故障安全的取消纪律，两步非原子是设计明示。恢复语义已获一次真实 DSH 键控纵向实证（`scripts/dsh-recovery-vertical.mjs`：崩溃模拟→收割→恢复→密钥任务 completed attempts=2，单次运行）；ZCode 六阶段工作流层有机器可检离线 harness（`scripts/zcode-workflow-vertical.mjs`，offline-workflow-journal-harness 分级：真实 CLI 记账+审批门，零模型调用，非宿主纵向）。
 - 状态目录须位于模型不可写的工作区外。锁遗留时拒绝继续，不自动清锁或重新批准。
-- **0.3.1 破坏性变更（状态文件命名空间隔离）**：任务与审批记录分别改用 `task-<uuid>.json` 与 `approval-<uuid>.json` 文件名，两类存储从此可安全共用一个 `--state` 目录。0.3.0 写入的无前缀 `<uuid>.json` 记录升级后对 `list`/`get` 均不可见（等效丢失），需按各自前缀人工改名迁移；当前没有外部部署，故不提供自动迁移。文件名只划分命名空间，记录内容校验（含 id、状态机）仍是权威——伪装成对方前缀的记录一律 `INVALID_*_RECORD` 拒绝。
+- **0.3.1 破坏性变更（状态文件命名空间隔离）**：任务与审批记录分别改用 `task-<uuid>.json` 与 `approval-<uuid>.json` 文件名，两类存储从此可安全共用一个 `--state` 目录。0.3.0 写入的无前缀 `<uuid>.json` 记录升级后对 `list`/`get` 均不可见（等效丢失）——**0.4.18 起提供自动迁移**：`gstack861 migrate-state --state DIR [--dry-run]`（按内容分类 task/approval、歧义一律拒绝绝不猜、只改名不动字节、目标冲突拒绝；此前版本的人工改名路径仍可用）。文件名只划分命名空间，记录内容校验（含 id、状态机）仍是权威——伪装成对方前缀的记录一律 `INVALID_*_RECORD` 拒绝。
 - 不执行任何付费模型调用；后续功能必须使用显式网关配置，不回退官方端点。
 
 ## 后续开发入口
