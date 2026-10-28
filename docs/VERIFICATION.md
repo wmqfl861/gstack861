@@ -428,3 +428,14 @@ Lane A（渲染）：初审 Needs fixes（2 Critical）→ 修复轮 → 复审�
 | 状态升级 | 边界①全部完成（deny+allow+纵向+toolRewrites）；边界②全部完成（activation+运行时消费）——DSH 技能装载 → runtime-consumption-verified (single keyed run) |
 
 证据：`docs/verification-2026-10-27-dsh-vertical.md`。仍 blocked：穷尽旁路验证、宿主内嵌 UI、GBrain、设备组（单次运行不宣称穷尽）。
+
+# 第二十轮验证记录：批次 13——DSH 鲁棒性 + 最小纵向（2026-10-28）
+
+| 项 | 结果 |
+|---|---|
+| `npm test` | 309/307+2skip（新增 43：两密钥脚本离线单测；另加 2 条提示词钉死回归） |
+| `verify-dsh-robustness.mjs`（密钥 1 任务） | **PASS**：同会话先 deny（OUTSIDE_SCOPE）后 allow（abstain+文件精确创建）顺序一致；模型遵守 do-both 条款 |
+| `dsh-mini-vertical.mjs`（密钥 3×2） | 第一次诚实失败（任务 A `UNMAPPED_TOOL`——模型工具漂移，真实密钥级缺陷，已按 fail 记账）；修复（提示词钉死 read 工具+回归断言）后第二次**全链 PASS**（exit 0）：spec 逐字→implement 精确→qa 逐字，三任务真实记账 |
+| 密钥用量 | 本批 7 任务（上限 4+修复复跑 3，原因如实）；项目累计 10 |
+
+证据：`docs/verification-2026-10-28-dsh-robustness-vertical.md`。安全行「多调用一致性」推进为 single-keyed-run 实证；DSH 纵向 spec→qa+记账 vertical-verified（ship/审批未含，子 Agent/PTC 仍 blocked）。
