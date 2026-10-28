@@ -17,6 +17,7 @@ test/verification-scripts.test.mjs 钉死（本表 ↔ `scripts/` 目录 ↔ `bi
 | scripts/dsh-ship-vertical.mjs | ship+审批集成 | 密钥需 | 冒烟可 | DEEPSEEK_API_KEY=... node scripts/dsh-ship-vertical.mjs | vertical-verified (2026-10-28) | docs/verification-2026-10-28-batch14-dsh-ship.md |
 | scripts/dsh-recovery-vertical.mjs | 崩溃恢复 reap→resume | 密钥需 | 冒烟可 | DEEPSEEK_API_KEY=... node scripts/dsh-recovery-vertical.mjs | vertical-verified (2026-10-28) | docs/verification-2026-10-28-batch16.json |
 | scripts/zcode-workflow-vertical.mjs | ZCode 六阶段工作流层离线 harness | 密钥无 | 可跑（整跑） | node scripts/zcode-workflow-vertical.mjs | offline-harness PASS (2026-10-28) | docs/verification-2026-10-28-batch16.json |
+| scripts/zcode-acceptance-vertical.mjs | ③ ZCode 受控会话验收（真实无头派生：技能发现+Skill 装载+guard 双向；HOOK_TRUST_PENDING 独立分类） | 密钥需（ZCODE_ACCEPTANCE_KEY=1 开关；走本机 ZCode 登录态） | 冒烟可（无开关 exit 2）；真跑需本机 ZCode | ZCODE_ACCEPTANCE_KEY=1 node scripts/zcode-acceptance-vertical.mjs | 见 docs/VERIFICATION.md 第三十三轮 | docs/VERIFICATION.md |
 
 ## 密钥预算纪律
 

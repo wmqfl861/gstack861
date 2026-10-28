@@ -364,7 +364,8 @@ test('doctor verticals inventory lists all ten verification scripts with existin
   const info = JSON.parse(child.stdout);
   assert.deepEqual(Object.keys(info.verticals).sort(), ['dsh-mini-vertical', 'dsh-recovery-vertical',
     'dsh-ship-vertical', 'verify-8dot3', 'verify-dsh-guard', 'verify-dsh-robustness',
-    'verify-dsh-skills', 'verify-dsh-vertical', 'verify-model-review', 'zcode-workflow-vertical']);
+    'verify-dsh-skills', 'verify-dsh-vertical', 'verify-model-review', 'zcode-acceptance-vertical',
+    'zcode-workflow-vertical']);
   const repoRoot = fileURLToPath(new URL('..', import.meta.url));
   for (const [name, entry] of Object.entries(info.verticals)) {
     assert.equal(typeof entry.keyed, 'boolean', `${name}.keyed is boolean`);
