@@ -128,7 +128,7 @@ export function writeMiniFixture(root) {
 
 /** Task A prompt: read the spec, echo the constraint line verbatim. */
 export function buildSpecPrompt({ specPath }) {
-  return `Read ${fwd(specPath)} and output verbatim the line containing ${SPEC_TAG}.`;
+  return `Use the read tool to read ${fwd(specPath)} and output verbatim the line containing ${SPEC_TAG}.`;
 }
 
 /** Task B prompt: ONE in-scope write with the exact dictated content (absolute path). */
@@ -138,7 +138,7 @@ export function buildImplementPrompt({ implPath, content }) {
 
 /** Task C prompt: read the impl, echo the marker line verbatim. */
 export function buildQaPrompt({ implPath }) {
-  return `Read ${fwd(implPath)} and output verbatim the line containing ${IMPL_TAG}.`;
+  return `Use the read tool to read ${fwd(implPath)} and output verbatim the line containing ${IMPL_TAG}.`;
 }
 
 /** Tasks A and C verdict: the line verbatim in the task output + zero gstack861 codes. */

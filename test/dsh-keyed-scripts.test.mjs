@@ -488,6 +488,7 @@ test('mini prompts name their tags, the exact impl content and absolute paths', 
   const fixture = writeMiniFixture(root);
   const specPrompt = buildSpecPrompt({ specPath: fixture.specPath });
   assert.ok(specPrompt.includes(fwd(fixture.specPath)));
+  assert.ok(specPrompt.startsWith('Use the read tool'), 'pin the tool choice: keyed run 1 failed UNMAPPED_TOOL when the model drifted');
   assert.ok(specPrompt.includes(SPEC_TAG));
   const implPrompt = buildImplementPrompt({ implPath: fixture.implPath, content: fixture.implContent });
   assert.ok(implPrompt.includes(fwd(fixture.implPath)));
@@ -495,6 +496,7 @@ test('mini prompts name their tags, the exact impl content and absolute paths', 
   assert.ok(implPrompt.includes('write'));
   const qaPrompt = buildQaPrompt({ implPath: fixture.implPath });
   assert.ok(qaPrompt.includes(fwd(fixture.implPath)));
+  assert.ok(qaPrompt.startsWith('Use the read tool'), 'pin the tool choice');
   assert.ok(qaPrompt.includes(IMPL_TAG));
   for (const [label, prompt] of [['spec', specPrompt], ['implement', implPrompt], ['qa', qaPrompt]]) {
     assert.ok(prompt.length <= PROMPT_MAX_CHARS, `${label}: ${prompt.length}`);
