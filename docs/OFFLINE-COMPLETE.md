@@ -48,13 +48,23 @@
 - **精确触发方式**：与既有键控纵向同款约束——密钥只进子进程 env、提示词 ≤200 字符 throw-before-launch 红线；具体任务集与上限由该批计划定义。此类**无需 ③**（DSH 键控即可推进），故独立于第 1 项单列。
 - **触发后做什么**：消费计数与 FEATURE_MATRIX「浏览器/QA/设计」「文档/记忆/GBrain」「CSO/iOS/远程等专项」相关行按实测升级。
 
-## 二、离线余量（后续批次，不宣称已尽）
+## 二、离线余量（批次 19 起逐项收口，不宣称已尽）
 
-以下各项上游前提齐备、离线可先行，列为后续批次工作，**本批不做**：
+批次 19 对固定子模块（5755601）`bin/` 实名二进制完成全量前提审计并落盘如下。判定口径：**ported**=已移植；**covered**=本项目已有等价实现；**N/A**=前提属本项目不支持的宿主；**mapped**=语义映射为本项目原生工具；**deferred**=留独立批次集中做。**5 项 deferred 仍是离线余量——本清单不宣称"离线已尽"。**
 
-1. **纯工具二进制移植（上游无前提类）**。已 `ls upstream/gstack/bin`（固定子模块 5755601）并逐一检视文件头核实存在：bash 纯脚本类 `gstack-slug`、`gstack-paths`、`gstack-patch-names`、`gstack-jsonl-merge`；bun+共享库类 `gstack-redact`（`lib/redact-engine.ts`）、`gstack-issue-links`、`gstack-banned-terms`。以上为逐个检视过的候选、非穷举——移植批须做全量前提审计，凡依赖模型/浏览器/设备/账号者不入此类。
-2. **原生迁移工具**。`upstream/gstack/bin/gstack-migrate-claude-code` + `upstream/gstack/lib/claude-code-migration.ts`（两者均已核实存在）。本项目 `stage-render → install → uninstall` 装载链先例支持离线先行：对 fixture/临时工作区实测迁移语义，不触碰真实用户配置。
-3. **命令别名与团队引导**。`upstream/gstack/bin/gstack-team-init` 已核实存在（bash，生成团队模式 bootstrap 文件）；命令别名属蓝图 M3 生命周期组，可随装载/迁移先例离线先行。
+| 二进制 | 规模 | 判定 | 依据（一句话） |
+|---|---|---|---|
+| `gstack-jsonl-merge` | 105 行 bash | **ported**（本批 Lane B） | 零前提、宿主无关的 git merge driver（拼接去重 + ts 排序 + sha256 兜底）；移植为 `bin/gstack861-jsonl-merge.mjs`（零依赖 Node，侧对称逐字节钉死于 `test/jsonl-merge.test.mjs`）；上游内嵌 python3 前提由移植消除 |
+| `gstack-patch-names` | 34 行 | **covered** | name: 前缀改写已在渲染链解决（`src/stage.mjs` renderedDir 前缀映射，render 链实测）；其 unprefix 方向对本项目是死路径 |
+| `gstack-paths` | 160 行 | **N/A** | 前提=Claude 插件运行时环境（CLAUDE_PLUGIN_DATA / ~/.claude/plans 链）；本项目状态根为显式绝对 `--state`（安全设计：模型不可写工作区外），移植=为不支持的宿主发明需求 |
+| `gstack-migrate-claude-code` | 20+270 | **mapped** | 语义属上游安装域（重命名上游在其他宿主的技能安装）；映射为本项目原生 `migrate-state`（本批 Lane A，偿还本项目自己的 0.3.1 状态命名空间断裂债务） |
+| `gstack-slug` | 880 行 | deferred | 纯工具但体量大，独立批次移植（批次 20 候选） |
+| `gstack-redact` | 341+817（引擎） | deferred | bun+TS，移植须连 `lib/redact-engine.ts`，独立批次（批次 20 候选） |
+| `gstack-issue-links` | 202 行 | deferred | 依赖 `gstack-issue-guard` 等上游内部件，待其依赖面审计后定 |
+| `gstack-banned-terms` | 90 行 | deferred | 宿主无关、可移植，但非必需；留二进制批次集中做避免碎片化 |
+| `gstack-team-init` | 269 行 | deferred | bash 团队引导模板，依赖上游模板内容审计后定 |
+
+原清单其余两条随本表收口：原生迁移工具即上行 **mapped**（`migrate-state` 本批落地）；命令别名（蓝图 M3 生命周期组）不在二进制审计面内，仍为离线余量，可随装载/迁移先例离线先行。
 
 ## 三、环境受阻（每项一句"缺什么"）
 
