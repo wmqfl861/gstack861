@@ -417,3 +417,14 @@ Lane A（渲染）：初审 Needs fixes（2 Critical）→ 修复轮 → 复审�
 ## 解锁后续（批次 12）
 
 边界①余下半边（DSH 纵向流程、toolRewrites 实装进 hosts overlay/示例策略）与边界②运行时半边（gstack861-skills 注入索引被模型真实消费）现已可做——按既定流程（计划→审→并行→审→推送）执行。
+
+# 第十九轮验证记录：批次 12——DSH 纵向 + 边界②运行时 + toolRewrites（2026-10-27）
+
+| 项 | 结果 |
+|---|---|
+| `npm test` | 266/264+2skip（新增 15：vertical 验证器离线单测，首个 verify 脚本测试模式） |
+| `node scripts/verify-dsh-vertical.mjs`（密钥） | **两任务全过 exit 0**：任务 A 模型经索引真实读 SKILL.md 并逐字输出 28 位随机标记；任务 B 范围内写 guard abstain、文件内容精确。~13.6k tokens，本批密钥任务恰 2（上限内） |
+| toolRewrites 重渲染差异 | 23 个 .dsh 产物变化；"the Read tool"→"the read tool" 等六短语条目生效（字节等同上游常量子集，审查程序化核对）；Bash 等无据未加 |
+| 状态升级 | 边界①全部完成（deny+allow+纵向+toolRewrites）；边界②全部完成（activation+运行时消费）——DSH 技能装载 → runtime-consumption-verified (single keyed run) |
+
+证据：`docs/verification-2026-10-27-dsh-vertical.md`。仍 blocked：穷尽旁路验证、宿主内嵌 UI、GBrain、设备组（单次运行不宣称穷尽）。
