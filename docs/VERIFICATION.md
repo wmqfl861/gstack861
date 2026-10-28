@@ -452,3 +452,15 @@ Lane A（渲染）：初审 Needs fixes（2 Critical）→ 修复轮 → 复审�
 | 提交 | 621cabf（代码）→ 摘要于最终 HEAD 重算（本提交）→ push → CI 复核 |
 
 同类排查结论（审核代理输出）：其余 `path.sep` 用点（cliArg ×4、acceptance-pack、render-upstream、测试内局部 fwd）均只作用于平台原生路径，双平台行为不变，不属同类缺陷，未改。
+
+# 第二十二轮验证记录：批次 14——DSH ship 阶段 + 审批集成（2026-10-28）
+
+| 项 | 结果 |
+|---|---|
+| `npm test` | 328→326/324+2skip（新增 17：ship 纵向离线单测——审成果删除 2 条与 adapters.test.mjs:222-224/:239-244 重复的 CLI 测试；doctor hosts 钉死随状态升级更新） |
+| `verify` 密钥运行 1 | 诚实失败：AUTH 401——操作员密钥提取子串误匹配 `MY_DEEPSEEK_API_KEY`（用户今日新增占位条目）；**零计费**（服务端拒绝），编排三段已全过；锚定提取后复跑 |
+| `verify` 密钥运行 2 | **PASS exit 0**（恰 1 计费任务）：模型写 `w/ship/` 被 `OUTSIDE_SCOPE` 拒；**改用 pwsh 绕过被 `UNMAPPED_TOOL` 拒**（计划外安全观察：默认拒绝白名单在真实模型探测下工作）；ask 桥审批（reason 只回显不落盘）；shipGate(approved) 后特权发布逐字节校验；consume 单次（重放拒）；任务记账 completed 绑 action-D |
+| 密钥用量 | 本批 1 计费任务（401 未计费）；项目累计 **11** |
+| 状态升级 | DSH 纵向 → **ship-vertical-verified（单次密钥运行）**：spec→…→ship 全阶段 + 审批门 + 特权发布；FEATURE_MATRIX 第 23/28 行更新；doctor hosts.dsh 同步 |
+
+证据：`docs/verification-2026-10-28-batch14-dsh-ship.md`。审计划 4 项必改全部落实（TTL 900000、CLI 测试去重、泄漏先记账 failed 再中止、控制器 mkdir ship 目录）。仍不宣称：穷尽旁路、宿主内嵌 UI（④）、ZCode 侧 ship 纵向（待③）、真实部署交付（M3+）。
