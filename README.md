@@ -8,6 +8,7 @@
 
 - [完整蓝图与阶段验收](docs/BLUEPRINT.md)
 - [功能与证据矩阵](docs/FEATURE_MATRIX.md)
+- [验证脚本族总表（目的/密钥/状态/证据/统一离线回归）](docs/VERIFICATION-SCRIPTS.md)（`npm run verify-offline`，已入 CI）
 - [本轮测试说明及限制](docs/VERIFICATION.md)
 - [精确测试文件摘要](docs/verification-2026-10-26.json)（首轮 Linux）；[Windows 轮](docs/verification-2026-10-26-windows.json)；[M2 基础批次](docs/verification-2026-10-26-m2.json)
 - [后续轮次](docs/verification-2026-10-27-review-fixes.json)：[Windows 验收](docs/verification-2026-10-27-windows-acceptance.json)、[M2 纵向](docs/verification-2026-10-27-m2-vertical.json)、[纵向流程证据](docs/verification-2026-10-27-vertical-zcode.md)、[批次 2](docs/verification-2026-10-27-batch2.json)、[批次 3](docs/verification-2026-10-27-batch3.json)、[批次 4](docs/verification-2026-10-27-batch4.json)、[批次 5](docs/verification-2026-10-27-batch5.json)、[渲染技能消费证据](docs/verification-2026-10-27-render-consumption.md)、[批次 6](docs/verification-2026-10-27-batch6.json)、[安全套件](docs/verification-2026-10-27-safety-suite.md)、[批次 7](docs/verification-2026-10-27-batch7.json)、[工作流套件](docs/verification-2026-10-27-workflow-suite.md)、[批次 8](docs/verification-2026-10-27-batch8.json)、[产品套件](docs/verification-2026-10-27-product-suite.md)、[批次 9](docs/verification-2026-10-27-batch9.json)、[收官套件](docs/verification-2026-10-27-final-suite.md)、[批次 8](docs/verification-2026-10-27-batch8.json)、[产品套件](docs/verification-2026-10-27-product-suite.md)
