@@ -559,3 +559,16 @@ Lane A（渲染）：初审 Needs fixes（2 Critical）→ 修复轮 → 复审�
 | 密钥用量 | 本批 0；项目累计 12 不变 |
 
 证据：`docs/verification-2026-10-28-batch21.json`。离线余量剩 redact（341+817+fs-utils）与 issue-links（202+闭包）两项。
+
+# 第三十轮验证记录：批次 22——redact 扫描核心移植（2026-10-28）
+
+| 项 | 结果 |
+|---|---|
+| `npm test` | 493→847/840+7skip（Lane A +330 上游向量回放；Lane C +24 CLI 契约测试，2 例 POSIX-only slow-pipe 跳过） |
+| Lane A（da15255） | `redact-patterns`（1075 行：44 模式+全部上下文校验器+spanBounds AUDIT-SYNC）+`redact-engine`（817 行：审计划 5 组语义全含——email 豁免簇/sourcePath #3048/五栅栏标签/结构守护 skipped/null 扣留契约）；fixtures 逐字节（git blob 哈希相等）；**差分 harness 对类型剥离的原版上游 TS 直比：TAXONOMY IDENTICAL + ENGINE IDENTICAL OVER CORPUS**（用后删除）；cso 导入断言随 cso 批、spawn-bin 尾块按约移 Lane C 回填 |
+| Lane B（e5a082b） | OFFLINE-COMPLETE §二：redact 扫描核心本批完成（不宣称整支移植）；prepush 790+27 deferred 行（特征+state-root/sealed-guard 依赖闭包+5 个上游测试文件名）；**并发现批次 21 遗留的 slug 行表格损坏（协调者 sed 工件）——本批收尾修复** |
+| Lane C（0fc4e33） | `gstack861-redact` 扫描路径 CLI：四态退出码（usage=1 与 M=2/H=3 区分）、空路径 #2679 不落 stdin、非法 max-bytes #1824、16MiB 引擎前边界、--auto-redact 正文+diff、bd621cc0 排空语义逐字、hook 子命令按 RC3 连 import 一并删除；spawn-bin 尾块回填兑现 |
+| 独立审查 | 审计划 4 必改全部落实；审成果 Yes：审查者**独立差分复测约 4500 次比较零分歧**（上游语料 722 向量×2 矩阵 + 60 对抗构造×3 矩阵 + 全 redact API），四态退出/回填/账本/文档逐项活体验证；发现上游自身一处死代码（WARN 降级分支不可达——移植逐字保真，记入 prepush 批次上下文） |
+| 密钥用量 | 本批 0；项目累计 12 不变 |
+
+证据：`docs/verification-2026-10-28-batch22.json`。离线余量剩 prepush（790+27）与 issue-links（202）两项（各自依赖闭包已入 OFFLINE-COMPLETE §二）。

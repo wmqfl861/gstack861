@@ -58,7 +58,7 @@
 | `gstack-patch-names` | 34 行 | **covered** | name: 前缀改写已在渲染链解决（`src/stage.mjs` renderedDir 前缀映射，render 链实测）；其 unprefix 方向对本项目是死路径 |
 | `gstack-paths` | 160 行 | **N/A** | 前提=Claude 插件运行时环境（CLAUDE_PLUGIN_DATA / ~/.claude/plans 链）；本项目状态根为显式绝对 `--state`（安全设计：模型不可写工作区外），移植=为不支持的宿主发明需求 |
 | `gstack-migrate-claude-code` | 20+270 | **mapped** | 语义属上游安装域（重命名上游在其他宿主的技能安装）；映射为本项目原生 `migrate-state`（批次 19 Lane A，偿还本项目自己的 0.3.1 状态命名空间断裂债务） |
-| `gstack-slug → **ported（批次 21，两段+薄 CLI；活体上游对照 41/41 原语字节相等+27 身份向量）**
+| `gstack-slug` | 880+147+109 | **ported**（批次 21，两段+薄 CLI） | remote-identity 27 向量金样回放；身份解析 v2 缓存零 git spawn；checkpoint 簿记活体上游对照 41/41 原语字节相等；状态根映射 ~/.gstack861（绝不触碰 ~/.gstack） |
 | `gstack-redact` | 341+1075+817（CLI+patterns+引擎） | 扫描核心 **本批完成**（批次 22） | patterns 1075+engine 817 零依赖移植，上游 9 个测试文件向量回放；CLI 扫描路径同批；hook install/uninstall 子命令不在本批——整支 binary 未全量移植，随下行 prepush 批 deferred |
 | `gstack-redact-prepush` | 790+27 | **deferred**（独立批次） | 连带闭包：CLI hook install/uninstall + `lib/fs-utils` mkdirpSync（27 行，随 prepush 批）。特征：pre-push stdin refs 解析、remote..local 增行扫描、新分支 merge-base 回退、删分支跳过、force-push 净新增语义、`GSTACK_REDACT_PREPUSH=skip` 旁路、guardrail 非 enforcement；另依赖 `lib/state-root` 与 `lib/sealed-guard`；上游有 5 个专属测试文件（prepush-{emails,hook,rebase-force-push,scan-range,target}） |
 | `gstack-issue-links` | 202 行 | deferred | 依赖 `gstack-issue-guard` 等上游内部件，待其依赖面审计后定；lib/issue-links.ts 188 行纯分类零导入；闭包边界在 bin 的 gstack-issue-guard/gh 调用——先审 gh 前提 |
