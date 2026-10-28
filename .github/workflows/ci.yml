@@ -23,6 +23,9 @@ jobs:
           node-version: '22.16.0'
       - run: npm run check
       - run: npm test
+      # Unified offline regression for the verify-* family (batch 17): keyed BLOCKED
+      # smokes + the offline zcode workflow harness + model-review readiness (~7s).
+      - run: npm run verify-offline
       - run: npm run doctor
       - name: Inventory pinned upstream without executing its code
         run: node bin/gstack861.mjs inventory --upstream upstream/gstack
