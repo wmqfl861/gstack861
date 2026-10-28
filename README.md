@@ -78,7 +78,7 @@ node bin/gstack861.mjs zcode-config --policy /absolute/private/policy.json
 
 终版逐项盘点见 [docs/OFFLINE-COMPLETE.md](docs/OFFLINE-COMPLETE.md)（待解锁/离线余量/环境受阻三分类）。
 
-截至 2026-10-27，本项目在离线环境（无 API Key、无浏览器栈、无设备、无远端、0 付费调用）内可自主推进的空间已尽。已交付：上游渲染的 CI 受限执行管线（rendered-experimental，零付费调用、零网络渲染路径）、装载链 `stage-render → install → uninstall` 全链实测（含 fixture 工作区装载与幂等重装/卸载清空）、渲染技能宿主消费（累计计数以 `npm run doctor` 报告为准；均非 host_verified，自动拾取未验证）、approvals/tasks/ask 三组原语（操作员 CLI 全量接通，`approvals ask` 无答案绝不自动同意）、install/uninstall dry-run 零变更预检，以及多轮外部独立审查与逐批证据体系（链接见上方开发文档节）。在此边界内，剩余 13 项均受阻于用户解锁或环境，逐项如下：
+截至 2026-10-28（批次 18 终版盘点后修订）：本项目的离线边界已从"空间已尽"修正为"余量显式在案"——除**纯工具二进制移植与原生迁移工具**（OFFLINE-COMPLETE §二，后续批次工作）外，其余剩余项均受阻于用户解锁或环境。已交付：上游渲染的 CI 受限执行管线（rendered-experimental，零付费调用、零网络渲染路径）、装载链 `stage-render → install → uninstall` 全链实测（含 fixture 工作区装载与幂等重装/卸载清空）、渲染技能宿主消费（累计计数以 `npm run doctor` 报告为准；均非 host_verified，自动拾取未验证）、approvals/tasks/ask 三组原语（操作员 CLI 全量接通，`approvals ask` 无答案绝不自动同意）、install/uninstall dry-run 零变更预检、DSH 五类键控纵向（spec/implement/qa/ship/恢复）与统一离线回归入 CI，以及多轮外部独立审查与逐批证据体系（链接见上方开发文档节）。逐项判定见终版清单：
 
 1. ① DSH 管线+纵向+toolRewrites——**全部完成**：deny（第十八轮）+ allow（批次 12）双向真实管线实证；同会话多调用 deny→allow 一致性实证（批次 13）；spec→implement→qa+记账纵向通过（批次 13，含一次诚实失败与修复复跑）；toolRewrites 六短语实装（渲染 diff 23 文件）；**ship 阶段+审批集成纵向通过（批次 14 密钥单次运行：模型写 ship 目录被拒 OUTSIDE_SCOPE、ask 桥审批、控制器特权发布、审批单次消费+重放拒绝）**。见 dsh-pipeline、dsh-vertical 与 dsh-ship 证据。
 2. ② DSH 插件式技能装载——**全部完成**：activation（批次 10b）+ 运行时消费实证（批次 12 密钥任务：模型经注入索引真实读 SKILL.md，逐字输出随机标记）——runtime-consumption-verified (single keyed run)。

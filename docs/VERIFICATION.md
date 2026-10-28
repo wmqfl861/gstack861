@@ -505,3 +505,17 @@ Lane A（渲染）：初审 Needs fixes（2 Critical）→ 修复轮 → 复审�
 | 独立审查 | 审计划 4 必改全部落实（hosts 测试原地改/8dot3 第 5 轮/跨 lane 合并门/陈旧字面量）；审成果 Yes（四项亲手复现：套件、runner、doctor、check；5 条证据抽查属实；无 overclaim） |
 
 成本如实记录：ZCode harness 每条 CI 腿整跑 3 次（自身测试 5.2s + runner 契约测试内 4.4s + CI 步 4.4s ≈ 15s/腿）——批次 17 计划接受并要求记录。runner 冒烟失败诊断输出与步 2/3 对齐（成果审查 Minor 1 已落实）。
+
+# 第二十六轮验证记录：批次 18——终版盘点与收口（2026-10-28）
+
+| 项 | 结果 |
+|---|---|
+| `npm test` | 360→370/367+3skip（Lane A +3 竞争测试；Lane C +7 真调用入口测试，1 例 win32 symlink 跳过） |
+| 双进程租约竞争（Lane A） | **15 次真双进程 reap/heartbeat 竞争全部恰一 exit 0**；胜者分布 reap 6/heartbeat 4；四种合法"胜者×败者码"组合（WRONG_STATE/LEASE_ACTIVE/BUSY）均真实出现；成果审查独立复测 10/10 恒一胜者；双收割者恰一成功 attempts 不变；控制组钉死装置有效性。此前的"真实多进程竞争为非目标"保留意见就此关闭（SIGKILL 竞争仍环境受限） |
+| 终版盘点（Lane B） | `docs/OFFLINE-COMPLETE.md`：**不宣称离线已尽**——待解锁 5 项（③ acceptance-pack 含 --rendered 变体、⑨ 精确命令、④+执行器接线、宿主级安装、DSH 键控预算类）、离线余量 3 项（纯工具二进制 slug/paths/patch-names/jsonl-merge/redact/issue-links/banned-terms、原生迁移 migrate-claude-code、team-init——名字逐一核实于上游 5755601）、环境受阻 9 项（各一句"缺什么"）。审计划发现的盘点洞（README⑪/迁移/⑫ 一桶化）全部补上 |
+| gateway 真调用入口（Lane C） | `verify-model-review.mjs --gateway-config <abs>`：loadGateway 全 schema 在真实文件上执行→回环覆盖仅在验证之后；`GSTACK861_MODEL_CALL=1`+apiKeyEnv 红线（键值零打印——开发中测试抓到并修正了一处字段名泄漏）；单次封顶由构造保证+测试外部计数；裸模式字节不变。⑨ 的触发方式从"以代码为准"变为一条精确可运行命令 |
+| 矩阵真值同步 | L24 DSH→vertical-slice-verified（生命周期切片限定，非 /investigate、/review 方法论）；L25 非目标子句替换+实测分布落终稿；L29 事实修正（document-generate 已于批次 6 消费——成果审查抓到的错误）；L3/README "离线已尽"表述与终版清单对齐（余量显式在案） |
+| 密钥用量 | 本批 0；项目累计 12 不变 |
+| 独立审查 | 审计划 4 必改（TASK_BUSY 断言集/盘点洞/⑨ 真入口/措辞限定）→ 批次扩三 lane；审成果 with-fixes：2 Important（L29 事实错误、已尽矛盾）+2 Minor 全部由协调者在终稿落实；已知残留：REVIEW_OUTPUT_UNPARSEABLE 详情含网关控制的前 1KiB 响应体（批次 11 既有行为，记为加固项非本批缺陷） |
+
+证据：`docs/verification-2026-10-28-batch18.json`。结论修正：**离线空间未"已尽"——余量=纯工具二进制移植+原生迁移工具（后续批次）；其余待用户解锁（OFFLINE-COMPLETE §一精确触发方式）或环境受阻（§三）。**

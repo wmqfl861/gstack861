@@ -1,6 +1,6 @@
 # 功能与证据矩阵
 
-状态：2026-10-28，0.4.16：M2 前置 + 纵向批次 + 批次 2–17（doctor verticals 清单 + verify-offline 统一离线回归入 CI + 脚本族文档收口）（状态目录命名空间、上游渲染 CI 复用 rendered-experimental、原生询问桥 approvals ask、apply-patch/参数 effect、approvals/tasks CLI 全量、ZCode 工作流层纵向流程已实证、渲染产物 stage-render→install→uninstall 装载链全链实测、宿主装载 runbook 实测回填、渲染技能宿主消费 15 例已实证、install --dry-run 零写入预检；DSH 管线就绪脚本待密钥）；离线空间已尽（2026-10-27），剩余项均受阻于用户解锁或环境（README 离线边界节 13 项）。两个宿主均未获得 `host_verified` 或 `full`。
+状态：2026-10-28，0.4.17：M2 前置 + 纵向批次 + 批次 2–18（doctor verticals 清单 + verify-offline 统一离线回归入 CI + 脚本族文档收口 + 终版盘点 OFFLINE-COMPLETE + gateway 真调用入口 + 双进程租约竞争实证）（状态目录命名空间、上游渲染 CI 复用 rendered-experimental、原生询问桥 approvals ask、apply-patch/参数 effect、approvals/tasks CLI 全量、ZCode 工作流层纵向流程已实证、渲染产物 stage-render→install→uninstall 装载链全链实测、宿主装载 runbook 实测回填、渲染技能宿主消费 15 例已实证、install --dry-run 零写入预检）；除纯工具二进制移植/原生迁移工具等离线余量（OFFLINE-COMPLETE §二，后续批次）外，其余受阻于用户解锁或环境（OFFLINE-COMPLETE 三分类）。两个宿主均未获得 `host_verified` 或 `full`。
 
 | 范围 | ZCode | DSH | 已有证据 / 剩余工作 |
 |---|---|---|---|
@@ -22,11 +22,11 @@
 | 原生询问桥 | implemented | implemented | `approvals ask` 阻塞式应答（exit 3 不自动同意）；宿主内嵌 UI 未接通 |
 | 纵向流程（spec→ship） | workflow-harness-verified | ship-vertical-verified | ZCode 侧六阶段+审批+交付曾真实跑通（非 host_verified）；批次 16 增机器可检离线 harness（offline-workflow-journal-harness：六阶段 CLI 记账+review 恢复腿+审批门控 ship+策略腿，零模型调用）；DSH 侧 spec→implement→qa+TaskStore 记账 vertical-verified（批次 13）；ship+审批集成 vertical-verified（批次 14）；**恢复纵向 reap→resume 键控单次运行通过（批次 16：崩溃模拟→收割→恢复→密钥任务终态正确 attempts=2）** |
 | 开发/调查/review | planned | vertical-slice-verified | DSH 侧为**生命周期能力切片**键控实证（批次 13/14/16：逐字标记读、精确单写、回读校验、ship 负控+审批门、崩溃→收割→恢复复跑）——**非** /investigate、/review 技能方法论消费（两宿主均未跑）；ZCode 列仍 planned 待③ |
-| 子 Agent 与工作流恢复 | store-recovery-verified | store-recovery-verified | 批次 15 共享核 store+CLI 离线实证：租约/心跳/收割/重排（陈旧租约清除、收割↔心跳锁内竞争）、审批取消矩阵+cancelWorkflow 故障安全顺序（先拒审批后取消）；批次 16 DSH 恢复纵向键控单次运行通过（崩溃模拟→reap→resume→密钥任务 completed attempts=2）；宿主内执行器接线仍 planned（待③/后续）；双进程锁竞争已实证（既有 start 竞争测试 + 批次 18 reap/heartbeat 竞争序集断言；真实 SIGKILL 竞争仍环境受限）（以批次 18 实测为准） |
+| 子 Agent 与工作流恢复 | store-recovery-verified | store-recovery-verified | 批次 15 共享核 store+CLI 离线实证：租约/心跳/收割/重排（陈旧租约清除、收割↔心跳锁内竞争）、审批取消矩阵+cancelWorkflow 故障安全顺序（先拒审批后取消）；批次 16 DSH 恢复纵向键控单次运行通过（崩溃模拟→reap→resume→密钥任务 completed attempts=2）；宿主内执行器接线仍 planned（待③/后续）；双进程锁竞争已实证（既有 start 竞争测试 + 批次 18 reap/heartbeat 竞争序集断言；真实 SIGKILL 竞争仍环境受限）（批次 18 实测：15 次真双进程 reap/heartbeat 竞争全部恰一 exit 0，胜者分布 reap 6 / heartbeat 4，四种合法"胜者×败者码"组合均出现；成果审查独立复测 10/10 恒一胜者） |
 | 独立模型复核 | mechanism-ready | mechanism-ready | 配置加载/黑名单/单次封顶/开关红线全部实测（批次 11，五段就绪验证）；runtime 真调用待解锁-⑨（用户手放网关配置+开关+键） |
 | 浏览器/QA/设计 | planned | planned | 复用上游工具并迁移依赖；设计组消费属键控预算类（密钥即可推进，无需③），浏览器/QA 组受阻于浏览器栈 |
 | ship/部署/监控 | planned | vertical-slice-verified | 纵向切片实证（批次 14 DSH：审批门+特权发布+单次消费）；真实部署/监控交付仍 planned（审批、测试证据与幂等边界） |
-| 文档/记忆/GBrain | planned | planned | 对应原生工具与会话路径；learn/retro 已实证消费（15 例计数内），document-* 未消费，GBrain 前置③ |
+| 文档/记忆/GBrain | planned | planned | 对应原生工具与会话路径；learn/retro/document-generate 已实证消费（15 例计数内，批次 6 safety-suite），document-release 未消费，GBrain 前置③ |
 | CSO/iOS/远程等专项 | planned | planned | Docker/设备/账号等依赖验收；cso 消费属键控预算类（密钥即可推进，无需③） |
 | 真实模型质量对等 | not_run | not_run | 未调用模型，未使用预算 |
 
