@@ -229,3 +229,160 @@ test('two real processes cannot both start one task', async t => {
   assert.equal(results.filter(r => r.status === 'rejected').length, 1);
   assert.equal(store.get(id).state, 'running');
 });
+test('start and resume with leaseMs record the exact lease expiry from the clock', t => {
+  const f = fixture(t); let time = 5000;
+  const store = new TaskStore(path.join(f.base, 'tasks'), { clock: () => time }), s = subject(f);
+  const id = store.create(s);
+  assert.equal(store.start(id, s, { leaseMs: 1000 }).leaseExpiresAt, 6000);
+  assert.equal(store.get(id).leaseExpiresAt, 6000);
+  store.interrupt(id, s);
+  time = 7000;
+  assert.equal(store.resume(id, s, { leaseMs: 2000 }).leaseExpiresAt, 9000);
+  assert.equal(store.get(id).updatedAt, 7000);
+});
+test('entering running without leaseMs clears stale leases instead of re-arming phantoms', t => {
+  const f = fixture(t); let time = 5000;
+  const store = new TaskStore(path.join(f.base, 'tasks'), { clock: () => time }), s = subject(f);
+  const a = store.create(s);
+  store.start(a, s, { leaseMs: 1000 });
+  store.interrupt(a, s);
+  assert.equal(store.resume(a, s).state, 'running');
+  assert.equal('leaseExpiresAt' in store.get(a), false, 'a leaseless resume must not resurrect the old expiry');
+  time = 999999;
+  assert.throws(() => store.reap(a, s), /TASK_LEASE_REQUIRED/);
+  assert.equal(store.get(a).state, 'running', 'no lease signal means no reap, not a phantom crash');
+  const b = store.create(s);
+  store.start(b, s, { leaseMs: 1000 });
+  store.fail(b, s);
+  store.requeue(b, s);
+  assert.equal(store.start(b, s).state, 'running');
+  assert.equal('leaseExpiresAt' in store.get(b), false);
+  for (const leave of ['interrupt', 'cancel', 'complete']) {
+    const id = store.create(s);
+    store.start(id, s, { leaseMs: 1000 });
+    store[leave](id, s);
+    assert.equal('leaseExpiresAt' in store.get(id), false, `${leave} must clear the lease`);
+  }
+});
+test('heartbeat extends a lease but never invents one', t => {
+  const f = fixture(t); let time = 5000;
+  const store = new TaskStore(path.join(f.base, 'tasks'), { clock: () => time }), s = subject(f);
+  const id = store.create(s);
+  assert.throws(() => store.heartbeat(id, s, { leaseMs: 1000 }), /TASK_WRONG_STATE/); // planned, not running
+  store.start(id, s);
+  assert.throws(() => store.heartbeat(id, s, { leaseMs: 1000 }), /TASK_LEASE_REQUIRED/); // started leaseless
+  assert.throws(() => store.heartbeat(id, s), /INVALID_LEASE/); // leaseMs is required: no updatedAt-only no-op
+  store.fail(id, s); store.requeue(id, s);
+  store.start(id, s, { leaseMs: 1000 });
+  time = 5500;
+  assert.equal(store.heartbeat(id, s, { leaseMs: 2000 }).state, 'running');
+  assert.equal(store.get(id).leaseExpiresAt, 7500);
+  assert.equal(store.get(id).attempts, 2, 'heartbeats are not attempts');
+  time = 8000; // past the 7500 expiry: liveness is proven by the call itself
+  assert.equal(store.heartbeat(id, s, { leaseMs: 1000 }).leaseExpiresAt, 9000);
+});
+test('reap interrupts only an expired lease; recovery re-arms fresh and bumps attempts', t => {
+  const f = fixture(t); let time = 5000;
+  const store = new TaskStore(path.join(f.base, 'tasks'), { clock: () => time }), s = subject(f);
+  const id = store.create(s);
+  store.start(id, s);
+  assert.throws(() => store.reap(id, s), /TASK_LEASE_REQUIRED/); // lease absence is not crash proof
+  assert.equal(store.get(id).state, 'running');
+  store.fail(id, s); store.requeue(id, s);
+  store.start(id, s, { leaseMs: 1000 });
+  assert.throws(() => store.reap(id, s), /TASK_LEASE_ACTIVE/); // 5000 < 6000: live lease
+  assert.equal(store.get(id).state, 'running');
+  time = 6000; // now >= leaseExpiresAt
+  const reaped = store.reap(id, s);
+  assert.equal(reaped.state, 'interrupted');
+  assert.equal('leaseExpiresAt' in reaped, false);
+  assert.equal(store.get(id).attempts, 2, 'reaping is not an attempt; the resume is');
+  time = 7000;
+  assert.equal(store.resume(id, s, { leaseMs: 1500 }).state, 'running');
+  assert.equal(store.get(id).attempts, 3);
+  assert.equal(store.get(id).leaseExpiresAt, 8500);
+});
+test('a heartbeat landing before the reaper re-arms the lease and blocks the reap', t => {
+  const f = fixture(t); let time = 5000;
+  const store = new TaskStore(path.join(f.base, 'tasks'), { clock: () => time }), s = subject(f);
+  const id = store.create(s);
+  store.start(id, s, { leaseMs: 1000 }); // expiry 6000
+  time = 6000;
+  assert.equal(store.heartbeat(id, s, { leaseMs: 1000 }).leaseExpiresAt, 7000);
+  assert.throws(() => store.reap(id, s), /TASK_LEASE_ACTIVE/);
+  assert.equal(store.get(id).state, 'running');
+  time = 7000;
+  assert.equal(store.reap(id, s).state, 'interrupted'); // the same serialized check now passes
+  assert.throws(() => store.heartbeat(id, s, { leaseMs: 1000 }), /TASK_WRONG_STATE/); // reaped: liveness lost
+});
+test('requeue moves failed back to planned; every other state is enumerated and rejected', t => {
+  const f = fixture(t), store = new TaskStore(path.join(f.base, 'tasks')), s = subject(f);
+  const id = store.create(s);
+  store.start(id, s); store.fail(id, s);
+  assert.equal(store.requeue(id, s).state, 'planned');
+  assert.equal(store.start(id, s).state, 'running');
+  assert.equal(store.get(id).attempts, 2, 'the retry start bumps across the cycle');
+  assert.throws(() => store.requeue(id, s), /TASK_WRONG_STATE/); // running
+  assert.throws(() => store.requeue(store.create(s), s), /TASK_WRONG_STATE/); // planned
+  const done = store.create(s); store.start(done, s); store.complete(done, s);
+  assert.throws(() => store.requeue(done, s), /TASK_WRONG_STATE/); // completed
+  const cancelled = store.create(s); store.cancel(cancelled, s);
+  assert.throws(() => store.requeue(cancelled, s), /TASK_WRONG_STATE/); // cancelled stays terminal
+  const parked = store.create(s); store.start(parked, s); store.interrupt(parked, s);
+  assert.throws(() => store.requeue(parked, s), /TASK_WRONG_STATE/); // interrupted recovers via resume
+});
+test('leaseMs must be a safe integer within 1..86400000', t => {
+  const f = fixture(t), store = new TaskStore(path.join(f.base, 'tasks')), s = subject(f);
+  const id = store.create(s);
+  for (const leaseMs of [0, 86400001, 1.5, 'x']) {
+    assert.throws(() => store.start(id, s, { leaseMs }), /INVALID_LEASE/);
+    assert.throws(() => store.resume(id, s, { leaseMs }), /INVALID_LEASE/);
+    assert.throws(() => store.heartbeat(id, s, { leaseMs }), /INVALID_LEASE/);
+  }
+  assert.equal(store.start(id, s, { leaseMs: 1 }).state, 'running');
+  assert.equal(Number.isSafeInteger(store.heartbeat(id, s, { leaseMs: 86400000 }).leaseExpiresAt), true);
+});
+test('legacy records without leaseExpiresAt stay readable and transitional', t => {
+  const f = fixture(t), store = new TaskStore(path.join(f.base, 'tasks')), s = subject(f);
+  const id = store.create(s);
+  // Hand-written pre-lease shape: schemaVersion 1, every field valid, no lease key.
+  fs.writeFileSync(store.file(id), JSON.stringify(
+    { schemaVersion: 1, id, subjectHash: subjectDigest(s), state: 'planned', attempts: 0, createdAt: 1000, updatedAt: 1000 }) + '\n');
+  assert.equal(store.get(id).state, 'planned');
+  assert.deepEqual(store.list().map(r => r.id), [id]);
+  assert.equal(store.start(id, s).state, 'running'); // zero migration: old records keep working
+  store.interrupt(id, s);
+  assert.equal(store.resume(id, s, { leaseMs: 1000 }).state, 'running');
+});
+test('tampered leaseExpiresAt fields fail closed as INVALID_TASK_RECORD', t => {
+  const f = fixture(t), store = new TaskStore(path.join(f.base, 'tasks')), s = subject(f);
+  const id = store.create(s);
+  fs.writeFileSync(store.file(id), JSON.stringify({ ...store.get(id), leaseExpiresAt: 1.5 }) + '\n');
+  assert.throws(() => store.get(id), /INVALID_TASK_RECORD/);
+  assert.throws(() => store.start(id, s), /INVALID_TASK_RECORD/);
+});
+test('tasks CLI requires --lease-ms on heartbeat and refuses bad leases before creating state', async t => {
+  const f = fixture(t), state = path.join(f.base, 'never-created');
+  const actionFile = path.join(f.base, 'action.json');
+  fs.writeFileSync(actionFile, JSON.stringify({ kind: 'publish', artifactHash: 'fixture' }));
+  const binding = ['--host', 'zcode', '--session', 's1', '--run', 'r1', '--policy-hash', f.policy.policyHash, '--action-file', actionFile];
+  await assert.rejects(execute(process.execPath, [cli, 'tasks', 'heartbeat', '--state', state, '--id', '00000000-0000-4000-8000-000000000000', ...binding]),
+    error => error.code === 1 && /INVALID_ARGUMENTS/.test(error.stderr));
+  await assert.rejects(execute(process.execPath, [cli, 'tasks', 'start', '--state', state, '--id', '00000000-0000-4000-8000-000000000000', ...binding, '--lease-ms', '0']),
+    error => error.code === 1 && /INVALID_LEASE/.test(error.stderr));
+  assert.equal(fs.existsSync(state), false, 'a refused lease must not leave a state directory behind');
+});
+test('tasks CLI start --lease-ms arms a lease the reaper must respect until expiry', async t => {
+  const f = fixture(t), state = path.join(f.base, 'tasks');
+  const actionFile = path.join(f.base, 'action.json');
+  fs.writeFileSync(actionFile, JSON.stringify({ kind: 'publish', artifactHash: 'fixture' }));
+  const binding = ['--host', 'zcode', '--session', 's1', '--run', 'r1', '--policy-hash', f.policy.policyHash, '--action-file', actionFile];
+  const id = JSON.parse((await execute(process.execPath, [cli, 'tasks', 'create', '--state', state, ...binding])).stdout);
+  const started = JSON.parse((await execute(process.execPath, [cli, 'tasks', 'start', '--state', state, '--id', id, ...binding, '--lease-ms', '5000'])).stdout);
+  assert.equal(started.state, 'running');
+  assert.equal(Number.isSafeInteger(started.leaseExpiresAt), true);
+  const shown = JSON.parse((await execute(process.execPath, [cli, 'tasks', 'show', '--state', state, '--id', id])).stdout);
+  assert.equal(shown.leaseExpiresAt, started.leaseExpiresAt);
+  await assert.rejects(execute(process.execPath, [cli, 'tasks', 'reap', '--state', state, '--id', id, ...binding]),
+    error => error.code === 1 && /TASK_LEASE_ACTIVE/.test(error.stderr));
+});

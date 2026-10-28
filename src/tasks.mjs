@@ -9,6 +9,8 @@ const STATES = ['planned', 'running', 'completed', 'failed', 'cancelled', 'inter
 const fail = code => { throw new Error(code); };
 /** Optional operator label: a non-empty string of at most 256 characters. */
 const validOwner = owner => typeof owner === 'string' && owner.length >= 1 && owner.length <= 256;
+/** Lease durations share the approval TTL bounds: safe integer, 1 ms .. 24 h. */
+const validLeaseMs = leaseMs => Number.isSafeInteger(leaseMs) && leaseMs >= 1 && leaseMs <= 86400000;
 
 /** Durable task journal for trusted controllers. Mirrors ApprovalStore's on-disk security discipline. */
 export class TaskStore {
@@ -50,7 +52,8 @@ export class TaskStore {
       || !Number.isSafeInteger(record.attempts) || record.attempts < 0
       || !Number.isSafeInteger(record.createdAt) || !Number.isSafeInteger(record.updatedAt)
       || typeof record.subjectHash !== 'string' || !/^[a-f0-9]{64}$/.test(record.subjectHash)
-      || (record.owner !== undefined && !validOwner(record.owner))) fail('INVALID_TASK_RECORD');
+      || (record.owner !== undefined && !validOwner(record.owner))
+      || (record.leaseExpiresAt !== undefined && !Number.isSafeInteger(record.leaseExpiresAt))) fail('INVALID_TASK_RECORD');
     return record;
   }
   get(id) {
@@ -72,7 +75,7 @@ export class TaskStore {
     }
     return records;
   }
-  transition(id, subject, from, to, { bumpAttempts = false, owner } = {}) {
+  transition(id, subject, from, to, { bumpAttempts = false, owner, lease, guard } = {}) {
     if (owner !== undefined && !validOwner(owner)) fail('INVALID_OWNER');
     const filename = this.file(id), lock = `${filename}.lock`;
     try { fs.mkdirSync(lock, { mode: 0o700 }); } catch { fail('TASK_BUSY'); }
@@ -82,9 +85,13 @@ export class TaskStore {
       const record = this.read(id, filename, stat);
       if (record.subjectHash !== subjectDigest(subject)) fail('TASK_BINDING_MISMATCH');
       if (!from.includes(record.state)) fail('TASK_WRONG_STATE');
+      if (guard !== undefined) guard(record);
       const next = { ...record, state: to, updatedAt: this.now() };
       if (bumpAttempts) next.attempts = record.attempts + 1;
       if (owner !== undefined) next.owner = owner;
+      // lease: a number arms leaseExpiresAt, null clears it, undefined leaves it untouched.
+      if (lease === null) delete next.leaseExpiresAt;
+      else if (lease !== undefined) next.leaseExpiresAt = lease;
       const temp = `${filename}.${randomUUID()}.tmp`;
       try {
         fs.writeFileSync(temp, JSON.stringify(next) + '\n', { flag: 'wx', mode: 0o600 });
@@ -93,10 +100,37 @@ export class TaskStore {
       return Object.freeze(next);
     } finally { fs.rmdirSync(lock); }
   }
-  start(id, subject, { owner } = {}) { return this.transition(id, subject, ['planned', 'interrupted'], 'running', { bumpAttempts: true, owner }); }
-  resume(id, subject) { return this.transition(id, subject, ['interrupted'], 'running', { bumpAttempts: true }); }
-  complete(id, subject) { return this.transition(id, subject, ['running'], 'completed'); }
-  fail(id, subject) { return this.transition(id, subject, ['running'], 'failed'); }
-  cancel(id, subject) { return this.transition(id, subject, ['planned', 'running', 'interrupted'], 'cancelled'); }
-  interrupt(id, subject) { return this.transition(id, subject, ['running'], 'interrupted'); }
+  start(id, subject, { owner, leaseMs } = {}) {
+    if (leaseMs !== undefined && !validLeaseMs(leaseMs)) fail('INVALID_LEASE');
+    // Entering running leaseless clears any stale lease: "omitted" constrains the
+    // resulting record, so a leaseless start/resume can never be phantom-reaped.
+    return this.transition(id, subject, ['planned', 'interrupted'], 'running',
+      { bumpAttempts: true, owner, lease: leaseMs === undefined ? null : this.now() + leaseMs });
+  }
+  resume(id, subject, { leaseMs } = {}) {
+    if (leaseMs !== undefined && !validLeaseMs(leaseMs)) fail('INVALID_LEASE');
+    return this.transition(id, subject, ['interrupted'], 'running',
+      { bumpAttempts: true, lease: leaseMs === undefined ? null : this.now() + leaseMs });
+  }
+  // Liveness is proven by the call itself: an expired-but-present lease may still be
+  // extended (GC lag); a leaseless record may not invent one, and a reaped task fails
+  // the from-state check above.
+  heartbeat(id, subject, { leaseMs } = {}) {
+    if (!validLeaseMs(leaseMs)) fail('INVALID_LEASE');
+    return this.transition(id, subject, ['running'], 'running',
+      { lease: this.now() + leaseMs, guard: record => { if (record.leaseExpiresAt === undefined) fail('TASK_LEASE_REQUIRED'); } });
+  }
+  // Fail-closed crash proof: only an expired lease is evidence; lease absence is not.
+  reap(id, subject) {
+    return this.transition(id, subject, ['running'], 'interrupted', { lease: null, guard: record => {
+      if (record.leaseExpiresAt === undefined) fail('TASK_LEASE_REQUIRED');
+      if (this.now() < record.leaseExpiresAt) fail('TASK_LEASE_ACTIVE');
+    } });
+  }
+  requeue(id, subject) { return this.transition(id, subject, ['failed'], 'planned', { lease: null }); }
+  // Every path leaving running drops the lease: parked and terminal states carry no expiry claim.
+  complete(id, subject) { return this.transition(id, subject, ['running'], 'completed', { lease: null }); }
+  fail(id, subject) { return this.transition(id, subject, ['running'], 'failed', { lease: null }); }
+  cancel(id, subject) { return this.transition(id, subject, ['planned', 'running', 'interrupted'], 'cancelled', { lease: null }); }
+  interrupt(id, subject) { return this.transition(id, subject, ['running'], 'interrupted', { lease: null }); }
 }
