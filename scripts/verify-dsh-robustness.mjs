@@ -90,7 +90,10 @@ const PROFILE = 'g861rb';
 const GUARD = 'gstack861-guard';
 export const OUTSIDE_CONTENT = 'x';
 export const INSIDE_CONTENT = 'y';
-const fwd = p => p.split(path.sep).join('/');
+// Platform-independent: prompts must embed forward-slash paths even when the
+// caller spells a target windows-style on a POSIX host (path.sep-only splitting
+// left backslashes verbatim and broke the ubuntu CI contract pin).
+const fwd = p => p.split(/[\\/]/).join('/');
 
 function dshInstall() {
   const base = process.env.LOCALAPPDATA ?? path.join(os.homedir(), 'AppData', 'Local');

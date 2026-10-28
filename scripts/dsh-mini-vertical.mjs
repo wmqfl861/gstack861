@@ -93,7 +93,9 @@ const CLI = fileURLToPath(new URL('../bin/gstack861.mjs', import.meta.url));
 const CLI_TIMEOUT_MS = 30000; // journal transitions are sync fs operations
 export const SPEC_TAG = 'G861-SPEC';
 export const IMPL_TAG = 'G861-IMPL';
-const fwd = p => p.split(path.sep).join('/');
+// Same platform-independent convention as verify-dsh-robustness.mjs: both
+// separators normalize to '/' regardless of the host the script runs on.
+const fwd = p => p.split(/[\\/]/).join('/');
 
 // ---------------------------------------------------------------------------
 // Pure helpers (unit-tested offline; no DSH, no key, file writes under a
