@@ -75,7 +75,25 @@ if (args[0] === 'hook') {
   try {
     if (args[0] === 'doctor' && args.length === 1) {
       print({ version, node: process.version, platform: process.platform, baseline: lock(),
-        hosts: { zcode: 'not-host-verified', dsh: 'ship-vertical-verified-single-keyed-runs' },
+        // hosts refresh with batch 16: zcode names the six-stage manual workflow evidence
+        // plus the machine-checkable offline journal harness — deliberately NOT the string
+        // 'host-verified', which stays reserved for controlled-session acceptance.
+        hosts: { zcode: 'workflow-harness-verified-offline', dsh: 'ship-and-recovery-vertical-verified-single-keyed-runs' },
+        // Machine-readable inventory of every verification/workflow script: keyed means the
+        // script refuses to run without DEEPSEEK_API_KEY (exit 2 BLOCKED); statuses restate
+        // VERIFICATION rounds without upgrading any claim to host_verified/full-parity.
+        verticals: {
+          'verify-dsh-guard': { keyed: true, status: 'deny-verified (2026-10-27)', evidence: 'docs/verification-2026-10-27-dsh-pipeline.md' },
+          'verify-dsh-skills': { keyed: false, status: 'keyless-by-design; activation-verified 3 controls (batch 10b)', evidence: 'docs/verification-2026-10-27-batch10b.json' },
+          'verify-dsh-vertical': { keyed: true, status: 'skills-runtime+allow-path verified (2026-10-27)', evidence: 'docs/verification-2026-10-27-dsh-vertical.md' },
+          'verify-dsh-robustness': { keyed: true, status: 'deny->allow consistency verified (2026-10-28)', evidence: 'docs/verification-2026-10-28-dsh-robustness-vertical.md' },
+          'verify-model-review': { keyed: false, status: 'five-segment readiness verified (batch 11)', evidence: 'docs/verification-2026-10-27-batch11.json' },
+          'dsh-mini-vertical': { keyed: true, status: 'spec->implement->qa+journaling vertical-verified (2026-10-28; 1 honest fail+fix)', evidence: 'docs/verification-2026-10-28-dsh-robustness-vertical.md' },
+          'dsh-ship-vertical': { keyed: true, status: 'ship+approvals vertical-verified (2026-10-28)', evidence: 'docs/verification-2026-10-28-batch14-dsh-ship.md' },
+          'dsh-recovery-vertical': { keyed: true, status: 'reap->resume recovery vertical-verified (2026-10-28)', evidence: 'docs/verification-2026-10-28-batch16.json' },
+          'zcode-workflow-vertical': { keyed: false, status: 'offline-workflow-journal-harness PASS (2026-10-28)', evidence: 'docs/verification-2026-10-28-batch16.json' },
+          'verify-8dot3': { keyed: false, status: 'manual windows alias probe (round 5; $?-chain artifact honestly noted)', evidence: 'docs/VERIFICATION.md' }
+        },
         networkCalls: 0, modelCalls: 0,
         safety: 'guard-protocol foundation; not an OS sandbox; no full-parity certification',
         // count and evidence update together per batch; the 15 count lands only
