@@ -82,7 +82,7 @@ node bin/gstack861.mjs zcode-config --policy /absolute/private/policy.json
 
 1. ① DSH 管线+纵向+toolRewrites——**全部完成**：deny（第十八轮）+ allow（批次 12）双向真实管线实证；同会话多调用 deny→allow 一致性实证（批次 13）；spec→implement→qa+记账纵向通过（批次 13，含一次诚实失败与修复复跑）；toolRewrites 六短语实装（渲染 diff 23 文件）；**ship 阶段+审批集成纵向通过（批次 14 密钥单次运行：模型写 ship 目录被拒 OUTSIDE_SCOPE、ask 桥审批、控制器特权发布、审批单次消费+重放拒绝）**。见 dsh-pipeline、dsh-vertical 与 dsh-ship 证据。
 2. ② DSH 插件式技能装载——**全部完成**：activation（批次 10b）+ 运行时消费实证（批次 12 密钥任务：模型经注入索引真实读 SKILL.md，逐字输出随机标记）——runtime-consumption-verified (single keyed run)。
-3. ③ ZCode guard 层+自动拾取+容忍度（需受控新会话）。一键生成受控验收包：`node scripts/acceptance-pack.mjs --out DIR`（含装好技能的 fixture 工作区、可加载样例策略、Hook 片段与打印好的验收清单，详见 `--help`）。
+3. ③ ZCode guard 层+自动拾取+容忍度：**拾取半段已 host 级实证（批次 25 无头真实会话：技能发现+Skill 装载标记逐字）**；guard 半段待一次工作区钩子信任手势（精确步骤见 OFFLINE-COMPLETE §一 3b）。一键生成受控验收包：`node scripts/acceptance-pack.mjs --out DIR`（含装好技能的 fixture 工作区、可加载样例策略、Hook 片段与打印好的验收清单，详见 `--help`）。
 4. ④ 宿主内嵌询问/审批 UI 接通（区别于③）。
 5. ⑤ GBrain 真接入（待①②③）。
 6. ⑥ 浏览器 QA/scrape/qa 组（浏览器栈）。

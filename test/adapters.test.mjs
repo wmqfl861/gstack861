@@ -358,7 +358,7 @@ test('doctor makes no claim of host or full-parity certification', () => {
   assert.equal(info.networkCalls, 0); // pinned here for the first time (batch 17)
   assert.equal(info.modelCalls, 0);
 });
-test('doctor verticals inventory lists all ten verification scripts with existing evidence', () => {
+test('doctor verticals inventory lists all eleven verification scripts with existing evidence', () => {
   const child = spawnSync(process.execPath, [cli, 'doctor'], { encoding: 'utf8' });
   assert.equal(child.status, 0);
   const info = JSON.parse(child.stdout);

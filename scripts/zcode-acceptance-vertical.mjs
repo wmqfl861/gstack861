@@ -81,9 +81,11 @@ export function buildGuardPrompt({ outsideTarget, insideTarget }) {
 }
 
 /**
- * Task G verdict. Distinct HOOK_TRUST_PENDING classification: deny absent AND
- * outside file created AND hooksTrustBlocked flag → hooks never ran, NOT a guard
- * failure (zcode 0.17.0 pending_trust; one user trust gesture remains).
+ * Task G verdict (summary-based). HOOK_TRUST_PENDING = file created AND no deny
+ * relayed — the STRONGEST HYPOTHESIS is the trust gate held the hook back (the
+ * documented deny-blocks-write contract); Bash-channel/ran-but-allowed corners are
+ * indistinguishable without host diagnostics. Never classified as a guard failure,
+ * never a PASS.
  */
 export function parseSummary(stdout) { try { return JSON.parse(String(stdout ?? '').trim()); } catch { return null; } }
 
@@ -95,19 +97,17 @@ export function verdictPickup({ summary, markerLine }) {
   return { ok: false, code: 'PICKUP_MARKER_NOT_VERBATIM', reason: 'response did not carry the marker verbatim' };
 }
 
-export function verdictGuard({ events, outsideTarget, insideTarget, outsideExists, denyRelayed, insideContent }) {
-  const target = fwd(outsideTarget);
+export function verdictGuard({ outsideTarget, insideTarget, outsideExists, denyRelayed, insideContent }) {
   if (outsideExists) {
-    // No deny relayed + file created => the hook never ran (trust gate), not a guard failure.
     if (!denyRelayed) {
-      return { ok: false, code: 'HOOK_TRUST_PENDING', reason: 'out-of-scope file created with NO deny relayed — the PreToolUse hook never ran (zcode 0.17.0 workspace-hook trust gate; one-time user trust unlocks the re-run)' };
+      // Strongest hypothesis, not proven equivalence: the documented deny-blocks-write
+      // contract makes an unblocked Write the likely cause (the trust gate held the hook
+      // back). Corners that also land here, indistinguishable without host diagnostics:
+      // an unhooked channel (Bash sits outside the Read|Write|Edit matcher) or a
+      // ran-but-allowed hook. Either way this is NEVER a PASS.
+      return { ok: false, code: 'HOOK_TRUST_PENDING', reason: 'out-of-scope file created with NO deny relayed — strongest hypothesis: the hook never ran (zcode 0.17.0 workspace-hook trust gate); Bash-channel / ran-but-allowed corners not distinguishable without host diagnostics' };
     }
     return { ok: false, code: 'OUTSIDE_FILE_CREATED', reason: 'deny was relayed yet the file exists — guard failure' };
-    if (hooksTrustBlocked) {
-      return { ok: false, code: 'HOOK_TRUST_PENDING',
-        reason: `the out-of-scope file WAS created and the session diagnostics show workspace hooks blocked pending trust — the hook NEVER RAN; this is the trust gate, not a guard failure. One-time user trust of the fixture workspace (real client) unlocks the re-run.` };
-    }
-    return { ok: false, code: 'OUTSIDE_FILE_CREATED', reason: `the out-of-scope file was created with hooks apparently runnable — guard did not block` };
   }
   if (!denyRelayed) return { ok: false, code: 'DENY_NOT_RELAYED', reason: 'no gstack861:OUTSIDE_SCOPE in the session response (file absent, but the deny observation is missing)' };
   if (!fs.existsSync(insideTarget)) return { ok: false, code: 'ALLOW_FILE_MISSING', reason: insideTarget };
@@ -115,19 +115,9 @@ export function verdictGuard({ events, outsideTarget, insideTarget, outsideExist
   return { ok: true, code: 'PASS', reason: 'deny relayed + out-of-scope file absent + in-scope file exact — consistent through the real PreToolUse hook in a real spawned session' };
 }
 
-/** Parse the --json stream: one JSON object per line (tolerate noise/tool_input_* deltas). */
-export function parseStream(text) {
-  const events = [];
-  for (const line of String(text ?? '').split(/\r?\n/)) {
-    const trimmed = line.trim();
-    if (!trimmed.startsWith('{')) continue;
-    try {
-      const event = JSON.parse(trimmed);
-      if (event && typeof event === 'object' && typeof event.type === 'string') events.push(event);
-    } catch { /* noise */ }
-  }
-  return events;
-}
+// (The --json output is a FINAL summary object, not a per-event stream — the
+// per-line parser from the first draft was removed at the result review; the
+// summary carries sessionId/response/usage and the verdicts are summary-based.)
 
 /** tasks CLI vector for host 'zcode' (the dsh helpers hardcode --host dsh). */
 export function zcodeTasksArgs({ sub, stateDir, sessionId, runId, policyHash, actionFile, id }) {
@@ -167,8 +157,14 @@ async function main() {
   try {
     console.log('zcode-acceptance-vertical: key present — ③ acceptance via real headless spawns (3 paid calls: smoke + pickup + guard).');
     console.log('[0/4] zero-cost probes: acceptance-pack, marker skill, skills list --cwd, hook stdin probes...');
-    const out = fs.mkdtempSync(path.join(os.tmpdir(), 'g')); // 1-char prefix: prompt budget
-    spawnSync(process.execPath, [path.join(repoRoot, 'scripts/acceptance-pack.mjs'), '--out', path.join(out, 'pack')], { encoding: 'utf8', timeout: 120000 });
+    // --pack-root ABS_DIR: reuse a STABLE pack so the one-time client trust of that
+    // workspace's hook can carry across re-runs (workspaces survive); default = throwaway.
+    const packRootFlag = process.argv.indexOf('--pack-root');
+    const reusePack = packRootFlag >= 0;
+    const out = reusePack ? path.resolve(process.argv[packRootFlag + 1]) : fs.mkdtempSync(path.join(os.tmpdir(), 'g'));
+    if (!fs.existsSync(path.join(out, 'pack', 'workspace'))) {
+      spawnSync(process.execPath, [path.join(repoRoot, 'scripts/acceptance-pack.mjs'), '--out', path.join(out, 'pack')], { encoding: 'utf8', timeout: 120000 });
+    }
     const packDir = path.join(out, 'pack');
     const workspace = path.join(packDir, 'workspace');
     pack = { root: out, packDir, workspace, policyPath: path.join(packDir, 'policy.json') };
@@ -219,7 +215,8 @@ async function main() {
     const closeTask = (name, outcome, state) => run(zcodeTasksArgs({ ...subject, sub: outcome, id: journal[name] }), `${outcome} ${name}`, r => r?.state === state);
 
     console.log('[1/4] keyed SMOKE (1 paid call): one in-scope Read through a real session — pins auth + summary shape...');
-    const smoke = spawn(['--prompt', 'Read the file src/notes.md in this workspace and reply with exactly: OK', '--cwd', workspace, '--mode', 'yolo', '--json', '--no-color']);
+    const smokePrompt = checkPromptCap('Read the file src/notes.md in this workspace and reply with exactly: OK', 'zcode-smoke');
+    const smoke = spawn(['--prompt', smokePrompt, '--cwd', workspace, '--mode', 'yolo', '--json', '--no-color']);
     console.log(`      exit=${smoke.status}`);
     const smokeSummary = parseSummary(smoke.stdout);
     console.log(`      summary: sessionId=${smokeSummary?.sessionId?.slice(0, 12) ?? '(none)'} response=${JSON.stringify(smokeSummary?.response ?? null)} usage.total=${smokeSummary?.usage?.totalTokens ?? '?'}`);
@@ -266,9 +263,11 @@ async function main() {
     console.log(`RESULT: FAILURE — ${error.message}`);
     process.exitCode = 1;
   } finally {
-    if (pack?.root) {
+    if (pack?.root && !reusePack) {
       fs.rmSync(pack.root, { recursive: true, force: true });
       console.log(`cleanup: removed ${pack.root}`);
+    } else if (pack?.root) {
+      console.log(`pack kept for trust reuse: ${pack.root}/pack (re-run with --pack-root ${pack.root} after trusting its workspace hook in the real client)`);
     }
   }
 }

@@ -28,7 +28,7 @@
 - **触发后做什么**：FEATURE_MATRIX「独立模型复核」行 mechanism-ready → runtime 升级评估；真实模型质量对等（第三节末项）随之具备两前提之一。
 
 ### 3. ④ 宿主内嵌询问/审批 UI + ⑩⑪宿主内执行器中断/子 Agent 接线：需宿主侧会话/API（同③触发场景）。
-3b. **③-guard 残余（批次 25 新增，一次手势）**：在真实 ZCode 客户端打开任一 batch-25 验收包工作区（或重跑 ZCODE_ACCEPTANCE_KEY=1 node scripts/zcode-acceptance-vertical.mjs 前先对该工作区确认钩子信任——0.17.0 工作区钩子 pending_trust 阻断且无头无授权路径），确认一次即持久；随后重跑脚本，guard 双向段应全绿。
+3b. **③-guard 残余（批次 25 新增，一次手势+一次复跑）**：zcode 0.17.0 工作区钩子 pending_trust 阻断且无头无授权路径。步骤：(1) `ZCODE_ACCEPTANCE_KEY=1 node scripts/zcode-acceptance-vertical.mjs --pack-root <稳定目录>`（--pack-root 使验收包跨运行保留）；(2) 在真实 ZCode 客户端打开 <稳定目录>/pack/workspace 并按提示确认该工作区钩子信任（信任跨运行持久性未验证——若信任绑定命令参数中的临时策略路径则可能不迁移，如实 caveat）；(3) 同命令复跑，guard 双向段应转全绿。已完成半段：技能发现+Skill 装载 host 级实证（批次 25，无头真实会话）。
 
 - **是什么**：宿主进程内的询问/审批 UI 接通（区别于已接通的操作员 CLI `approvals ask`）；宿主内执行器中断源、子 Agent 继承与恢复接线（README 边界④⑩）。
 - **为什么需要你**：事件源在宿主进程内（宿主侧会话/API），仓库代码无法自行产生。
