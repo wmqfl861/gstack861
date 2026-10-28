@@ -8,9 +8,10 @@
 // helpers the scanner leans on — containedRelative / globToRegExp /
 // matchesAny (upstream lines 190-227) — were inlined here since the b20
 // port and are lifted into the shared src/ship-policy.mjs as of batch 23;
-// this bin now imports them (behavior-preserving refactor, the 29 tests
-// below are the regression gate). One standalone zero-dependency Node
-// executable apart from that intra-repo import.
+// resolveBaseBranch follows it in batch 24; this bin now imports all four
+// (behavior-preserving refactor, the 29 tests below are the regression
+// gate). One standalone zero-dependency Node executable apart from that
+// intra-repo import.
 //
 // CLI (upstream shape):
 //   gstack861-banned-terms.mjs [check] [--base <ref>] [--diff-base <sha>] [--files <csv>] [--policy-from base|head] [--json]
@@ -106,11 +107,11 @@
 import { spawnSync } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-// The three shared ship-policy helpers, lifted (batch 23) from their b20
-// inlining here into src/ship-policy.mjs — re-exported so this bin's module
-// surface (and the divergence-4 ledger) is unchanged.
-import { containedRelative, globToRegExp, matchesAny } from '../src/ship-policy.mjs';
-export { containedRelative, globToRegExp, matchesAny };
+// The four shared ship-policy helpers, lifted (batch 23 / batch 24) from
+// their b20 inlining here into src/ship-policy.mjs — re-exported so this
+// bin's module surface (and the divergence-4 ledger) is unchanged.
+import { containedRelative, globToRegExp, matchesAny, resolveBaseBranch } from '../src/ship-policy.mjs';
+export { containedRelative, globToRegExp, matchesAny, resolveBaseBranch };
 
 const BANNED_TERMS_PATH = '.gstack/banned-terms.json';
 const BANNED_TERMS_SCHEMA = 'https://github.com/garrytan/gstack/docs/ship-policy.md#banned-terms';
@@ -121,25 +122,10 @@ const EXIT = { ok: 0, fail: 1, usage: 2, refused: 3 }; // headless-artifacts.ts 
 const EXIT_TABLE_HELP = 'Exit codes: 0 ok · 1 fail · 2 usage · 3 refused or needs a flag'; // headless-artifacts.ts line 104, verbatim
 
 // ---------------------------------------------------------------------------
-// ship-policy.ts resolveBaseBranch (upstream lines 420-431)
-// ---------------------------------------------------------------------------
-
-function git30(repoRoot, args) {
-  const r = spawnSync('git', args, { cwd: repoRoot, encoding: 'utf8', timeout: 30_000 });
-  return { ok: r.status === 0, out: (r.stdout ?? '').trim() };
-}
-
-/** `--base` when given, else origin/HEAD's branch, else `main`. */
-export function resolveBaseBranch(repoRoot, explicit) {
-  if (explicit && explicit.trim()) return explicit.trim().replace(/^origin\//, '');
-  const r = git30(repoRoot, ['symbolic-ref', '--quiet', '--short', 'refs/remotes/origin/HEAD']);
-  if (r.ok && r.out) return r.out.replace(/^origin\//, '');
-  return 'main';
-}
-
-// ---------------------------------------------------------------------------
 // lib/banned-terms.ts (upstream-exact)
 // ---------------------------------------------------------------------------
+// resolveBaseBranch (the former upstream lines 420-431 section, inlined here
+// since b20) moved to src/ship-policy.mjs in batch 24 — imported above.
 
 export function exampleBannedTermsJson() {
   return JSON.stringify({
