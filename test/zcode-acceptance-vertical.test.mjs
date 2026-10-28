@@ -15,7 +15,7 @@ import { fileURLToPath } from 'node:url';
 import { checkPromptCap } from '../scripts/verify-dsh-robustness.mjs';
 import {
   markerSkillDir, buildMarkerLine, writeMarkerSkill, mergeHookConfig,
-  buildPickupPrompt, buildGuardPrompt, verdictGuard, parseStream, zcodeTasksArgs,
+  buildPickupPrompt, buildGuardPrompt, verdictPickup, verdictGuard, parseSummary, zcodeTasksArgs,
 } from '../scripts/zcode-acceptance-vertical.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -69,40 +69,42 @@ test('prompts: pickup pins the Skill tool; guard is the two-write do-both patter
   checkPromptCap(guard, 'zcode-guard');
 });
 
-test('verdictGuard: PASS shape; HOOK_TRUST_PENDING never classified as a guard failure', (t) => {
+test('verdictPickup: marker verbatim in the summary response, zero guard codes', () => {
+  const line = buildMarkerLine();
+  assert.equal(verdictPickup({ summary: { response: `intro\n${line}\ntail` }, markerLine: line }).code, 'PASS');
+  assert.equal(verdictPickup({ summary: { response: 'no marker' }, markerLine: line }).code, 'PICKUP_MARKER_NOT_VERBATIM');
+  assert.equal(verdictPickup({ summary: { response: `${line} gstack861:OUTSIDE_SCOPE` }, markerLine: line }).code, 'PICKUP_MARKER_NOT_VERBATIM');
+  assert.equal(verdictPickup({ summary: null, markerLine: line }).code, 'PICKUP_MARKER_NOT_VERBATIM');
+});
+
+test('verdictGuard (summary-based): PASS; HOOK_TRUST_PENDING never classified as a guard failure', (t) => {
   const root = base(t);
   const outside = path.join(root, 'outside.txt');
   const inside = path.join(root, 'src', 'ok.txt');
-  const events = [
-    { type: 'tool_call', tool: 'Write', input: { file_path: outside, content: 'z' } },
-    { type: 'tool_result', status: 'error', result: 'Error: gstack861:OUTSIDE_SCOPE' },
-    { type: 'tool_call', tool: 'Write', input: { file_path: inside, content: 'y' } },
-    { type: 'tool_result', status: 'completed', result: 'ok' },
-  ];
   fs.mkdirSync(path.dirname(inside), { recursive: true });
   fs.writeFileSync(inside, 'y');
-  assert.equal(verdictGuard({ events, outsideTarget: outside, insideTarget: inside, outsideExists: false, hooksTrustBlocked: false }).code, 'PASS');
-  // Outside created + trust blocked → HOOK_TRUST_PENDING (the trust gate, not the guard).
-  assert.equal(verdictGuard({ events, outsideTarget: outside, insideTarget: inside, outsideExists: true, hooksTrustBlocked: true }).code, 'HOOK_TRUST_PENDING');
-  // Outside created + hooks apparently runnable → the real guard failure.
-  assert.equal(verdictGuard({ events, outsideTarget: outside, insideTarget: inside, outsideExists: true, hooksTrustBlocked: false }).code, 'OUTSIDE_FILE_CREATED');
-  // Count/target/file shapes.
-  assert.equal(verdictGuard({ events: events.slice(0, 2), outsideTarget: outside, insideTarget: inside, outsideExists: false }).code, 'CALL_COUNT_WRONG');
-  assert.equal(verdictGuard({ events: [{ ...events[0], input: { file_path: path.join(root, 'elsewhere.txt') } }, events[1], events[2], events[3]], outsideTarget: outside, insideTarget: inside, outsideExists: false }).code, 'WRONG_TARGET');
+  const args = { outsideTarget: outside, insideTarget: inside };
+  // PASS: deny relayed + outside absent + inside exact.
+  assert.equal(verdictGuard({ ...args, outsideExists: false, denyRelayed: true }).code, 'PASS');
+  // Outside created + NO deny relayed → the hook never ran (trust gate), NOT a guard failure.
+  assert.equal(verdictGuard({ ...args, outsideExists: true, denyRelayed: false }).code, 'HOOK_TRUST_PENDING');
+  // Outside created + deny relayed → the real guard failure.
+  assert.equal(verdictGuard({ ...args, outsideExists: true, denyRelayed: true }).code, 'OUTSIDE_FILE_CREATED');
+  // Deny missing with file absent → observation missing.
+  assert.equal(verdictGuard({ ...args, outsideExists: false, denyRelayed: false }).code, 'DENY_NOT_RELAYED');
   fs.rmSync(inside);
-  assert.equal(verdictGuard({ events, outsideTarget: outside, insideTarget: inside, outsideExists: false }).code, 'ALLOW_FILE_MISSING');
+  assert.equal(verdictGuard({ ...args, outsideExists: false, denyRelayed: true }).code, 'ALLOW_FILE_MISSING');
+  fs.writeFileSync(path.dirname(inside) && (() => { fs.mkdirSync(path.dirname(inside), { recursive: true }); return inside; })(), 'wrong');
+  assert.equal(verdictGuard({ ...args, outsideExists: false, denyRelayed: true }).code, 'ALLOW_CONTENT_MISMATCH');
 });
 
-test('parseStream extracts typed JSON lines and tolerates noise + tool_input deltas', () => {
-  const events = parseStream([
-    'noise',
-    '{"type":"tool_input_start","id":"x"}',
-    '{"type":"tool_call","tool":"Write","input":{"file_path":"C:/t/a.txt"}}',
-    '{"type":"tool_result","status":"error","result":"Error: gstack861:OUTSIDE_SCOPE"}',
-    'not { json',
-  ].join('\n'));
-  assert.deepEqual(events.map(e => e.type), ['tool_input_start', 'tool_call', 'tool_result']);
-  assert.deepEqual(parseStream(''), []);
+test('parseSummary: the --json FINAL summary object (observed live: sessionId/response/usage)', () => {
+  const summary = parseSummary(`{"sessionId":"sess_x","response":"OK","usage":{"totalTokens":1},"eventCount":209}\n`);
+  assert.equal(summary.sessionId, 'sess_x');
+  assert.equal(summary.response, 'OK');
+  assert.equal(summary.eventCount, 209);
+  assert.equal(parseSummary('not json'), null);
+  assert.equal(parseSummary(''), null);
 });
 
 test('zcodeTasksArgs: host=zcode subject block, --id only on non-create', () => {

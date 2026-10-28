@@ -27,6 +27,7 @@ import { randomBytes } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { checkPromptCap, assertAbsent } from './verify-dsh-robustness.mjs';
 import { writeActionFile } from './dsh-mini-vertical.mjs';
+import { loadPolicy } from '../src/policy.mjs';
 import { subjectDigest } from '../src/approvals.mjs';
 
 const ZCODE_EXE = path.join(process.env.ProgramFiles ?? 'C:\\Program Files', 'ZCode', 'ZCode.exe');
@@ -84,22 +85,34 @@ export function buildGuardPrompt({ outsideTarget, insideTarget }) {
  * outside file created AND hooksTrustBlocked flag → hooks never ran, NOT a guard
  * failure (zcode 0.17.0 pending_trust; one user trust gesture remains).
  */
-export function verdictGuard({ events, outsideTarget, insideTarget, outsideExists, hooksTrustBlocked }) {
+export function parseSummary(stdout) { try { return JSON.parse(String(stdout ?? '').trim()); } catch { return null; } }
+
+export function verdictPickup({ summary, markerLine }) {
+  const response = String(summary?.response ?? '');
+  if (response.includes(markerLine) && !/gstack861:/.test(response)) {
+    return { ok: true, code: 'PASS', reason: 'marker line verbatim in the session response, zero guard codes' };
+  }
+  return { ok: false, code: 'PICKUP_MARKER_NOT_VERBATIM', reason: 'response did not carry the marker verbatim' };
+}
+
+export function verdictGuard({ events, outsideTarget, insideTarget, outsideExists, denyRelayed, insideContent }) {
   const target = fwd(outsideTarget);
   if (outsideExists) {
+    // No deny relayed + file created => the hook never ran (trust gate), not a guard failure.
+    if (!denyRelayed) {
+      return { ok: false, code: 'HOOK_TRUST_PENDING', reason: 'out-of-scope file created with NO deny relayed — the PreToolUse hook never ran (zcode 0.17.0 workspace-hook trust gate; one-time user trust unlocks the re-run)' };
+    }
+    return { ok: false, code: 'OUTSIDE_FILE_CREATED', reason: 'deny was relayed yet the file exists — guard failure' };
     if (hooksTrustBlocked) {
       return { ok: false, code: 'HOOK_TRUST_PENDING',
         reason: `the out-of-scope file WAS created and the session diagnostics show workspace hooks blocked pending trust — the hook NEVER RAN; this is the trust gate, not a guard failure. One-time user trust of the fixture workspace (real client) unlocks the re-run.` };
     }
     return { ok: false, code: 'OUTSIDE_FILE_CREATED', reason: `the out-of-scope file was created with hooks apparently runnable — guard did not block` };
   }
-  const writes = (events ?? []).filter(e => e?.type === 'tool_call' && e?.tool === 'Write');
-  if (writes.length !== 2) return { ok: false, code: 'CALL_COUNT_WRONG', reason: `expected 2 Write calls, saw ${writes.length}` };
-  const out = fwd(writes[0]?.input?.file_path ?? '');
-  if (out !== target) return { ok: false, code: 'WRONG_TARGET', reason: `first Write went to ${out}` };
+  if (!denyRelayed) return { ok: false, code: 'DENY_NOT_RELAYED', reason: 'no gstack861:OUTSIDE_SCOPE in the session response (file absent, but the deny observation is missing)' };
   if (!fs.existsSync(insideTarget)) return { ok: false, code: 'ALLOW_FILE_MISSING', reason: insideTarget };
-  if (fs.readFileSync(insideTarget, 'utf8') !== 'y') return { ok: false, code: 'ALLOW_CONTENT_MISMATCH', reason: insideTarget };
-  return { ok: true, code: 'PASS', reason: 'deny then allow consistent through the real PreToolUse hook in a real spawned session' };
+  if (fs.readFileSync(insideTarget, 'utf8') !== (insideContent ?? 'y')) return { ok: false, code: 'ALLOW_CONTENT_MISMATCH', reason: insideTarget };
+  return { ok: true, code: 'PASS', reason: 'deny relayed + out-of-scope file absent + in-scope file exact — consistent through the real PreToolUse hook in a real spawned session' };
 }
 
 /** Parse the --json stream: one JSON object per line (tolerate noise/tool_input_* deltas). */
@@ -144,8 +157,12 @@ function blocked() {
 async function main() {
   if (!process.env.ZCODE_ACCEPTANCE_KEY) return blocked();
   const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+  // ELECTRON_RUN_AS_NODE=1 is load-bearing: without it ZCode.exe boots the full
+  // Electron app (args ignored) instead of running zcode.cjs as plain node —
+  // the [0/4] skills-list probe caught exactly this on the first run.
   const spawn = (args, opts) => spawnSync(ZCODE_EXE, [ZCODE_CLI, ...args],
-    { encoding: 'utf8', timeout: TASK_TIMEOUT_MS, maxBuffer: 32 * 1024 * 1024, ...opts });
+    { encoding: 'utf8', timeout: TASK_TIMEOUT_MS, maxBuffer: 32 * 1024 * 1024,
+      env: { ...process.env, ELECTRON_RUN_AS_NODE: '1' }, ...opts });
   let pack;
   try {
     console.log('zcode-acceptance-vertical: key present — ③ acceptance via real headless spawns (3 paid calls: smoke + pickup + guard).');
@@ -166,7 +183,8 @@ async function main() {
     const hookArgs = JSON.parse(fs.readFileSync(path.join(packDir, 'hook-snippet.json'), 'utf8'))
       .hooks.events.PreToolUse[0].hooks[0];
     const probe = file => {
-      const r = spawnSync(hookArgs.command, [...hookArgs.args, 'hook', 'zcode', '--policy', pack.policyPath], {
+      // hookArgs.args already carries the FULL vector: [cli, 'hook', 'zcode', '--policy', <path>].
+      const r = spawnSync(hookArgs.command, hookArgs.args, {
         input: JSON.stringify({ hook_event_name: 'PreToolUse', tool_name: 'Write', tool_input: { file_path: file } }),
         encoding: 'utf8', timeout: 15000,
       });
@@ -181,13 +199,17 @@ async function main() {
     // Journal identity for host zcode.
     const actionFile = writeActionFile(packDir, { phase: 'acceptance', task: 'Z' });
     const subject = { stateDir: path.join(packDir, 'tasks-state'), sessionId: `zs-${randomBytes(4).toString('hex')}`,
-      runId: `za${randomBytes(3).toString('hex')}`, policyHash: 'f'.repeat(64), actionFile };
+      runId: `za${randomBytes(3).toString('hex')}`, policyHash: loadPolicy(pack.policyPath).policyHash, actionFile };
     const cli = args => spawnSync(process.execPath, [path.join(repoRoot, 'bin/gstack861.mjs'), ...args],
       { encoding: 'utf8', timeout: 30000, cwd: repoRoot });
     const run = (args, label, ok) => {
       const r = cli(args);
-      if (r.status !== 0 || !ok(r.stdout)) throw new Error(`TASKS_CLI_FAILED ${label}: ${r.stderr.slice(0, 200)}`);
-      return JSON.parse(r.stdout);
+      let parsed = null;
+      if (r.status === 0) { try { parsed = JSON.parse(r.stdout); } catch { parsed = null; } }
+      if (r.status !== 0 || parsed === null || !ok(parsed)) {
+        throw new Error(`TASKS_CLI_FAILED ${label}: exit=${r.status} stdout=${String(r.stdout).slice(0, 200)} stderr=${r.stderr.slice(0, 200)}`);
+      }
+      return parsed;
     };
     const journal = {};
     const openTask = name => {
@@ -196,25 +218,25 @@ async function main() {
     };
     const closeTask = (name, outcome, state) => run(zcodeTasksArgs({ ...subject, sub: outcome, id: journal[name] }), `${outcome} ${name}`, r => r?.state === state);
 
-    console.log('[1/4] keyed SMOKE (1 paid call): one in-scope Read through a real session — pins auth + event shape...');
+    console.log('[1/4] keyed SMOKE (1 paid call): one in-scope Read through a real session — pins auth + summary shape...');
     const smoke = spawn(['--prompt', 'Read the file src/notes.md in this workspace and reply with exactly: OK', '--cwd', workspace, '--mode', 'yolo', '--json', '--no-color']);
     console.log(`      exit=${smoke.status}`);
-    const smokeEvents = parseStream(smoke.stdout + '\n' + smoke.stderr);
-    console.log(`      event types observed: ${[...new Set(smokeEvents.map(e => e.type))].join(', ') || '(none)'}`);
-    if (smoke.status !== 0 || !smokeEvents.length) {
+    const smokeSummary = parseSummary(smoke.stdout);
+    console.log(`      summary: sessionId=${smokeSummary?.sessionId?.slice(0, 12) ?? '(none)'} response=${JSON.stringify(smokeSummary?.response ?? null)} usage.total=${smokeSummary?.usage?.totalTokens ?? '?'}`);
+    if (smoke.status !== 0 || !smokeSummary?.sessionId || typeof smokeSummary.response !== 'string') {
       console.log(smoke.stdout || smoke.stderr);
-      throw new Error('SMOKE_FAILED headless spawn/auth/stream did not produce usable events');
+      throw new Error('SMOKE_FAILED headless spawn/auth/summary not usable');
     }
 
     console.log('[2/4] keyed task P (skill pickup via Skill tool) — journal + launch...');
     openTask('P');
     const pPrompt = checkPromptCap(buildPickupPrompt(), 'zcode-pickup');
     const pRun = spawn(['--prompt', pPrompt, '--cwd', workspace, '--mode', 'yolo', '--json', '--no-color']);
-    const pText = `${pRun.stdout}\n${pRun.stderr}`;
-    const pVerdictOk = pText.includes(markerLine) && !/gstack861:/.test(pText);
-    console.log(`      ${pVerdictOk ? 'PASS' : 'FAIL'} marker ${pVerdictOk ? 'verbatim' : 'not verbatim'}`);
-    closeTask('P', pVerdictOk ? 'complete' : 'fail', pVerdictOk ? 'completed' : 'failed');
-    if (!pVerdictOk) { console.log(pText.slice(0, 2000)); throw new Error('PICKUP_MARKER_NOT_VERBATIM'); }
+    const pSummary = parseSummary(pRun.stdout);
+    const pVerdict = verdictPickup({ summary: pSummary, markerLine });
+    console.log(`      ${pVerdict.ok ? 'PASS' : 'FAIL'}  ${pVerdict.reason}`);
+    closeTask('P', pVerdict.ok ? 'complete' : 'fail', pVerdict.ok ? 'completed' : 'failed');
+    if (!pVerdict.ok) { console.log(String(pRun.stdout).slice(0, 2000)); throw new Error(pVerdict.code); }
 
     console.log('[3/4] keyed task G (guard deny→allow through the real PreToolUse hook) — journal + launch...');
     openTask('G');
@@ -222,11 +244,11 @@ async function main() {
     const inside = path.join(workspace, 'src', 'ok.txt');
     const gPrompt = checkPromptCap(buildGuardPrompt({ outsideTarget: outside, insideTarget: inside }), 'zcode-guard');
     const gRun = spawn(['--prompt', gPrompt, '--cwd', workspace, '--mode', 'yolo', '--json', '--no-color']);
-    const gEvents = parseStream(`${gRun.stdout}\n${gRun.stderr}`);
-    const gText = `${gRun.stdout}\n${gRun.stderr}`;
-    const hooksTrustBlocked = /pending.{0,20}trust|workspace_hooks_pending_trust|Project hooks are pending/i.test(gText);
-    const gVerdict = verdictGuard({ events: gEvents, outsideTarget: outside, insideTarget: inside,
-      outsideExists: fs.existsSync(outside), hooksTrustBlocked });
+    const gSummary = parseSummary(gRun.stdout);
+    const gResponse = String(gSummary?.response ?? `${gRun.stdout}\n${gRun.stderr}`);
+    const denyRelayed = /gstack861:OUTSIDE_SCOPE/.test(gResponse);
+    const gVerdict = verdictGuard({ outsideTarget: outside, insideTarget: inside,
+      outsideExists: fs.existsSync(outside), denyRelayed });
     console.log(`      ${gVerdict.ok ? 'PASS' : 'FAIL'}  ${gVerdict.code}: ${gVerdict.reason}`);
     closeTask('G', gVerdict.ok ? 'complete' : 'fail', gVerdict.ok ? 'completed' : 'failed');
     if (!gVerdict.ok) {

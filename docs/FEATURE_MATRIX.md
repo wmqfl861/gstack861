@@ -17,7 +17,7 @@
 | 自动安装/升级/卸载（宿主级） | planned | planned | ZCode 仅输出配置，不改用户文件；DSH 安装片段需含 system-prompt+tools 闭包（调研结论） |
 | 不可绕过的全宿主安全 | blocked | blocked | 多调用一致性已单次密钥实证（批次 13）；启动失败、工具替换、PTC、子 Agent、Shell/OS 隔离仍待；DSH apply() 抛错仅警告且退出码 0（实测），验收须解析警告 |
 | 相对路径/Session cwd | contract_tested | blocked | ZCode 用事件 cwd；DSH 暂只接受绝对路径（Session cwd 语义与继承待真实宿主事件源——环境受阻） |
-| 技能渲染（上游管线 CI 复用） | rendered-experimental | rendered-experimental | CI 渲染成功（run 40464085183）；0.4.1 起装载链接通：stage-render→install→uninstall 全链实测（多文件技能含 registry 锚定摘要）；0.4.2 fixture 工作区 `.zcode/skills` 装载实测（runbook §2.2/2.3/2.5 回填）；不宣称 conformance/full；新会话自动拾取待用户受控会话解锁 |
+| 技能渲染（上游管线 CI 复用） | rendered-experimental | rendered-experimental | CI 渲染成功（run 40464085183）；0.4.1 起装载链接通：stage-render→install→uninstall 全链实测（多文件技能含 registry 锚定摘要）；0.4.2 fixture 工作区 `.zcode/skills` 装载实测（runbook §2.2/2.3/2.5 回填）；不宣称 conformance/full；新会话拾取：**工作区技能发现+Skill 装载已 host 级实证（批次 25 无头真实会话，标记逐字）**；上下文自动注入/UI 会话仍未验证 |
 | 渲染技能宿主消费 | workflow-evidence | runtime-consumption-verified | 15 例已实证（+context-save/context-restore/diagram/make-pdf——后两者 BLOCKED/降级按其原文如实）：上下文注入消费、方法论遵循、技能自带降级与验证门槛执行（deslop 零候选为门槛正确运转）、语义审查真实拦截（spec flagged）、机制差距如实记录（见五份消费证据文档）；自动拾取未验证，非 host_verified |
 | 原生询问桥 | implemented | implemented | `approvals ask` 阻塞式应答（exit 3 不自动同意）；宿主内嵌 UI 未接通 |
 | 纵向流程（spec→ship） | workflow-harness-verified | ship-vertical-verified | ZCode 侧六阶段+审批+交付曾真实跑通（非 host_verified）；批次 16 增机器可检离线 harness（offline-workflow-journal-harness：六阶段 CLI 记账+review 恢复腿+审批门控 ship+策略腿，零模型调用）；DSH 侧 spec→implement→qa+TaskStore 记账 vertical-verified（批次 13）；ship+审批集成 vertical-verified（批次 14）；**恢复纵向 reap→resume 键控单次运行通过（批次 16：崩溃模拟→收割→恢复→密钥任务终态正确 attempts=2）** |

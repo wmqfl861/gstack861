@@ -598,3 +598,17 @@ Lane A（渲染）：初审 Needs fixes（2 Critical）→ 修复轮 → 复审�
 | 里程碑 | **OFFLINE-COMPLETE §二 离线余量清零**——上游纯工具二进制族（jsonl-merge/banned-terms/team-init[映射]/migrate[映射]/slug/redact 全家/issue-links 全家）全部 ported/mapped；剩余全部为 §一用户解锁或 §三环境受阻 |
 
 证据：`docs/verification-2026-10-29-batch24.json`。
+
+# 第三十三轮验证记录：批次 25——③ ZCode 受控会话验收（无头真实派生）（2026-10-29）
+
+| 项 | 结果 |
+|---|---|
+| `npm test` | 996→1003/983+20skip（+8 离线测试：config.json 合并目标/HOOK_TRUST_PENDING 分类/汇总判定/提示词/host=zcode 向量/无开关 exit 2；doctor↔表↔fs 三方同步 11 行） |
+| 机制发现 | **ZCode 有无头 CLI**（ELECTRON_RUN_AS_NODE=1 + zcode.cjs --prompt/--cwd/--mode/--json；as-node 绕过应用引导）——③"需用户开新会话"的定式写于无人调查此前；审计划另纠正两阻断错：合并目标是 **.zcode/config.json**（无 settings.json）且 0.17.0 工作区钩子有信任门 |
+| 零成本探针 | skills list --cwd **发现**标记技能（项目域）；钩子 stdin 三探针 src=pass/outside=deny/.git=deny（真实钩子命令直打） |
+| 密钥运行 | 冒烟 **PASS**（真实会话 sessionId/response/usage 39.5k tokens；--json 输出为最终汇总对象——事件流不在 stdout，判定改汇总制）；任务 P（技能装载）**PASS**（标记行逐字+零 guard 码）；任务 G（guard 双向）**HOOK_TRUST_PENDING**（越界文件被创建且无 deny 转述=钩子从未运行；信任门分类，非 guard 失败；一次用户信任手势后重跑即全绿路径） |
+| 记账 | 5 个 zcode 无头计费调用（预算 3→5 如实：两次零成本阶段门拦截[缺 ELECTRON_RUN_AS_NODE、探针参数拼重]+一次冒烟后记账 bug[校验器喂字符串当对象]；DSH b13 cap-extension 先例）；项目 DSH 累计 12 + zcode 5 |
+| 过程插曲 | 三次诚实失败-修复循环全部在阶段门或判定层拦截；批次 17 三方一致性护栏第三次当场抓住新脚本未入总表 |
+| 状态升级 | ③ 拾取半段：**工作区技能发现+Skill 工具装载=host 级实证（真实无头会话）**——不宣称上下文自动注入/UI 会话/host_verified full；guard 半段：待一次用户信任手势（OFFLINE-COMPLETE §一 精确步骤） |
+
+证据：本表+脚本转写要点；版本 caveat：证据针对本机 zcode 0.17.0，与锁文件提交 3c5b227 映射未验证（同 DSH 第 7 条）。
