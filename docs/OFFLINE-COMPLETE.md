@@ -61,7 +61,7 @@
 | `gstack-slug` | 880+147+109 | **ported**（批次 21，两段+薄 CLI） | remote-identity 27 向量金样回放；身份解析 v2 缓存零 git spawn；checkpoint 簿记活体上游对照 41/41 原语字节相等；状态根映射 ~/.gstack861（绝不触碰 ~/.gstack） |
 | `gstack-redact` | 341+1075+817（CLI+patterns+引擎） | 扫描核心 **本批完成**（批次 22） | patterns 1075+engine 817 零依赖移植，上游 9 个测试文件向量回放；CLI 扫描路径同批；hook install/uninstall 子命令不在本批——整支 binary 未全量移植，随下行 prepush 批 deferred |
 | `gstack-redact-prepush` | 790+27 | **deferred**（独立批次） | 连带闭包：CLI hook install/uninstall + `lib/fs-utils` mkdirpSync（27 行，随 prepush 批）。特征：pre-push stdin refs 解析、remote..local 增行扫描、新分支 merge-base 回退、删分支跳过、force-push 净新增语义、`GSTACK_REDACT_PREPUSH=skip` 旁路、guardrail 非 enforcement；另依赖 `lib/state-root` 与 `lib/sealed-guard`；上游有 5 个专属测试文件（prepush-{emails,hook,rebase-force-push,scan-range,target}） |
-| `gstack-issue-links` | 202 行 | deferred | 依赖 `gstack-issue-guard` 等上游内部件，待其依赖面审计后定；lib/issue-links.ts 188 行纯分类零导入；闭包边界在 bin 的 gstack-issue-guard/gh 调用——先审 gh 前提 |
+| `gstack-issue-links` | 202+188+98+117 | **ported**（批次 24：lib 纯分类逐字+两 bin+tracker-guard 信封；上游 ship-issue-intent 13 向量+tracker-guard 14 向量适配，gh 缺失极性双腿可测） |
 | `gstack-banned-terms` | 90 行 | **ported**（批次 20 Lane A） | 宿主无关、零依赖 Node 移植为 `bin/gstack861-banned-terms.mjs`（`check|init|validate` 三命令；`.gstack/banned-terms.json` 词表在 diff 新增行扫描 + 允许路径豁免；退出码 0/1/2/3 对齐上游 ok/fail/usage/refused） |
 | `gstack-team-init` | 269 行 | **mapped**（批次 20 Lane B） | Claude 专属面（CLAUDE.md、.claude/settings.json+check-gstack.cjs、vendored 迁移）不逐字移植：映射为 `gstack861 team-init {optional|required} [--root DIR]`——AGENTS.md 段（宿主侧约定[验收项]标注）+ 复用既有 zcode PreToolUse 接线（zcode-config）与 DSH guard profile 指引，不发明新 hook 文件；幂等 grep-skip；`--root` 显式绕过 git（记录在案的映射差异） |
 

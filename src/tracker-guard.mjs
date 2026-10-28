@@ -26,7 +26,7 @@
 //      upstream-identical; the vectors live in test/tracker-guard.test.mjs
 //      (adapted from upstream test/tracker-guard.test.ts).
 //
-// Upstream doc comment (verbatim, lines 1-28) follows:
+// Upstream doc comment (verbatim, lines 1-21) follows:
 //
 //   tracker-guard — trust envelope for tracker text (PR bodies, PR/issue
 //   comments, issue titles) before it enters an agent's context.

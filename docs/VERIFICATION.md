@@ -585,3 +585,16 @@ Lane A（渲染）：初审 Needs fixes（2 Critical）→ 修复轮 → 复审�
 | 密钥用量 | 本批 0；项目累计 12 不变 |
 
 证据：`docs/verification-2026-10-28-batch23.json`。离线余量仅剩 issue-links（202 行，闭包=gh 调用前提待审）。
+
+# 第三十二轮验证记录：批次 24——issue-links 移植，离线余量清零（2026-10-29）
+
+| 项 | 结果 |
+|---|---|
+| `npm test` | 967→996/976+20skip（Lane A +19 库向量[7 bin 副本收尾删除]；Lane B +17 bin 向量；skip 10=win32 shim 结构性带理由+10 既有） |
+| Lane A（c05234b） | `issue-links` 188 逐字（零导入保零导入）+ `tracker-guard` 117（INJECTION_PATTERNS 13 正则内联+账本）+ resolveBaseBranch 提升共享库（banned-terms 三度重构，29 门绿）；上游 ship-issue-intent 5 纯库向量+tracker-guard 7 库向量适配 |
+| Lane B（17eda93） | `gstack861-issue-guard` 98 + `gstack861-issue-links` 202（result-codes 两码含 docs 后缀逐字、EXIT_TABLE_HELP 字节同、guard 子进程 process.execPath 调 .mjs）；8 bin 向量适配（7+1 构造性免 shim）+ gh 缺失极性向量双腿（--issue 降级序列/零 spawn 反断言/--stdin 信封）；shim 类 POSIX 腿、win32 带理由 skip |
+| 独立审查 | 审计划 4 必改（**向量源更正**：上游 ship-issue-intent.test.ts 存在，废弃"自行构造"；INJECTION_PATTERNS 依赖；result-codes 格式；win32 shim 分诊）；审成果 Yes：四文件对上游规范化 diff 仅账本类+7 处前缀改名补账本；活体冒烟逐字匹配计划序列；**7 个过期 skip 副本按建议删除**（skip 只给不能跑的测试，不给覆盖两次的） |
+| 密钥用量 | 本批 0；项目累计 12 不变 |
+| 里程碑 | **OFFLINE-COMPLETE §二 离线余量清零**——上游纯工具二进制族（jsonl-merge/banned-terms/team-init[映射]/migrate[映射]/slug/redact 全家/issue-links 全家）全部 ported/mapped；剩余全部为 §一用户解锁或 §三环境受阻 |
+
+证据：`docs/verification-2026-10-29-batch24.json`。

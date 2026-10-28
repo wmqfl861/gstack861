@@ -42,7 +42,6 @@ const GUARD = path.join(ROOT, 'bin', 'gstack861-issue-guard.mjs');
 // Lane-coordination skip: the guard bin lands in batch 24 LANE B; lane B's
 // own test file re-covers these 7 vectors (the bodies below stay ported and
 // ready for that lift).
-const LANE_B = 'bin/gstack861-issue-guard.mjs lands in batch 24 lane B; lane B\'s test file re-covers this vector';
 
 // ---------------------------------------------------------------------------
 // lib/tracker-guard — 7 tests, fully adapted and running
@@ -104,94 +103,9 @@ test('escapeTrackerSentinels splices both banners', () => {
 });
 
 // ---------------------------------------------------------------------------
-// bin/gstack861-issue-guard — 7 tests, SKIP-WITH-REASON until lane B lands
 // ---------------------------------------------------------------------------
-
-function runGuard(args, input) {
-  const r = spawnSync(process.execPath, [GUARD, ...args], { input, encoding: 'utf8', timeout: 30000 });
-  return { status: r.status ?? 1, stdout: r.stdout ?? '', stderr: r.stderr ?? '' };
-}
-
-// upstream test/helpers/scratch-repo.ts lines 56-66, verbatim shim bodies
-function makeGhShimPath(mode, jsonPayload = '{}') {
-  const shimDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gstack861-gh-shim-'));
-  const body =
-    mode === 'fail'
-      ? '#!/bin/sh\necho "shim: gh failed" >&2\nexit 1\n'
-      : mode === 'garbage'
-        ? '#!/bin/sh\necho "this is not json"\nexit 0\n'
-        : `#!/bin/sh\ncat <<'SHIM_JSON'\n${jsonPayload}\nSHIM_JSON\nexit 0\n`;
-  fs.writeFileSync(path.join(shimDir, 'gh'), body, { mode: 0o755 });
-  return { pathEnv: `${shimDir}:${process.env.PATH ?? ''}`, shimDir };
-}
-
-test('--stdin envelopes piped text with a source label', { skip: LANE_B }, () => {
-  const r = runGuard(['--stdin', '--source', 'unit-test'], 'hello tracker');
-  assert.equal(r.status, 0);
-  assert.ok(r.stdout.includes(`${TRACKER_ENVELOPE_BEGIN} (unit-test)`));
-  assert.ok(r.stdout.includes('hello tracker'));
-});
-
-test('a non-numeric issue argument is rejected before any gh spawn', { skip: LANE_B }, () => {
-  const r = runGuard(['issue', '42; rm -rf /']);
-  assert.notEqual(r.status, 0);
-  assert.ok(r.stderr.includes('numeric'));
-  assert.equal(r.stdout.includes(TRACKER_ENVELOPE_BEGIN), false);
-});
-
-test('gh failure emits NO envelope (never a fake-trusted empty one)', { skip: LANE_B }, (t) => {
-  // A PATH gh shim that exits 1 — the REAL gh-failure branch runs (killing
-  // the whole PATH would kill the shebang before the script ever ran,
-  // which made an earlier version of this test vacuous).
-  const { pathEnv, shimDir } = makeGhShimPath('fail');
-  t.after(() => fs.rmSync(shimDir, { recursive: true, force: true }));
-  const r = spawnSync(process.execPath, [GUARD, 'pr-body'], {
-    encoding: 'utf8',
-    timeout: 30000,
-    env: { ...process.env, PATH: pathEnv },
-  });
-  assert.notEqual(r.status ?? 1, 0);
-  assert.ok(r.stderr.includes('gh pr view failed'));
-  assert.equal((r.stdout ?? '').includes(TRACKER_ENVELOPE_BEGIN), false);
-});
-
-test('issue mode assembles title + body + comments from gh JSON (shimmed)', { skip: LANE_B }, (t) => {
-  const payload = JSON.stringify({
-    title: 'Widget breaks',
-    body: 'It fails on save.',
-    comments: [{ author: { login: 'alice' }, body: 'repro attached' }],
-  });
-  const { pathEnv, shimDir } = makeGhShimPath('json', payload);
-  t.after(() => fs.rmSync(shimDir, { recursive: true, force: true }));
-  const r = spawnSync(process.execPath, [GUARD, 'issue', '42'], { encoding: 'utf8', timeout: 30000, env: { ...process.env, PATH: pathEnv } });
-  assert.equal(r.status, 0);
-  assert.ok(r.stdout.includes(`${TRACKER_ENVELOPE_BEGIN} (issue #42)`));
-  assert.ok(r.stdout.includes('TITLE: Widget breaks'));
-  assert.ok(r.stdout.includes('It fails on save.'));
-  assert.ok(r.stdout.includes('--- comment by alice ---'));
-  assert.ok(r.stdout.includes('repro attached'));
-});
-
-test('pr-body success envelopes the body (shimmed)', { skip: LANE_B }, (t) => {
-  const { pathEnv, shimDir } = makeGhShimPath('json', 'the pr body text');
-  t.after(() => fs.rmSync(shimDir, { recursive: true, force: true }));
-  const r = spawnSync(process.execPath, [GUARD, 'pr-body'], { encoding: 'utf8', timeout: 30000, env: { ...process.env, PATH: pathEnv } });
-  assert.equal(r.status, 0);
-  assert.ok(r.stdout.includes('the pr body text'));
-  assert.ok(r.stdout.includes(TRACKER_ENVELOPE_BEGIN));
-});
-
-test('unparseable gh JSON in issue mode fails with NO envelope (shimmed)', { skip: LANE_B }, (t) => {
-  const { pathEnv, shimDir } = makeGhShimPath('garbage');
-  t.after(() => fs.rmSync(shimDir, { recursive: true, force: true }));
-  const r = spawnSync(process.execPath, [GUARD, 'issue', '42'], { encoding: 'utf8', timeout: 30000, env: { ...process.env, PATH: pathEnv } });
-  assert.notEqual(r.status, 0);
-  assert.ok(r.stderr.includes('unparseable'));
-  assert.equal((r.stdout ?? '').includes(TRACKER_ENVELOPE_BEGIN), false);
-});
-
-test('unknown mode exits non-zero with usage', { skip: LANE_B }, () => {
-  const r = runGuard(['bogus-mode']);
-  assert.notEqual(r.status, 0);
-  assert.ok(r.stderr.includes('usage'));
-});
+// bin/gstack861-issue-guard — bin-level coverage lives in test/tracker-guard-cli.test.mjs
+// (batch 24 lane B: same 7 upstream vectors 1:1, with proper win32 shim skips).
+// The interim skip-with-reason copies from lane A were deleted at closeout per
+// the batch-24 result review (skip-with-reason is for tests that cannot run,
+// not for tests covered twice).
