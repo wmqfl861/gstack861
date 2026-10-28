@@ -10,6 +10,7 @@ import { stageRender } from '../src/stage.mjs';
 import { installSkills, uninstallSkills } from '../src/install.mjs';
 import { ApprovalStore, subjectDigest } from '../src/approvals.mjs';
 import { TaskStore } from '../src/tasks.mjs';
+import { migrateStateFiles } from '../src/migrate.mjs';
 
 const args = process.argv.slice(2);
 const print = value => process.stdout.write(JSON.stringify(value, null, 2) + '\n');
@@ -246,6 +247,13 @@ if (args[0] === 'hook') {
       else if (args[1] === 'heartbeat') print(store.heartbeat(options['--id'], subjectFrom(options), { leaseMs }));
       else if (args[1] === 'resume') print(store.resume(options['--id'], subjectFrom(options), leaseMs === undefined ? {} : { leaseMs }));
       else print(store[args[1]](options['--id'], subjectFrom(options)));
+    } else if (args[0] === 'migrate-state') {
+      const options = flags(args.slice(1), ['--state'], ['--dry-run']);
+      // absolute() refuses a missing or relative --state before anything runs; the
+      // migration itself never creates directories, only renames into an existing one.
+      const report = migrateStateFiles({ stateDir: absolute(options['--state']), dryRun: options['--dry-run'] === true });
+      print(report);
+      if (report.refused.length > 0) process.exitCode = 1;
     } else {
       process.stderr.write('Usage: gstack861 doctor | inventory --upstream PATH | zcode-config --policy ABS_PATH\n'
         + '  generate --upstream PATH --staging DIR --host zcode|dsh\n'
@@ -263,7 +271,8 @@ if (args[0] === 'hook') {
         + '  tasks resume --state DIR --id ID --host H --session S --run R --policy-hash HASH --action-file F [--lease-ms N]\n'
         + '  tasks heartbeat --state DIR --id ID --host H --session S --run R --policy-hash HASH --action-file F --lease-ms N\n'
         + '  tasks reap|requeue|complete|fail|cancel|interrupt --state DIR --id ID --host H --session S --run R --policy-hash HASH --action-file F\n'
-        + '  tasks show --state DIR --id ID | tasks list --state DIR\n');
+        + '  tasks show --state DIR --id ID | tasks list --state DIR\n'
+        + '  migrate-state --state DIR [--dry-run]  (rename 0.3.0 unprefixed <uuid>.json into the prefixed namespaces; refuses instead of guessing)\n');
       process.exitCode = 1;
     }
   } catch (error) {
