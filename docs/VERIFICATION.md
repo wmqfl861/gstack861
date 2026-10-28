@@ -439,3 +439,16 @@ Lane A（渲染）：初审 Needs fixes（2 Critical）→ 修复轮 → 复审�
 | 密钥用量 | 本批 7 任务（上限 4+修复复跑 3，原因如实）；项目累计 10 |
 
 证据：`docs/verification-2026-10-28-dsh-robustness-vertical.md`。安全行「多调用一致性」推进为 single-keyed-run 实证；DSH 纵向 spec→qa+记账 vertical-verified（ship/审批未含，子 Agent/PTC 仍 blocked）。
+
+# 第二十一轮验证记录：批次 13 热修——CI ubuntu 红 → 根因 → 复绿（2026-10-28）
+
+| 项 | 结果 |
+|---|---|
+| 现象 | 8e3459f CI：render-upstream ✓、windows ✓、ubuntu ✗——`dsh-keyed-scripts.test.mjs:65` `windows-style inputs are embedded forward-slash`（Windows 本机过、Linux 失败） |
+| 根因 | 代码缺陷：两脚本 `fwd = p => p.split(path.sep).join('/')` 只归一当前平台分隔符；POSIX 上 `path.sep === '/'`，反斜杠输入原样保留。测试钉的是平台无关合同（与同文件 `normPath` 既有约定一致），helper 不满足——修代码不改测试 |
+| 独立审核 | 单行热修按比例裁剪：计划审核+成果审核合并为一个独立子代理席位（诊断与修复逐点核实、全仓 `path.sep` 同类排查、安全面 FOREIGN_PATH 核验、新旧 fwd 字节级对照），VERDICT approve |
+| 修复 | `verify-dsh-robustness.mjs`/`dsh-mini-vertical.mjs` 两处 fwd 改 `p.split(/[\/]/).join('/')`；测试零改动 |
+| 验证 | 定向 43/43；全量 309/307+2skip 与修复前持平；`check.mjs` 通过；POSIX 语义经正则平台无关直接成立 |
+| 提交 | 621cabf（代码）→ 摘要于最终 HEAD 重算（本提交）→ push → CI 复核 |
+
+同类排查结论（审核代理输出）：其余 `path.sep` 用点（cliArg ×4、acceptance-pack、render-upstream、测试内局部 fwd）均只作用于平台原生路径，双平台行为不变，不属同类缺陷，未改。

@@ -80,13 +80,13 @@
     },
     {
       "path": "bin/gstack861.mjs",
-      "gitBlobSha1": "c0a3a87548f884b94a4efd27043518cbe9c836fe",
-      "sha256": "2d177c4cc9812ea7504950741814d3e7758cb2054c4ce186a7210be4be916ceb"
+      "gitBlobSha1": "b9551eff40d0a70b5c4db045a061dd1b7b3b2311",
+      "sha256": "2d10801340966e1b77c2772a438b00c414ce3278c0be3535a0c0657c757a8688"
     },
     {
       "path": "package.json",
-      "gitBlobSha1": "418acd11bfbd51867290da3f0e58e174c3323bf5",
-      "sha256": "fed08ff718f2e952864ec4b50c25ee7d104f7296da59ce707bb723f19380cc34"
+      "gitBlobSha1": "8d4f3392df3761d8dff37e208540fbd7e8e681f3",
+      "sha256": "0cd61d8294dde055ea129e95d863edff9498bf2b74e1ddfff2ada028e5fef18d"
     },
     {
       "path": "scripts/check.mjs",
@@ -140,8 +140,8 @@
     },
     {
       "path": "test/adapters.test.mjs",
-      "gitBlobSha1": "4754cd28fc40f0dc6f95c1c8b916abf1850ae928",
-      "sha256": "c74dddadd707696e0330576a25c04a3280b28318b18fe387c94903e58c5ad1b4"
+      "gitBlobSha1": "64da77ab7437b2b310cf2e7aa15dbe14eb467961",
+      "sha256": "31b0a279560155e7d24d474a693c96fe6ae1bb1b6d89158cf97038b519d2dc12"
     },
     {
       "path": "test/approvals.test.mjs",
