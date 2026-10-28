@@ -18,7 +18,8 @@ function repo(t) {
   const root = path.join(base, 'project');
   fs.mkdirSync(root);
   const git = (...args) => execFileSync('git', ['-C', root, ...args], { encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }).trim();
-  git('init', '--initial-branch=main');
+  // git <2.28 rejects --initial-branch; fall back to renaming the unborn HEAD.
+  try { git('init', '--initial-branch=main'); } catch { git('init'); git('symbolic-ref', 'HEAD', 'refs/heads/main'); }
   fs.writeFileSync(path.join(root, 'README.md'), 'fixture\n');
   git('add', '.');
   git('-c', 'user.name=gstack861 test', '-c', 'user.email=test@example.invalid', '-c', 'commit.gpgsign=false', 'commit', '-m', 'fixture');

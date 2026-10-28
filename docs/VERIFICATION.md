@@ -532,3 +532,16 @@ Lane A（渲染）：初审 Needs fixes（2 Critical）→ 修复轮 → 复审�
 | 独立审查 | 审计划 4 必改（空行丢弃/ts 别名/两群键/ENOENT）全部落实；审成果 with-fixes：**差异账本双向纠错**——CRLF 行为非 upstream-exact（上游 python 文本模式剥 \r，本移植字节导向保留 \r，记为分歧 5）；空串 ts（`??` vs `or`）与顶层数组护栏（上游崩溃退出 vs 本移植哈希群排序）两处真实分歧补记 6/7；UTF-8 边缘记 8。账本已修正后落盘。README 0.3.1 段落同步（人工改名→提供 migrate-state） |
 
 证据：`docs/verification-2026-10-28-batch19.json`。诚实边界：merge driver 与 GBrain（⑤）的集成未发生（无消费方）；migrate-state 针对的 0.3.0 记录在真实部署中不存在（债务是文档性的，工具按形状防御性实现并全矩阵测试）。
+
+# 第二十八轮验证记录：批次 20——banned-terms 移植 + team-init 原生映射（2026-10-28）
+
+| 项 | 结果 |
+|---|---|
+| `npm test` | 389→426/421+5skip（Lane A +29 banned-terms 真实 git fixture 测试；Lane B +8 team-init 测试） |
+| banned-terms 移植（Lane A） | 上游 bin+lib+ship-policy 助手零依赖移植；审计划 4 必改全落地（policy 默认读 base 提交副本+bin 层回退/配置自豁免/退出码全矩阵 0-3 含 refused≠ask 账本注记/base 链静默回退 main）；termRegExp 四规则、addedLines/wholeFiles、render/--json 逐字；5 条差异入账本；**成果审查逐函数语义比对零未记账分歧**，6 项必改逐一活体复现。Lane 开发如实记录 5 处"工具对、预期错"的测试修正 |
+| team-init 映射（Lane B） | Claude 专属表面（CLAUDE.md/check-gstack.cjs/.claude/settings/vendored 迁移/git-commit 尾块）映射为 AGENTS.md（宿主侧约定[验收项]标注，仓库不断言）+ 既有 zcode hook/DSH guard 入口（接线命令逐字钉死）；映射表入头注释；幂等（跨模式）；纯度测试钉死零 Claude 字样 |
+| 大件评估 | OFFLINE-COMPLETE §二：deferred 5→3（slug 行按审查重写=身份 slug 解析器+checkpoint 簿记非 TUI；redact 补 fs-utils 依赖；issue-links 补闭包边界=bin 的 issue-guard/gh 调用） |
+| 密钥用量 | 本批 0；项目累计 12 不变 |
+| 独立审查 | 审计划 6 必改（policy 源默认/自豁免/退出矩阵/base 链/slug 特征证伪/AGENTS.md 出处）全部落实；审成果 Yes（逐函数比对+活体 fixture，git<2.28 回退 Minor 已补） |
+
+证据：`docs/verification-2026-10-28-batch20.json`。过程插曲如实记录：批次中段子代理配额受限一次，恢复后重跑计划审查席（结论不受影响，席位完整）。
