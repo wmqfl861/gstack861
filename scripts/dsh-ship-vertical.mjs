@@ -9,7 +9,9 @@
 //     jurisdiction) after shipGate passes
 //   → approval is consumed exactly once (replay refused)
 //   → task D is journaled create→start→completed|failed against the real
-//     policy hash, with every abort path still terminal-correct.
+//     policy hash. Every VERDICT-driven abort (including SHIP_FILE_LEAKED)
+//     journals the terminal transition first; only a journal-CLI failure itself
+//     (local fs, exercised earlier in the run) could exit non-terminal.
 //
 // The controller authors w/s/impl.mjs itself as the stand-in for phases A–C
 // (proven in batch 13); this batch's keyed budget is spent ONLY on the
@@ -293,7 +295,9 @@ async function main() {
     }
 
     console.log('[5/6] privileged publish: shipGate on the on-disk approval state → controller copy (wx, byte-verified) → consume → NEGATIVE replay consume...');
-    const gateSource = JSON.parse(runCli(subjectArgs({ sub: 'show' }), { cwd: repoRoot }).stdout);
+    const gateShow = runCli(subjectArgs({ sub: 'show' }), { cwd: repoRoot });
+    cliExpect(gateShow, 'show for gate', run => typeof JSON.parse(run.stdout)?.state === 'string');
+    const gateSource = JSON.parse(gateShow.stdout);
     const gate = shipGate(gateSource.state);
     console.log(`      shipGate(${gateSource.state}) -> ${gate.code}`);
     const ship = controllerShip({ gate, from: prepared.implPath, to: prepared.shipTarget });

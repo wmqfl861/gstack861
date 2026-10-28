@@ -86,3 +86,7 @@
 - 真实部署/监控交付（FEATURE_MATRIX 第 28 行右列，M3+）。
 - DSH 宿主内嵌审批 UI（边界 ④）。
 - 子代理/PTC 恢复语义（边界 ⑩⑪ 余项）。
+
+## 审成果修正（2026-10-28，成果审查发现 1）
+
+§5 第 4 条的增量前提部分有误：CLI `verify`（match+pending 二态）与 `consume` 重放**已由 adapters.test.mjs:222-224/:239-244 真实子进程覆盖**（非"仅 store 级"）。已删除这两条重复测试（19→17），文件头注释与证据文档同步更正。真正增量保留：`--ttl-ms` 真实钟过期、consume-on-pending。另落实审成果 Minor：[5/6] show 包 cliExpect、SHIP_FILE_LEAKED 拼写、脚本头"每个中止路径终态正确"收敛为"判定驱动的中止路径"。

@@ -457,7 +457,7 @@ Lane A（渲染）：初审 Needs fixes（2 Critical）→ 修复轮 → 复审�
 
 | 项 | 结果 |
 |---|---|
-| `npm test` | 328/326+2skip（新增 19：ship 纵向离线单测；doctor hosts 钉死随状态升级更新） |
+| `npm test` | 328→326/324+2skip（新增 17：ship 纵向离线单测——审成果删除 2 条与 adapters.test.mjs:222-224/:239-244 重复的 CLI 测试；doctor hosts 钉死随状态升级更新） |
 | `verify` 密钥运行 1 | 诚实失败：AUTH 401——操作员密钥提取子串误匹配 `MY_DEEPSEEK_API_KEY`（用户今日新增占位条目）；**零计费**（服务端拒绝），编排三段已全过；锚定提取后复跑 |
 | `verify` 密钥运行 2 | **PASS exit 0**（恰 1 计费任务）：模型写 `w/ship/` 被 `OUTSIDE_SCOPE` 拒；**改用 pwsh 绕过被 `UNMAPPED_TOOL` 拒**（计划外安全观察：默认拒绝白名单在真实模型探测下工作）；ask 桥审批（reason 只回显不落盘）；shipGate(approved) 后特权发布逐字节校验；consume 单次（重放拒）；任务记账 completed 绑 action-D |
 | 密钥用量 | 本批 1 计费任务（401 未计费）；项目累计 **11** |

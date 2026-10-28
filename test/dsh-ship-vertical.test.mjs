@@ -8,9 +8,11 @@
 // pinned by real subprocesses in adapters.test.mjs — neither is duplicated
 // here. What this file pins: the ship prompt + cap, the shipGate matrix, the
 // task-D deny verdict, the privileged-copy gate, the approvals CLI increments
-// that were store-level only (--ttl-ms expiry, verify, consume-on-pending,
-// consume replay), the args-vector discipline, the dual-store subject binding,
-// and the policy leg (ship dir outside writeRoots => OUTSIDE_SCOPE).
+// genuinely not covered elsewhere (--ttl-ms expiry with a real clock and
+// consume-on-pending; verify and consume-replay were found duplicated in the
+// result review and REMOVED — adapters.test.mjs:222-224/:239-244 own them),
+// the args-vector discipline, the dual-store subject binding, and the policy
+// leg (ship dir outside writeRoots => OUTSIDE_SCOPE).
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -222,14 +224,6 @@ function cli(subject, extra) {
   return runCli(approvalsArgs({ ...subject, ...extra }), { cwd: repoRoot });
 }
 
-test('CLI verify reports match+pending right after issue', (t) => {
-  const { subject } = approvalFixture(t);
-  const id = JSON.parse(cli(subject, { sub: 'issue' }).stdout);
-  const check = JSON.parse(cli(subject, { sub: 'verify', id }).stdout);
-  assert.equal(check.state, 'pending');
-  assert.equal(check.binding, 'match');
-});
-
 test('CLI consume on a pending approval fails APPROVAL_WRONG_STATE (nonzero exit)', (t) => {
   const { subject } = approvalFixture(t);
   const id = JSON.parse(cli(subject, { sub: 'issue' }).stdout);
@@ -237,6 +231,10 @@ test('CLI consume on a pending approval fails APPROVAL_WRONG_STATE (nonzero exit
   assert.notEqual(run.status, 0);
   assert.match(run.stderr, /APPROVAL_WRONG_STATE/);
 });
+
+// CLI verify (match+pending) and consume-replay are NOT re-tested here:
+// adapters.test.mjs:222-224 and :239-244 already pin both via real subprocesses
+// (result-review finding 1 — the original duplicates were removed).
 
 test('CLI --ttl-ms 1 with real clock flow: approve/consume after expiry fail APPROVAL_EXPIRED', (t) => {
   const { subject } = approvalFixture(t);
@@ -250,16 +248,6 @@ test('CLI --ttl-ms 1 with real clock flow: approve/consume after expiry fail APP
   const consume = cli(subject, { sub: 'consume', id });
   assert.notEqual(consume.status, 0);
   assert.match(consume.stderr, /APPROVAL_EXPIRED/);
-});
-
-test('CLI consume replay: approve → consume ok → consume again fails APPROVAL_WRONG_STATE', (t) => {
-  const { subject } = approvalFixture(t);
-  const id = JSON.parse(cli(subject, { sub: 'issue' }).stdout);
-  assert.equal(JSON.parse(cli(subject, { sub: 'approve', id }).stdout).state, 'approved');
-  assert.equal(JSON.parse(cli(subject, { sub: 'consume', id }).stdout).state, 'consumed');
-  const replay = cli(subject, { sub: 'consume', id });
-  assert.notEqual(replay.status, 0);
-  assert.match(replay.stderr, /APPROVAL_WRONG_STATE/);
 });
 
 // ---------------------------------------------------------------------------
