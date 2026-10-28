@@ -25,7 +25,9 @@
     "./model-review": "./src/model-review.mjs",
     "./remote-identity": "./src/remote-identity.mjs",
     "./slug": "./src/slug.mjs",
-    "./slug-checkpoints": "./src/slug-checkpoints.mjs"
+    "./slug-checkpoints": "./src/slug-checkpoints.mjs",
+    "./redact-patterns": "./src/redact-patterns.mjs",
+    "./redact-engine": "./src/redact-engine.mjs"
   },
   "scripts": {
     "test": "node --test test/*.test.mjs",
