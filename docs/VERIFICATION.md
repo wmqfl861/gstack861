@@ -491,3 +491,17 @@ Lane A（渲染）：初审 Needs fixes（2 Critical）→ 修复轮 → 复审�
 | 状态升级 | FEATURE_MATRIX 第 23 行 ZCode 列：六阶段+审批+交付 → 附机器可检离线 harness（offline-workflow-journal-harness 分级，非宿主纵向）；第 25 行：恢复语义已接入 DSH 真实纵向（reap→resume 键控单次运行） |
 
 证据：`docs/verification-2026-10-28-batch16.json`（含密钥转写要点与装饰性修复出处）。诚实边界：恢复纵向为单次密钥运行+进程内崩溃模拟（真实 SIGKILL 多进程竞争仍非目标）；ZCode harness 零模型调用零宿主 API，阶段工件为控制器站位。
+
+# 第二十五轮验证记录：批次 17——doctor verticals 整合 + verify-* 统一回归与文档收口（2026-10-28）
+
+| 项 | 结果 |
+|---|---|
+| `npm test` | 353→360/358+2skip（Lane A +2 doctor 测试；Lane B +6 一致性/钉死测试；合并树跨 lane 红转绿，0 失败） |
+| `npm run verify-offline` | **8/8 步全绿**（6 键控脚本 BLOCKED 冒烟 ~0.2s/个 + ZCode harness 整跑 ~5s + model-review 就绪 ~0.5s；零网络超回环、零模型调用）；已入 CI offline-contracts 两腿 |
+| doctor 整合 | hosts 刷新（zcode=`workflow-harness-verified-offline`、dsh=`ship-and-recovery-vertical-verified-single-keyed-runs`）；新增 `verticals` 10 条清单（keyed/status/evidence，证据路径测试断言存在；8dot3 轮次更正为第 5 轮）；networkCalls 首次被测试钉 0 |
+| 文档收口 | `docs/VERIFICATION-SCRIPTS.md` 脚本总表（10 行）+ 密钥预算纪律 + CI 安全边界（skills 需本机 DSH、8dot3 卷相关，均不入 runner）；host-loading/zcode-acceptance/acceptance-pack 三处陈旧 `not-host-verified` 字面量更新为如实措辞 |
+| 三方一致性 | 表↔文件系统双射、证据存在、doctor↔表键集与 keyed 布尔一致——测试钉死，防漂移 |
+| 密钥用量 | 本批 0；项目累计 12 不变 |
+| 独立审查 | 审计划 4 必改全部落实（hosts 测试原地改/8dot3 第 5 轮/跨 lane 合并门/陈旧字面量）；审成果 Yes（四项亲手复现：套件、runner、doctor、check；5 条证据抽查属实；无 overclaim） |
+
+成本如实记录：ZCode harness 每条 CI 腿整跑 3 次（自身测试 5.2s + runner 契约测试内 4.4s + CI 步 4.4s ≈ 15s/腿）——批次 17 计划接受并要求记录。runner 冒烟失败诊断输出与步 2/3 对齐（成果审查 Minor 1 已落实）。

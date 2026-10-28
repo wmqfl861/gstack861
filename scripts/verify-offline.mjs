@@ -63,8 +63,9 @@ function main() {
   for (const [index, script] of KEYED.entries()) {
     const child = run(script, 60000);
     const blocked = /BLOCKED/.test(child.stdout ?? '');
-    mark(child.status === 2 && blocked,
-      `[1.${index + 1}/6] scripts/${script} exit=${child.status}${tail(child)}${blocked ? ' BLOCKED' : ' NO-BLOCKED-LINE'}`);
+    const ok = child.status === 2 && blocked;
+    mark(ok, `[1.${index + 1}/6] scripts/${script} exit=${child.status}${tail(child)}${blocked ? ' BLOCKED' : ' NO-BLOCKED-LINE'}`);
+    if (!ok) console.log(child.stdout || child.stderr || '(no output)'); // same diagnosis dump as steps 2/3
   }
 
   console.log('[2/3] zcode-workflow-vertical full offline harness (expect exit 0 + RESULT: PASS)...');
