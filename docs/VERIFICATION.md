@@ -612,3 +612,16 @@ Lane A（渲染）：初审 Needs fixes（2 Critical）→ 修复轮 → 复审�
 | 状态升级 | ③ 拾取半段：**工作区技能发现+Skill 工具装载=host 级实证（真实无头会话）**——不宣称上下文自动注入/UI 会话/host_verified full；guard 半段：待一次用户信任手势（OFFLINE-COMPLETE §一 精确步骤） |
 
 证据：本表+脚本转写要点；版本 caveat：证据针对本机 zcode 0.17.0，与锁文件提交 3c5b227 映射未验证（同 DSH 第 7 条）。
+
+# 第三十四轮验证记录：批次 26——③ guard 半段收口（架构性结论）（2026-10-29）
+
+| 项 | 结果 |
+|---|---|
+| 中心结论 | **zcode 0.17.0 无头 `--prompt` 模式架构性禁用工作区钩子**——非可信任宿主。证据链：客户端日志 `workspace_hook.feature_disabled`（reasonCode workspace_hooks_feature_disabled, source startup, identityDigest=sha256(工作区路径)前 12 hex 吻合；全天 13 个无头会话每会话恰一条）+ bundle 反解门条件 `workspaceHookTrustEnabled===true`（仅 app-server session/create 路径设置——桌面客户端所用协议层；--prompt 无头路径无任何设真点）。独立审核者复核 4 处标志引用后确认无翻案反例 |
+| ③ 状态定级 | 拾取半段 host 级实证（批次 25）；guard 半段**无头不可达**（本批新知），桌面客户端为唯一可执行宿主；信任决定已按用户明示授权（两条消息在案）以运行时真实模块+真实 schema 登记入 `~/.zcode/security/workspace-hook-trust-v1.json`（唯一新增文件，全链披露；首次直写漏 maxOutputBytes=32768 输入→审核发现确定性分歧→已用修正输入重写：decl b665fe62…/bundle f3b02182…，与审核者独立重算一致） |
+| 协议考古（零计费） | app-server 线协议跑通 session/create+send（send 因无模型上下文 prompt_failed）；tui 未打包；四条代理路径全排除后才得出架构性结论 |
+| 密钥账（审核更正） | 本批 **8**（06:36 三调用[存储不存在]+07:33 两调用[残留 outside.txt 触发 ALREADY_EXISTS 中止，G 未发射——如实入账]+07:37 三调用[存储已在，仍 feature_disabled]）；项目 zcode 累计 **13**、DSH 12 |
+| 代码改动 | 仅 `zcode-acceptance-vertical.mjs` 的 reusePack 作用域修复（finally 引用 try 内 const 崩溃） |
+| 独立审核 | 拒绝现稿→三项修正全部落实：计费 8/13+中止运行披露；摘要分歧重写；措辞收紧（app-server 协议层非"桌面路径"） |
+
+证据：本表+客户端日志（zcode-2026-10-29.jsonl 的 feature_disabled 条目）+bundle 反解片段（审核报告在案）。OFFLINE-COMPLETE §一 3b 同步重写：桌面打开 `…\pack\workspace` 发一条消息即弹信任确认（若修正摘要与桌面重算一致则直接 trusted_persistent，否则按提示再点一次确认——两步内完成），随后桌面内手工跑 STEPS.md §5 探针（钩子三态已在 stdin 直打级验证）即完成 guard 验收。

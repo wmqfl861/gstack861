@@ -154,13 +154,14 @@ async function main() {
     { encoding: 'utf8', timeout: TASK_TIMEOUT_MS, maxBuffer: 32 * 1024 * 1024,
       env: { ...process.env, ELECTRON_RUN_AS_NODE: '1' }, ...opts });
   let pack;
+  let reusePack = false;
   try {
     console.log('zcode-acceptance-vertical: key present — ③ acceptance via real headless spawns (3 paid calls: smoke + pickup + guard).');
     console.log('[0/4] zero-cost probes: acceptance-pack, marker skill, skills list --cwd, hook stdin probes...');
     // --pack-root ABS_DIR: reuse a STABLE pack so the one-time client trust of that
     // workspace's hook can carry across re-runs (workspaces survive); default = throwaway.
     const packRootFlag = process.argv.indexOf('--pack-root');
-    const reusePack = packRootFlag >= 0;
+    reusePack = packRootFlag >= 0;
     const out = reusePack ? path.resolve(process.argv[packRootFlag + 1]) : fs.mkdtempSync(path.join(os.tmpdir(), 'g'));
     if (!fs.existsSync(path.join(out, 'pack', 'workspace'))) {
       spawnSync(process.execPath, [path.join(repoRoot, 'scripts/acceptance-pack.mjs'), '--out', path.join(out, 'pack')], { encoding: 'utf8', timeout: 120000 });
