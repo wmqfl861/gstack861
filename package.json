@@ -27,7 +27,10 @@
     "./slug": "./src/slug.mjs",
     "./slug-checkpoints": "./src/slug-checkpoints.mjs",
     "./redact-patterns": "./src/redact-patterns.mjs",
-    "./redact-engine": "./src/redact-engine.mjs"
+    "./redact-engine": "./src/redact-engine.mjs",
+    "./ship-policy": "./src/ship-policy.mjs",
+    "./fs-utils": "./src/fs-utils.mjs",
+    "./sealed-guard": "./src/sealed-guard.mjs"
   },
   "scripts": {
     "test": "node --test test/*.test.mjs",
