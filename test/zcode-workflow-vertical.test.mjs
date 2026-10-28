@@ -61,16 +61,15 @@ test('zcode builders: stage table, byte-identical subject blocks, lease/ttl/prom
     assert.deepEqual(zcodeTasksArgs({ ...common, sub, id: 'tid-1' }),
       ['tasks', sub, '--state', 'C:/s', ...block, '--id', 'tid-1'], `${sub} carries the identical block`);
   }
-  // --lease-ms is scoped to start|resume ONLY, appended after --id; heartbeat
-  // (which the CLI would also accept it on) and every journal transition the
-  // CLI would refuse cannot even express it.
+  // --lease-ms is scoped to start|resume ONLY, appended after --id; out-of-scope
+  // callers get a builder refusal (LEASE_SCOPE_VIOLATION) instead of a silently
+  // dropped flag — a caller mistake surfaces, never masks into a valid vector.
   for (const sub of ['start', 'resume']) {
     assert.deepEqual(zcodeTasksArgs({ ...common, sub, id: 'tid-1', leaseMs: 900000 }),
       ['tasks', sub, '--state', 'C:/s', ...block, '--id', 'tid-1', '--lease-ms', '900000']);
   }
   for (const sub of ['create', 'interrupt', 'complete', 'fail', 'cancel', 'show', 'heartbeat']) {
-    assert.equal(zcodeTasksArgs({ ...common, sub, id: 'tid-1', leaseMs: 900000 })
-      .filter(v => v === '--lease-ms').length, 0, `${sub} must not carry --lease-ms`);
+    assert.throws(() => zcodeTasksArgs({ ...common, sub, id: 'tid-1', leaseMs: 900000 }), /LEASE_SCOPE_VIOLATION/, sub);
   }
   assert.deepEqual(zcodeTasksArgs({ sub: 'list', stateDir: 'C:/s' }), ['tasks', 'list', '--state', 'C:/s']);
 
@@ -82,15 +81,17 @@ test('zcode builders: stage table, byte-identical subject blocks, lease/ttl/prom
       ['approvals', sub, '--state', 'C:/s', '--id', 'aid-1', ...block], `${sub} carries the identical block`);
   }
   // --prompt-file belongs to ask only; --ttl-ms to issue only — even on the
-  // subcommand that may carry the OTHER scoped flag.
-  assert.deepEqual(zcodeApprovalsArgs({ ...common, sub: 'ask', id: 'aid-1', promptFile: 'C:/p.txt', ttlMs: 1 }),
+  // subcommand that may carry the OTHER scoped flag (the mismatched one throws).
+  assert.deepEqual(zcodeApprovalsArgs({ ...common, sub: 'ask', id: 'aid-1', promptFile: 'C:/p.txt' }),
     ['approvals', 'ask', '--state', 'C:/s', '--id', 'aid-1', ...block, '--prompt-file', 'C:/p.txt']);
+  assert.throws(() => zcodeApprovalsArgs({ ...common, sub: 'ask', id: 'aid-1', ttlMs: 1 }), /LEASE_SCOPE_VIOLATION/);
   for (const sub of ['approve', 'reject', 'consume', 'verify', 'show']) {
-    assert.equal(zcodeApprovalsArgs({ ...common, sub, id: 'aid-1', ttlMs: 900000, promptFile: 'C:/p.txt' })
-      .filter(v => v === '--ttl-ms' || v === '--prompt-file').length, 0, `${sub} must carry neither scoped flag`);
+    assert.throws(() => zcodeApprovalsArgs({ ...common, sub, id: 'aid-1', ttlMs: 900000 }), /LEASE_SCOPE_VIOLATION/, `${sub} --ttl-ms`);
+    assert.throws(() => zcodeApprovalsArgs({ ...common, sub, id: 'aid-1', promptFile: 'C:/p.txt' }), /LEASE_SCOPE_VIOLATION/, `${sub} --prompt-file`);
   }
-  assert.deepEqual(zcodeApprovalsArgs({ ...common, sub: 'issue', ttlMs: 5, promptFile: 'C:/p.txt' }),
+  assert.deepEqual(zcodeApprovalsArgs({ ...common, sub: 'issue', ttlMs: 5 }),
     ['approvals', 'issue', '--state', 'C:/s', ...block, '--ttl-ms', '5']);
+  assert.throws(() => zcodeApprovalsArgs({ ...common, sub: 'issue', promptFile: 'C:/p.txt' }), /LEASE_SCOPE_VIOLATION/);
   assert.deepEqual(zcodeApprovalsArgs({ sub: 'list', stateDir: 'C:/s' }), ['approvals', 'list', '--state', 'C:/s']);
 });
 

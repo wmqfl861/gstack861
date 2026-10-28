@@ -48,6 +48,11 @@ test('real-clock CLI expiry matrix: --lease-ms 1 + 25ms → reap succeeds → re
   const subject = { stateDir: path.join(root, 'tasks-state'), sessionId: 'rv-uuid',
     runId: 'rv1a2b3c', policyHash: 'a'.repeat(64), actionFile };
   const cli = extra => runTasksCli(tasksLeaseArgs({ ...subject, ...extra }), { cwd: repoRoot });
+  // The builder guard (result-review minor 1): --lease-ms must be un-buildable
+  // for any subcommand the CLI itself would reject it on.
+  for (const sub of ['create', 'reap', 'complete', 'fail', 'heartbeat']) {
+    assert.throws(() => tasksLeaseArgs({ ...subject, sub, id: 'x', leaseMs: 1000 }), /LEASE_SCOPE_VIOLATION/, sub);
+  }
 
   const created = cli({ sub: 'create' });
   assert.equal(created.status, 0, created.stderr);

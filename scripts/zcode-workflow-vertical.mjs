@@ -84,10 +84,15 @@ const fwd = p => p.split(/[\\/]/).join('/');
  */
 export function zcodeTasksArgs({ sub, stateDir, sessionId, runId, policyHash, actionFile, id, leaseMs }) {
   if (sub === 'list') return ['tasks', 'list', '--state', stateDir];
+  // Scoped flag refuses to build rather than silently dropping (lane-A pattern):
+  // a caller mistake surfaces here instead of being masked into a valid vector.
+  if (leaseMs !== undefined && sub !== 'start' && sub !== 'resume') {
+    throw new Error(`LEASE_SCOPE_VIOLATION --lease-ms belongs to start/resume only, saw sub=${sub}`);
+  }
   const args = ['tasks', sub, '--state', stateDir, '--host', 'zcode',
     '--session', sessionId, '--run', runId, '--policy-hash', policyHash, '--action-file', actionFile];
   if (id !== undefined) args.push('--id', id);
-  if ((sub === 'start' || sub === 'resume') && leaseMs !== undefined) args.push('--lease-ms', String(leaseMs));
+  if (leaseMs !== undefined) args.push('--lease-ms', String(leaseMs));
   return args;
 }
 
@@ -102,6 +107,8 @@ export function zcodeApprovalsArgs({ sub, stateDir, sessionId, runId, policyHash
   const args = ['approvals', sub, '--state', stateDir];
   if (id !== undefined) args.push('--id', id);
   args.push('--host', 'zcode', '--session', sessionId, '--run', runId, '--policy-hash', policyHash, '--action-file', actionFile);
+  if (ttlMs !== undefined && sub !== 'issue') throw new Error('LEASE_SCOPE_VIOLATION --ttl-ms belongs to issue only');
+  if (promptFile !== undefined && sub !== 'ask') throw new Error('LEASE_SCOPE_VIOLATION --prompt-file belongs to ask only');
   if (sub === 'issue' && ttlMs !== undefined) args.push('--ttl-ms', String(ttlMs));
   if (sub === 'ask' && promptFile !== undefined) args.push('--prompt-file', promptFile);
   return args;
