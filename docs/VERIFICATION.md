@@ -464,3 +464,17 @@ Lane A（渲染）：初审 Needs fixes（2 Critical）→ 修复轮 → 复审�
 | 状态升级 | DSH 纵向 → **ship-vertical-verified（单次密钥运行）**：spec→…→ship 全阶段 + 审批门 + 特权发布；FEATURE_MATRIX 第 23/28 行更新；doctor hosts.dsh 同步 |
 
 证据：`docs/verification-2026-10-28-batch14-dsh-ship.md`。审计划 4 项必改全部落实（TTL 900000、CLI 测试去重、泄漏先记账 failed 再中止、控制器 mkdir ship 目录）。仍不宣称：穷尽旁路、宿主内嵌 UI（④）、ZCode 侧 ship 纵向（待③）、真实部署交付（M3+）。
+
+# 第二十三轮验证记录：批次 15——TaskStore 恢复语义 + 审批取消矩阵（2026-10-28）
+
+| 项 | 结果 |
+|---|---|
+| `npm test` | 344→346/344+2skip（Lane A +11 任务测试；Lane B +7 工作流测试；polish 后全绿） |
+| Lane A（b15a，并行子代理） | `src/tasks.mjs` 租约/心跳/收割/重排：进入 running 未给租约必清陈旧租约（审计划发现的健全性洞）；收割↔心跳锁内串行双向钉死；attempts 无双计；CLI `heartbeat|reap|requeue` + `--lease-ms`（界前检查、heartbeat 必填、拒绝不留状态目录） |
+| Lane B（b15b，并行子代理） | `src/workflow.mjs` cancelWorkflow：零转移前置绑定检查 → **先拒审批后取消任务**故障安全顺序；第一步失败（过期/已决）零任务突变；崩溃顺序钉死（第二步必败时审批已拒）；审批取消矩阵（可取消态×reject(pending/approved)×consume-拒绝×verify-match）；CLI 增量仅 `approvals reject` 子进程 |
+| 独立审计划 | 4 必改（陈旧租约洞/heartbeat 必填/CLI 去重/第一步失败入档）全部落入计划并实现 |
+| 独立审成果 | 结论 Yes（可推送）：四必改逐条核实、租约三态全转移路径走查、活探针验证 CLI 拒绝码与零状态目录；3 条 Minor polish（负租约拒绝、60s CLI 租约余量、./workflow 导出）已落实 |
+| 密钥用量 | 本批 0 计费（全离线）；项目累计 11 不变 |
+| 状态升级 | FEATURE_MATRIX 第 25 行两列 planned → store-recovery-verified（宿主内执行器接线仍 planned） |
+
+证据：计划 `docs/plans/2026-10-28-batch15-taskstore-recovery.md`（含审改记录）；本表即证据（全离线可复现：`npm test` + `node --test test/tasks.test.mjs test/workflow.test.mjs`）。非目标：宿主内执行器中断事件源接线（待③）、真实多进程租约竞争、审批自动级联（设计上不做——cancelWorkflow 是操作员纪律原语）。

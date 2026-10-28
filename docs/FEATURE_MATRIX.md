@@ -1,6 +1,6 @@
 # 功能与证据矩阵
 
-状态：2026-10-28，0.4.13：M2 前置 + 纵向批次 + 批次 2–14（状态目录命名空间、上游渲染 CI 复用 rendered-experimental、原生询问桥 approvals ask、apply-patch/参数 effect、approvals/tasks CLI 全量、ZCode 工作流层纵向流程已实证、渲染产物 stage-render→install→uninstall 装载链全链实测、宿主装载 runbook 实测回填、渲染技能宿主消费 15 例已实证、install --dry-run 零写入预检；DSH 管线就绪脚本待密钥）；离线空间已尽（2026-10-27），剩余项均受阻于用户解锁或环境（README 离线边界节 13 项）。两个宿主均未获得 `host_verified` 或 `full`。
+状态：2026-10-28，0.4.14：M2 前置 + 纵向批次 + 批次 2–15（状态目录命名空间、上游渲染 CI 复用 rendered-experimental、原生询问桥 approvals ask、apply-patch/参数 effect、approvals/tasks CLI 全量、ZCode 工作流层纵向流程已实证、渲染产物 stage-render→install→uninstall 装载链全链实测、宿主装载 runbook 实测回填、渲染技能宿主消费 15 例已实证、install --dry-run 零写入预检；DSH 管线就绪脚本待密钥）；离线空间已尽（2026-10-27），剩余项均受阻于用户解锁或环境（README 离线边界节 13 项）。两个宿主均未获得 `host_verified` 或 `full`。
 
 | 范围 | ZCode | DSH | 已有证据 / 剩余工作 |
 |---|---|---|---|
@@ -22,7 +22,7 @@
 | 原生询问桥 | implemented | implemented | `approvals ask` 阻塞式应答（exit 3 不自动同意）；宿主内嵌 UI 未接通 |
 | 纵向流程（spec→ship） | workflow-evidence | ship-vertical-verified | ZCode 侧六阶段+审批+交付已真实跑通（非 host_verified）；DSH 侧 spec→implement→qa+TaskStore 记账 vertical-verified（批次 13 密钥单次运行）；ship 阶段+审批集成 vertical-verified（批次 14 密钥单次运行：模型不能自写 ship 目录、ask 桥审批、特权发布、审批单次消费） |
 | 开发/调查/review | planned | planned | 尚未用真实宿主执行纵向任务 |
-| 子 Agent 与工作流恢复 | planned | planned | 核心日志已就绪；执行器、取消、恢复接线未做 |
+| 子 Agent 与工作流恢复 | store-recovery-verified | store-recovery-verified | 批次 15 共享核 store+CLI 离线实证：租约/心跳/收割/重排（陈旧租约清除、收割↔心跳锁内竞争）、审批取消矩阵+cancelWorkflow 故障安全顺序（先拒审批后取消）；宿主内执行器接线仍 planned（待③/后续）；真实多进程竞争为非目标（同主机可信操作员内时钟偏差可接受） |
 | 独立模型复核 | mechanism-ready | mechanism-ready | 配置加载/黑名单/单次封顶/开关红线全部实测（批次 11，五段就绪验证）；runtime 真调用待解锁-⑨（用户手放网关配置+开关+键） |
 | 浏览器/QA/设计 | planned | planned | 复用上游工具并迁移依赖 |
 | ship/部署/监控 | planned | vertical-slice-verified | 纵向切片实证（批次 14 DSH：审批门+特权发布+单次消费）；真实部署/监控交付仍 planned（审批、测试证据与幂等边界） |
