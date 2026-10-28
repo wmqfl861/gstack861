@@ -357,8 +357,11 @@ test('legacy records without leaseExpiresAt stay readable and transitional', t =
 test('tampered leaseExpiresAt fields fail closed as INVALID_TASK_RECORD', t => {
   const f = fixture(t), store = new TaskStore(path.join(f.base, 'tasks')), s = subject(f);
   const id = store.create(s);
-  fs.writeFileSync(store.file(id), JSON.stringify({ ...store.get(id), leaseExpiresAt: 1.5 }) + '\n');
-  assert.throws(() => store.get(id), /INVALID_TASK_RECORD/);
+  const pristine = store.get(id); // read once: the tampered record itself must not be re-readable
+  for (const bad of [1.5, '6000', -1]) {
+    fs.writeFileSync(store.file(id), JSON.stringify({ ...pristine, leaseExpiresAt: bad }) + '\n');
+    assert.throws(() => store.get(id), /INVALID_TASK_RECORD/, `leaseExpiresAt=${JSON.stringify(bad)}`);
+  }
   assert.throws(() => store.start(id, s), /INVALID_TASK_RECORD/);
 });
 test('tasks CLI requires --lease-ms on heartbeat and refuses bad leases before creating state', async t => {
@@ -378,7 +381,7 @@ test('tasks CLI start --lease-ms arms a lease the reaper must respect until expi
   fs.writeFileSync(actionFile, JSON.stringify({ kind: 'publish', artifactHash: 'fixture' }));
   const binding = ['--host', 'zcode', '--session', 's1', '--run', 'r1', '--policy-hash', f.policy.policyHash, '--action-file', actionFile];
   const id = JSON.parse((await execute(process.execPath, [cli, 'tasks', 'create', '--state', state, ...binding])).stdout);
-  const started = JSON.parse((await execute(process.execPath, [cli, 'tasks', 'start', '--state', state, '--id', id, ...binding, '--lease-ms', '5000'])).stdout);
+  const started = JSON.parse((await execute(process.execPath, [cli, 'tasks', 'start', '--state', state, '--id', id, ...binding, '--lease-ms', '60000'])).stdout);
   assert.equal(started.state, 'running');
   assert.equal(Number.isSafeInteger(started.leaseExpiresAt), true);
   const shown = JSON.parse((await execute(process.execPath, [cli, 'tasks', 'show', '--state', state, '--id', id])).stdout);

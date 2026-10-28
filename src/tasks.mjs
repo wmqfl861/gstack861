@@ -53,7 +53,7 @@ export class TaskStore {
       || !Number.isSafeInteger(record.createdAt) || !Number.isSafeInteger(record.updatedAt)
       || typeof record.subjectHash !== 'string' || !/^[a-f0-9]{64}$/.test(record.subjectHash)
       || (record.owner !== undefined && !validOwner(record.owner))
-      || (record.leaseExpiresAt !== undefined && !Number.isSafeInteger(record.leaseExpiresAt))) fail('INVALID_TASK_RECORD');
+      || (record.leaseExpiresAt !== undefined && (!Number.isSafeInteger(record.leaseExpiresAt) || record.leaseExpiresAt < 0))) fail('INVALID_TASK_RECORD');
     return record;
   }
   get(id) {
