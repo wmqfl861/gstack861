@@ -126,8 +126,10 @@ function readGitdirValue(file) {
 
 // Physical git common dir of the repository holding `start` (nearest .git
 // entry), or '' outside git. A worktree's .git file names its gitdir, whose
-// `commondir` file points at the shared dir. No git spawn.
-function gitCommonDir(start) {
+// `commondir` file points at the shared dir. No git spawn. Exported for the
+// lane C CLI (--checkpoints-below's inside-git gate and --newer-task's main
+// tree both reuse the exact cache-key derivation).
+export function gitCommonDir(start) {
   let dir = start;
   for (let depth = 0; dir && depth < DEPTH_CAP; depth++) {
     const dotgit = path.join(dir, '.git');
