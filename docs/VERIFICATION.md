@@ -478,3 +478,16 @@ Lane A（渲染）：初审 Needs fixes（2 Critical）→ 修复轮 → 复审�
 | 状态升级 | FEATURE_MATRIX 第 25 行两列 planned → store-recovery-verified（宿主内执行器接线仍 planned） |
 
 证据：计划 `docs/plans/2026-10-28-batch15-taskstore-recovery.md`（含审改记录）；本表即证据（全离线可复现：`npm test` + `node --test test/tasks.test.mjs test/workflow.test.mjs`）。非目标：宿主内执行器中断事件源接线（待③）、真实多进程租约竞争、审批自动级联（设计上不做——cancelWorkflow 是操作员纪律原语）。
+
+# 第二十四轮验证记录：批次 16——DSH 恢复纵向 + ZCode 工作流 harness（2026-10-28）
+
+| 项 | 结果 |
+|---|---|
+| `npm test` | 344→353/351+2skip（Lane A +3 恢复向量；Lane B +6 harness 测试；成果审查加固后全绿） |
+| Lane A 密钥运行 | **PASS exit 0（恰 1 计费任务）**：真实 CLI 崩溃模拟 create→start(lease 5000, attempts=1)→未过期负控 reap 被 TASK_LEASE_ACTIVE 拒→6200ms 真实时钟无心跳→reap=interrupted→resume(lease 900000) running attempts=2→密钥任务 R 在恢复后的记账下读 spec 逐字输出标记行→终检恰 1 条 completed attempts=2 subjectHash 绑 action-R。运行中发现并修复一处装饰性日志缺陷（.parsed 字段，断言一直正确，6826b21） |
+| Lane B harness | ZCode 六阶段工作流层**离线** harness 整跑 exit 0（六阶段真实 CLI 记账、review 恢复腿 attempts=2、审批门 pending 负控+ask+consume+重放负控、特权拷贝字节校验、策略腿 OUTSIDE_SCOPE/IN_SCOPE）；注入 `ZCODE_WORKFLOW_INJECT_SHIP_TARGET=1` → exit 1 + SHIP_TARGET_EXISTS（FAIL 不误报 PASS） |
+| 密钥用量 | 本批 1 计费；项目累计 **12** |
+| 独立审查 | 审计划 4 必改（租约旗标接线/去重定死/注入机制/时序余量）全部落实；审成果 Yes（全量套件/harness/注入/无密钥四项亲手复现，两 Minor 加固已落实：建造器越域旗标必抛 LEASE_SCOPE_VIOLATION） |
+| 状态升级 | FEATURE_MATRIX 第 23 行 ZCode 列：六阶段+审批+交付 → 附机器可检离线 harness（offline-workflow-journal-harness 分级，非宿主纵向）；第 25 行：恢复语义已接入 DSH 真实纵向（reap→resume 键控单次运行） |
+
+证据：`docs/verification-2026-10-28-batch16.json`（含密钥转写要点与装饰性修复出处）。诚实边界：恢复纵向为单次密钥运行+进程内崩溃模拟（真实 SIGKILL 多进程竞争仍非目标）；ZCode harness 零模型调用零宿主 API，阶段工件为控制器站位。
