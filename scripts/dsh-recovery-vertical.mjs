@@ -211,13 +211,13 @@ async function main() {
       throw new Error(`REAP_FAILED post-expiry reap must exit 0 with state=interrupted: exit=${reaped.status} `
         + `parsed=${JSON.stringify(reaped.parsed)} stderr=${reaped.stderr.slice(0, 200)}`);
     }
-    console.log(`      reap ok (state=${reaped.state}, lease cleared)`);
+    console.log(`      reap ok (state=${reaped.parsed.state}, lease cleared)`);
     const resumed = runTasksCli(tasksLeaseArgs({ ...subject, sub: 'resume', id: taskId, leaseMs: RECOVERY_LEASE_MS }), { cwd: repoRoot });
     if (resumed.status !== 0 || resumed.parsed?.state !== 'running' || resumed.parsed?.attempts !== 2) {
       throw new Error(`RESUME_FAILED resume must exit 0 with state=running and attempts=2 (start + resume, no double count): `
         + `exit=${resumed.status} parsed=${JSON.stringify(resumed.parsed)} stderr=${resumed.stderr.slice(0, 200)}`);
     }
-    console.log(`      resume ok (state=${resumed.state}, attempts=${resumed.attempts}, lease ${RECOVERY_LEASE_MS}ms re-armed > the 8min task timeout)`);
+    console.log(`      resume ok (state=${resumed.parsed.state}, attempts=${resumed.parsed.attempts}, lease ${RECOVERY_LEASE_MS}ms re-armed > the 8min task timeout)`);
 
     console.log('[3/4] keyed task R runs UNDER the recovered journal: read spec.md, echo the marker line verbatim...');
     const prompt = checkPromptCap(buildSpecPrompt({ specPath: prepared.specPath }), 'recovery-spec');
