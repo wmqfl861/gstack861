@@ -469,7 +469,7 @@ Lane A（渲染）：初审 Needs fixes（2 Critical）→ 修复轮 → 复审�
 
 | 项 | 结果 |
 |---|---|
-| `npm test` | 344→346/344+2skip（Lane A +11 任务测试；Lane B +7 工作流测试；polish 后全绿） |
+| `npm test` | 326→344/342+2skip（Lane A +11 任务测试；Lane B +7 工作流测试；polish 只收紧未增数） |
 | Lane A（b15a，并行子代理） | `src/tasks.mjs` 租约/心跳/收割/重排：进入 running 未给租约必清陈旧租约（审计划发现的健全性洞）；收割↔心跳锁内串行双向钉死；attempts 无双计；CLI `heartbeat|reap|requeue` + `--lease-ms`（界前检查、heartbeat 必填、拒绝不留状态目录） |
 | Lane B（b15b，并行子代理） | `src/workflow.mjs` cancelWorkflow：零转移前置绑定检查 → **先拒审批后取消任务**故障安全顺序；第一步失败（过期/已决）零任务突变；崩溃顺序钉死（第二步必败时审批已拒）；审批取消矩阵（可取消态×reject(pending/approved)×consume-拒绝×verify-match）；CLI 增量仅 `approvals reject` 子进程 |
 | 独立审计划 | 4 必改（陈旧租约洞/heartbeat 必填/CLI 去重/第一步失败入档）全部落入计划并实现 |
