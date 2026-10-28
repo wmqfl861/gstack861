@@ -572,3 +572,16 @@ Lane A（渲染）：初审 Needs fixes（2 Critical）→ 修复轮 → 复审�
 | 密钥用量 | 本批 0；项目累计 12 不变 |
 
 证据：`docs/verification-2026-10-28-batch22.json`。离线余量剩 prepush（790+27）与 issue-links（202）两项（各自依赖闭包已入 OFFLINE-COMPLETE §二）。
+
+# 第三十一轮验证记录：批次 23——redact-prepush 移植 + hook 回填（2026-10-28）
+
+| 项 | 结果 |
+|---|---|
+| `npm test` | 847→967/957+10skip（本批 +120：Lane B 24 = scan-range 16+rebase 8；Lane C 84 = emails 20+target 28+hook 36；Lane A 12 = sealed 7+ship-policy 5；skip 3 例 win32 结构性带理由） |
+| Lane A（4a4d98a） | ship-policy 三助手提升共享库（banned-terms 重构导入，29 测试回归门）+ fs-utils（#2635）+ sealed-guard 276 全语义（并集只紧不松/豁免仅 base 分支 sha 前缀/private-warn 非阻断/可见性缓存 TTL+尽力写路径逐字）；状态根 GSTACK861_STATE_ROOT 映射绝不触碰 ~/.gstack；上游 sealed-guard.test.ts 7/8 适配（1 pregate 随非目标 drop 入账）；一次性 driver 全 6 场景真 git 验证 |
+| Lane B（ce099af） | prepush 790 逐字移植（三 fail-closed/三步 diff 链+addedLinesFromNewCommits 收窄优先/分块扫描/committed allowlist/email 历史 5s 非阻断降级/版本豁免/字节精确输出）；logSkip 状态根注入钉死；win32 零跳过（Git-for-Windows sh 跑钩子） |
+| Lane C（26b9a99） | hook install/uninstall 回填（wrapper 与上游模板仅两处账本替换：marker 名、node 路径；printf x 哨兵/链式 .local/幂等/陈旧刷新/卸载还原逐字）；emails/target/hook 84 向量适配；**drop 7 测全部逐条入账**（hook install-UX 6——计划误写 5，Lane 诚实修正+1 sealed pregate） |
+| 独立审查 | 审计划 8 必改全部活体验证（含审查者自制 fixture 复验收窄优先双向、email 降级配对向量、~/.gstack 零触碰）；对上游规范化差分**仅剩账本类差异**；钩子 wrapper 活装字节比对 |
+| 密钥用量 | 本批 0；项目累计 12 不变 |
+
+证据：`docs/verification-2026-10-28-batch23.json`。离线余量仅剩 issue-links（202 行，闭包=gh 调用前提待审）。
