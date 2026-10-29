@@ -92,16 +92,26 @@ test('single-call cap: first POST forwards (non-429 status), second gets exactly
   fs.writeFileSync(path.join(tmp, 'ca.pem'), certs().cert);
   const { child, port } = await startGateway({ DEV_GATEWAY_UPSTREAM: `http://127.0.0.1:${stubPort}/chat/completions`, DEEPSEEK_API_KEY: 'stub-key' });
   try {
-    const post = () => spawnSync(process.execPath, ['-e', `
-      fetch('https://127.0.0.1:${port}/chat/completions', { method: 'POST', headers: {'content-type':'application/json'}, body: JSON.stringify({model:'x'}) })
-        .then(async r => { console.log('STATUS', r.status); }, e => { console.log('ERR', e?.cause?.code ?? e?.name); process.exit(2); });
-    `], { env: { ...process.env, NODE_EXTRA_CA_CERTS: path.join(tmp, 'ca.pem') }, encoding: 'utf8', timeout: 40000 });
-    const first = post();
-    assert.equal(first.status, 0, `first POST child crashed: ${first.stderr}`);
-    assert.match(first.stdout, /STATUS 200/, `first POST must forward to the stub (200): ${first.stdout}`);
-    assert.doesNotMatch(first.stdout, /STATUS 429/, 'first POST must NOT hit the cap');
-    const second = post();
-    assert.equal(second.status, 0, `second POST child crashed: ${second.stderr}`);
-    assert.match(second.stdout, /STATUS 429/, `second POST must be capped with exactly 429: ${second.stdout}`);
+    // Async spawn (NOT spawnSync): the stub lives in THIS process — a sync wait
+    // would freeze the event loop, the stub could never answer the gateway's
+    // upstream fetch, and the first POST would dead-lock into the 30s abort.
+    const post = () => new Promise((resolve, reject) => {
+      const probe = spawn(process.execPath, ['-e', `
+        fetch('https://127.0.0.1:${port}/chat/completions', { method: 'POST', headers: {'content-type':'application/json'}, body: JSON.stringify({model:'x'}) })
+          .then(async r => { console.log('STATUS', r.status); process.exit(0); }, e => { console.log('ERR', e?.cause?.code ?? e?.name); process.exit(2); });
+      `], { env: { ...process.env, NODE_EXTRA_CA_CERTS: path.join(tmp, 'ca.pem') }, stdio: ['pipe', 'pipe', 'pipe'] });
+      let out = '';
+      probe.stdout.on('data', d => { out += d.toString(); });
+      probe.on('exit', code => resolve({ code, out }));
+      probe.on('error', reject);
+      setTimeout(() => { probe.kill(); reject(new Error('probe timed out')); }, 40000);
+    });
+    const first = await post();
+    assert.equal(first.code, 0, `first POST child crashed: ${first.out}`);
+    assert.match(first.out, /STATUS 200/, `first POST must forward to the stub (200): ${first.out}`);
+    assert.doesNotMatch(first.out, /STATUS 429/, 'first POST must NOT hit the cap');
+    const second = await post();
+    assert.equal(second.code, 0, `second POST child crashed: ${second.out}`);
+    assert.match(second.out, /STATUS 429/, `second POST must be capped with exactly 429: ${second.out}`);
   } finally { child.kill(); stub.close(); fs.rmSync(tmp, { recursive: true, force: true }); }
 }, { timeout: 120000 });
