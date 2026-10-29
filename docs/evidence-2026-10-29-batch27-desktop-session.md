@@ -50,7 +50,7 @@ isError=true；**文件未变（仍为 y）**；模型未绕过（其"内容策�
 
 ## 补充 4（2026-10-29）：STEPS §4 G——updatedInput 共存审计（静态+运行时双证）
 
-**判定：共存约束满足（本机当前环境；README 部署前提条款不变）。** 三层证据（批次 32，计划经独立审核 3 必改修正后执行）：
+**判定：共存约束满足（本机当前环境；README 部署前提条款不变）。** 三层证据（批次 32，计划经独立审核 3 必改修正后执行；宿主插件解析自报 hookCount:0 / enabledPluginCount:11 / pluginCount:15；内建 builtin.sessionMailbox.drain 注册于 UserPromptSubmit/PostToolUse/Stop——均为 additionalContext-only 变体）：
 
 1. **脚本层**：与守卫共存的钩子清单实测=恰一条——用户级 SessionStart superpowers 钩子（`~/.zcode/cli/config.json` 快照 sha256/16 `7673f66549327fb2`）；脚本 grep `updatedInput` 零命中，试运行（只读+printf）输出 `{"additionalContext": …}`；验收工作区（快照 `2396879aeb6ea7b7`）仅守卫自身 PreToolUse。
 2. **宿主 schema 层**（bundle 反解）：`hookSpecificOutput` 判别联合中 `updatedInput` 仅在 **PreToolUse 变体**（直接字段）与 **PermissionRequest 变体** decision.allow 分支（运行时映射 `decision:"modify"`/modifiedInput）；SessionStart 等其余五变体仅 `additionalContext`，运行时 SessionStart 分支同样只读 additionalContext——SessionStart 钩子结构上不可能返回 updatedInput。合并语义引证：mergeHookRunResult `t.updatedInput!==void 0&&(e.updatedInput=t.updatedInput)`（钩子间最后写入者胜）；消费点仅限上述两个授权事件——正是约束针对的共存面；本机这两个事件上无其他注册钩子（宿主自报 hookCount:0，enabledPluginCount:11）。
