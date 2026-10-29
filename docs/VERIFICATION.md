@@ -661,3 +661,16 @@ Lane A（渲染）：初审 Needs fixes（2 Critical）→ 修复轮 → 复审�
 | 密钥用量 | 0 |
 
 遗留总表更新：⑨（网关配置）、F/G/H、④-⑧、macOS。证据：`docs/evidence-2026-10-29-batch27-desktop-session.md` 补充 3。
+
+# 第三十八轮验证记录：批次 28——⑨ model-review 真调用（本机显式网关）（2026-10-29）
+
+| 项 | 结果 |
+|---|---|
+| `npm test` | 1004→1008/988+20skip（+4：证书效期≥9 年断言、子进程 TLS 自证 [带 CA 成功/不带 CA 必拒双测]、单调用封顶 [首 POST 计数、次 POST 429]） |
+| 审计划 | 6 必改全部落实（三段流程更正/IP SAN/10 年效期 vs CI/子进程 env 证明法/healthz 不计数/⑨ 行措辞为操作员放置） |
+| 运行 1（未计费） | GATEWAY_ERROR 401——协调者首版编排的键传递缺陷（DS_KEY env 未能到达网关子进程；直连上游同键 curl=200 证明键本身有效）。401=服务端认证拒绝、未推理未计费。修复编排后复跑 |
+| 运行 2（**恰 1 计费**） | **PASS exit 0**：三段流程（loadGateway→红线→单调用）；verdict `request_changes` 1 finding（模型对夹具 diff 的合理评审——"changelog 式片段非真实代码 diff"），usage 159 tokens；网关侧独立断言 `POST -> upstream 200 (posts=1)`——单次封顶由外部装置证实 |
+| 密钥纪律 | DEEPSEEK_API_KEY 锚定提取→仅网关子进程 env；网关上游头**只**自建（绝不透传占位 Bearer）；两版编排均零打印/零落盘；运行后网关杀除、全部临时件清理 |
+| 状态升级 | FEATURE_MATRIX ⑨ 行：mechanism-ready → **runtime-verified (single real call)**；配置为协调者在用户持续授权下显式放置（本机 127.0.0.1 网关，黑名单尊重——防回退构造未被触碰） |
+
+证据：本表+网关日志行 `POST -> upstream 200 in 1641ms (posts=1)`（转写）。密钥用量：本批 1 计费（401 未计费）；项目 zcode 13、DSH 12、网关路径 1。

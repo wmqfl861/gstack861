@@ -23,7 +23,7 @@
 | 纵向流程（spec→ship） | workflow-harness-verified | ship-vertical-verified | ZCode 侧六阶段+审批+交付曾真实跑通（非 host_verified）；批次 16 增机器可检离线 harness（offline-workflow-journal-harness：六阶段 CLI 记账+review 恢复腿+审批门控 ship+策略腿，零模型调用）；DSH 侧 spec→implement→qa+TaskStore 记账 vertical-verified（批次 13）；ship+审批集成 vertical-verified（批次 14）；**恢复纵向 reap→resume 键控单次运行通过（批次 16：崩溃模拟→收割→恢复→密钥任务终态正确 attempts=2）** |
 | 开发/调查/review | planned | vertical-slice-verified | DSH 侧为**生命周期能力切片**键控实证（批次 13/14/16：逐字标记读、精确单写、回读校验、ship 负控+审批门、崩溃→收割→恢复复跑）——**非** /investigate、/review 技能方法论消费（两宿主均未跑）；ZCode 列仍 planned 待③ |
 | 子 Agent 与工作流恢复 | store-recovery-verified | store-recovery-verified | 批次 15 共享核 store+CLI 离线实证：租约/心跳/收割/重排（陈旧租约清除、收割↔心跳锁内竞争）、审批取消矩阵+cancelWorkflow 故障安全顺序（先拒审批后取消）；批次 16 DSH 恢复纵向键控单次运行通过（崩溃模拟→reap→resume→密钥任务 completed attempts=2）；宿主内执行器接线仍 planned（待③/后续）；双进程锁竞争已实证（既有 start 竞争测试 + 批次 18 reap/heartbeat 竞争序集断言；真实 SIGKILL 竞争仍环境受限）（批次 18 实测：15 次真双进程 reap/heartbeat 竞争全部恰一 exit 0，胜者分布 reap 6 / heartbeat 4，四种合法"胜者×败者码"组合均出现；成果审查独立复测 10/10 恒一胜者） |
-| 独立模型复核 | mechanism-ready | mechanism-ready | 配置加载/黑名单/单次封顶/开关红线全部实测（批次 11，五段就绪验证）；runtime 真调用待解锁-⑨（用户手放网关配置+开关+键） |
+| 独立模型复核 | mechanism-ready | mechanism-ready | 配置加载/黑名单/单次封顶/开关红线全部实测（批次 11，五段就绪验证）；runtime-verified（批次 28 单次真调用，本机显式网关，单次封顶独立证实）|
 | 浏览器/QA/设计 | planned | planned | 复用上游工具并迁移依赖；设计组消费属键控预算类（密钥即可推进，无需③），浏览器/QA 组受阻于浏览器栈 |
 | ship/部署/监控 | planned | vertical-slice-verified | 纵向切片实证（批次 14 DSH：审批门+特权发布+单次消费）；真实部署/监控交付仍 planned（审批、测试证据与幂等边界） |
 | 文档/记忆/GBrain | planned | planned | 对应原生工具与会话路径；learn/retro/document-generate 已实证消费（15 例计数内，批次 6 safety-suite），document-release 未消费，GBrain 前置③ |
