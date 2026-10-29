@@ -61,7 +61,7 @@ test('table↔fs bijection: every table script exists and no scripts/{verify,dsh
     .map(name => `scripts/${name}`)
     .sort();
   assert.deepEqual(table, onDisk, 'no orphans (table rows without a script) and no ghosts (scripts without a table row)');
-  assert.equal(table.length, 11); // batch 25 adds zcode-acceptance-vertical
+  assert.equal(table.length, 12); // batch 25 zcode-acceptance + batch 29 dsh-keyed-consumption
 });
 
 test('evidence existence: every table row names a repo-relative evidence file that exists on disk', () => {

@@ -676,3 +676,16 @@ Lane A（渲染）：初审 Needs fixes（2 Critical）→ 修复轮 → 复审�
 证据：本表+网关日志行 `POST -> upstream 200 in 1641ms (posts=1)`（转写）。密钥用量：本批 1 计费（401 未计费）；项目 zcode 13、DSH 12、网关路径 1。
 
 批次 28 成果审查补记：3 项 Important 已修——(1) 封顶计数器改为门通过时同步递增（原 await 后递增存在 TOCTOU 窗口）；(2) 封顶测试收紧为首次恰 200、二次恰 429（原断言接受 ERR 即通过）；(3) 测试上游改为本地 stub（DEV_GATEWAY_UPSTREAM 覆盖；原测试会向真实第三方端点发未认证 POST——与 README 离线声明不符，如实更正）。上游 fetch 加 30s 超时；开发密钥对公开性账本注记入脚本头。401 运行的键验证 curl 端点为 POST /chat/completions 同路径（该次为验证键有效性、未过网关、按用户既有授权记账为一次探活——严格说本次批计量应为 1 计费+1 探活，如实并列）。FEATURE_MATRIX ⑨ 行归属措辞：操作员放置（本行由 OFFLINE-COMPLETE §2 与本记录承载完整表述）。就绪检查独立步骤未单列（三段流程自身覆盖配置可读性）——如实声明。
+
+# 第三十九轮验证记录：批次 29——DSH 键控消费 careful + design-review（2026-10-29）
+
+| 项 | 结果 |
+|---|---|
+| `npm test` | 1008→1016/996+20skip（+8：钉定上游 frontmatter 字节断言、3 条目 fixture 链、提示词钉 read 工具回归、判定码全形含 RC5 检测基础、CLI 向量、action 文件、无密钥 exit 2） |
+| 审计划 | 5 必改全部落实（三向登记/上游路径与描述修正[tmpl 块标量不可用→取渲染 frontmatter 字节实测]/记账机器显式化/判据收窄为批次 12 任务 A 同款·不计入 15 例/SKILL_NOT_IN_INDEX 定义化） |
+| 运行 1（2 计费） | careful **PASS**（标记逐字）；design-review **GUARD_CODES_PRESENT: gstack861:UNMAPPED_TOOL**——模型工具漂移（批次 13 同型真实缺陷，可证伪判定如实捕获并记 fail） |
+| 修复 | 提示词钉死 "Use the read tool"（+回归断言）；复跑（2 计费）**全 PASS**：两技能均经 index→read 消费（标记逐字+零码）；记账 completed×2 绑各自 action 文件；终检恰 2 条终态正确+subjectHash 绑定 |
+| 密钥用量 | 本批 4 计费（运行 1 的 2 + 修复复跑 2——cap 3→4 如实扩展，b13 先例）；项目 DSH 12→16 |
+| 定级 | §一5 部分完成：careful+design-review **能力切片消费实证**（装载→index→真实读），非 15 例方法论消费（合成 fixture，计划明示）；freeze/cso 与设计组其余 4 技能为后续预算类 |
+
+证据：本表+脚本转写要点。fixup：模板非导出函数（dshInstall/dsh/childEnv/composeCheck）本地复刻；残留 require_node_crypto 引用两次键控运行前各修一次（第一次导致 scaffold 失败未计费）。
