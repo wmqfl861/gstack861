@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-29",
+  "baseCommit": "bc929e6a1aa87b3422e5d22d58754cd89d6e4a84",
+  "environment": {
+    "platform": "linux",
+    "node": "v22.16.0"
+  },
+  "results": {
+    "syntaxModules": 108,
+    "tests": 1089,
+    "passed": 1088,
+    "failed": 0,
+    "skipped": 1,
+    "offlineSteps": {
+      "passed": 9,
+      "total": 9
+    },
+    "doctorExit": 0,
+    "inventoryExit": 0
+  },
+  "reproduction": {
+    "firstBatchTests": 11,
+    "beforeFixFailed": 11,
+    "afterFixPassed": 11,
+    "additionalRegressions": 4
+  },
+  "notRun": [
+    "live-host-session",
+    "paid-model",
+    "user-cloud",
+    "Windows-local"
+  ],
+  "paidModelCalls": 0,
+  "files": [
+    {
+      "path": "src/install.mjs",
+      "sha256": "a406b0eb37bf2dbed24df987d9fa266ba8f28c197f8b944468a016d45a42d2f6",
+      "gitBlob": "22702bfc8a94016cf9896d52b1a103c853344507"
+    },
+    {
+      "path": "src/json.mjs",
+      "sha256": "01e6ad33c0891f15ff9b09d973085584409fc0165f2a625318a4a79114abb829",
+      "gitBlob": "1ae3d3046f18656f219b890abd826de75da283f4"
+    },
+    {
+      "path": "src/model-review.mjs",
+      "sha256": "c686c5174dbc4443bd403aa53419061a9f38a7aee59bb07b54069613bf65819d",
+      "gitBlob": "ee07c6a98e33d67f286f569bfba6ba752f43e50c"
+    },
+    {
+      "path": "src/stage.mjs",
+      "sha256": "1a7065756a7abe589ebe4905eaa384a82486e9eb99d2bbeee5578686bb270012",
+      "gitBlob": "39a01eb40a499db7991080172b1df0efa84b34f1"
+    },
+    {
+      "path": "test/install.test.mjs",
+      "sha256": "92b135244e5855562a6317f4a24808bc72bd3b4888aac6135da888a01ecd3632",
+      "gitBlob": "79e0ab5ddef875f74a88387125c4221f5d03809d"
+    },
+    {
+      "path": "test/recheck-audit.test.mjs",
+      "sha256": "6eecb37e227999bc0c2037618f50c97a034a4eb67f472965bbddc24f96b84833",
+      "gitBlob": "1c04d8930b66c9fe8081d699f440598cee9a2648"
+    }
+  ]
+}

@@ -1,0 +1,84 @@
+name: recheck-verified-transfer
+on:
+  push:
+    branches: ['audit/recheck-transfer-20261029']
+permissions:
+  contents: read
+jobs:
+  verify:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - name: Reconstruct exact reviewed tree
+        run: |
+          git config --global core.autocrlf false
+          git worktree add --detach repair bc929e6a1aa87b3422e5d22d58754cd89d6e4a84
+          python -X utf8 .audit-recheck/run.py repair
+          git -C repair submodule update --init --depth 1
+      - name: Full regression on verified tree
+        run: |
+          mkdir -p recheck-evidence
+          cd repair
+          npm run check > ../recheck-evidence/check.log 2>&1
+          npm test > ../recheck-evidence/tests.log 2>&1
+          npm run verify-offline > ../recheck-evidence/offline.log 2>&1
+          npm run doctor > ../recheck-evidence/doctor.log 2>&1
+          node bin/gstack861.mjs inventory --upstream upstream/gstack > ../recheck-evidence/inventory.json
+      - name: Compact failure or success report
+        if: always()
+        run: |
+          python -X utf8 - <<'PY'
+          from pathlib import Path
+          root=Path('recheck-evidence');root.mkdir(exist_ok=True)
+          lines=(root/'tests.log').read_text(errors='replace').splitlines() if (root/'tests.log').exists() else ['tests not run']
+          summary=[]
+          for i,line in enumerate(lines):
+              if line.lstrip().startswith('not ok'):
+                  summary.extend(lines[max(0,i-1):i+28])
+              elif line.startswith(('# tests','# pass','# fail','# skipped','# cancelled','# duration_ms')):
+                  summary.append(line)
+          text='\n'.join(summary or ['No test summary; inspect check.log or reconstruction step.'])[:15000]
+          (root/'summary.txt').write_text(text,encoding='utf-8')
+          print(text)
+          PY
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        if: always()
+        with:
+          name: recheck-${{ matrix.os }}
+          path: recheck-evidence/
+          retention-days: 5
+  publish-objects:
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+      - name: Publish only the verified repair tree to a separate branch
+        shell: bash
+        run: |
+          git worktree add --detach repair bc929e6a1aa87b3422e5d22d58754cd89d6e4a84
+          python -X utf8 .audit-recheck/run.py repair
+          git -C repair config user.name 'gstack861 audit'
+          git -C repair config user.email 'audit@users.noreply.github.com'
+          tree=$(git -C repair write-tree)
+          sha=$(printf '%s\n' 'fix(audit): bound gateway waits and preserve installation ownership' | git -C repair commit-tree "$tree" -p bc929e6a1aa87b3422e5d22d58754cd89d6e4a84)
+          git push origin "$sha:refs/heads/audit/recheck-verified-20261029"
+          echo "VERIFIED_REPAIR_COMMIT=$sha"
