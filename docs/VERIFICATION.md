@@ -703,3 +703,5 @@ Lane A（渲染）：初审 Needs fixes（2 Critical）→ 修复轮 → 复审�
 | 密钥用量 | 本批 2 计费；项目 DSH 16 → 18 |
 
 证据：本表+脚本转写要点。§一5 剩余：设计组 4 技能（design-consultation/shotgun/html/devex）——同命令一键可续。
+
+批次 30 成果审查补记：1 Important 已修——`--skills` 有旗无值/下一参为旗时不再静默缺省（先于密钥门 exit 1 + 新测试）；Minor 同步：头注释批次 30 化（RC5 完全落实）、测试 tmp 前缀 c30、verify-offline 横幅计数更正。审者裁定 Ready to push（Important 属潜在 argv 边角，不影响已完成运行与 CI，修于下一键控批之前——本补记即该修复）。

@@ -1,5 +1,5 @@
-// Batch 29: DSH keyed consumption of the careful (security group) and
-// design-review (design group) skills — OFFLINE-COMPLETE §一5.
+// DSH keyed consumption of §一5 budget-class skills — OFFLINE-COMPLETE §一5.
+// Batches 29-30 consumed: careful, design-review, freeze, cso (capability slices).
 //
 // Standard: batch-12 task A (marker verbatim + zero gstack861 codes). This is a
 // CAPABILITY-SLICE consumption via a synthetic fixture (load → index injection →
@@ -13,7 +13,7 @@
 //
 // KEY HANDLING: identical to verify-dsh-vertical.mjs (env-only, keyed children
 // only, offline children stripped). Prompts ≤200 chars throw-before-launch.
-// Exit 0 = both consumed; 1 = failure; 2 = BLOCKED (no key).
+// --skills a,b (whitelist; default careful,design-review). Exit 0 = all consumed; 1 = failure; 2 = BLOCKED (no key).
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -244,6 +244,11 @@ function blocked(skills) {
 async function main() {
   // Skill resolution BEFORE the key gate (plan RC 2): typos fail keylessly.
   const specIndex = process.argv.indexOf('--skills');
+  if (specIndex >= 0 && (specIndex + 1 >= process.argv.length || process.argv[specIndex + 1].startsWith('--'))) {
+    console.log('RESULT: FAILURE — INVALID_SKILLS_SPEC --skills present without a value (only the space-separated form is supported)');
+    process.exitCode = 1;
+    return;
+  }
   try {
     var skills = resolveSkills(specIndex >= 0 ? process.argv[specIndex + 1] : undefined);
   } catch (error) {

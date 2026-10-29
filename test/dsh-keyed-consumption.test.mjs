@@ -20,7 +20,7 @@ import {
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 function base(t) {
-  const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'gstack861-c29-')));
+  const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'gstack861-c30-')));
   t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
   return dir;
 }
@@ -152,6 +152,14 @@ test('invalid --skills fails BEFORE the key gate (keyless exit 1 with the reject
   });
   assert.equal(child.status, 1);
   assert.match(child.stdout, /UNKNOWN_SKILL/);
+}, { timeout: 120000 });
+
+test('--skills present without a value exits 1 keylessly (never silently defaults)', () => {
+  const child = spawnSync(process.execPath, [path.join(repoRoot, 'scripts/dsh-keyed-consumption.mjs'), '--skills'], {
+    encoding: 'utf8', timeout: 60000, env: { ...process.env, DEEPSEEK_API_KEY: '' },
+  });
+  assert.equal(child.status, 1);
+  assert.match(child.stdout, /INVALID_SKILLS_SPEC/);
 }, { timeout: 120000 });
 
 test('keyless invocation: exits 2 (BLOCKED) without touching DSH', () => {

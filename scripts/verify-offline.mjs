@@ -57,7 +57,7 @@ function main() {
   };
   const tail = child => child.signal ? ` signal=${child.signal}` : '';
 
-  console.log('verify-offline: unified offline regression — 6 keyed BLOCKED smokes + zcode-workflow-vertical full run + verify-model-review;');
+  console.log('verify-offline: unified offline regression — seven keyed BLOCKED smokes + zcode-workflow-vertical full run + verify-model-review;');
   console.log('                 zero network beyond loopback, zero model calls (keyed children see an explicitly empty DEEPSEEK_API_KEY).');
 
   console.log('[1/3] keyed scripts BLOCKED smoke (expect exit 2 + BLOCKED line for each)...');
