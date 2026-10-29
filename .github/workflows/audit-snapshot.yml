@@ -18,9 +18,11 @@ jobs:
         run: |
           mkdir -p "$RUNNER_TEMP/audit-source"
           git bundle create "$RUNNER_TEMP/audit-source/gstack861.bundle" HEAD
+          git -c protocol.version=2 submodule update --init --depth 1
+          git -C upstream/gstack bundle create "$RUNNER_TEMP/audit-source/upstream-gstack.bundle" HEAD
           git rev-parse HEAD > "$RUNNER_TEMP/audit-source/HEAD.txt"
           git ls-files --stage > "$RUNNER_TEMP/audit-source/tracked-files.txt"
-          sha256sum "$RUNNER_TEMP/audit-source/gstack861.bundle" > "$RUNNER_TEMP/audit-source/SHA256SUMS.txt"
+          sha256sum "$RUNNER_TEMP/audit-source/"*.bundle > "$RUNNER_TEMP/audit-source/SHA256SUMS.txt"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: audit-source-snapshot
