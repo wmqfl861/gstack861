@@ -1,15 +1,16 @@
-import { freeze } from './json.mjs';
-import { resolveKey } from './gateway.mjs';
+import { freeze, object } from './json.mjs';
+import { compileGateway, resolveKey } from './gateway.mjs';
 
 // Boundary (9) executor half: ONE capped, explicitly-authorized model call per review.
-// The gateway object comes from loadGateway() (src/gateway.mjs), which already enforced the
-// https/loopback rule and the official-endpoint blocklist; the API key is resolved here for
+// Revalidate even inline gateway objects at this public execution boundary; loadGateway()
+// additionally verifies a user-owned configuration file outside the workspace; the API key is resolved here for
 // one-time use and must never appear in any thrown error. Paid calls stay off unless the
 // environment switch GSTACK861_MODEL_CALL === '1': every precondition is checked BEFORE the
 // single fetch so refusals are provably zero-call.
 
 const SWITCH = 'GSTACK861_MODEL_CALL';
 const MAX_INPUT_BYTES = 64 * 1024; // assembled system+user prompt cap
+const MAX_OUTPUT_BYTES = 1024 * 1024; // a malicious gateway need not obey max_tokens
 const VERDICTS = new Set(['approve', 'request_changes']);
 const SYSTEM_TEMPLATE = [
   'You are the independent model reviewer for a repository change.',
@@ -39,6 +40,41 @@ function redact(text, key) {
   if (typeof key === 'string' && key.length >= 1) out = out.split(key).join('[REDACTED]');
   for (const [shape, replacement] of SECRET_SHAPES) out = out.replace(shape, replacement);
   return out;
+}
+
+/** Sanitize every gateway-controlled returned string, including JSON object keys.
+ * Bound recursion separately from the byte cap so deeply nested usage cannot overflow. */
+function redactValue(value, key, depth = 0) {
+  if (depth > 64) throw fail('REVIEW_OUTPUT_TOO_DEEP');
+  if (typeof value === 'string') return redact(value, key);
+  if (Array.isArray(value)) return value.map(v => redactValue(v, key, depth + 1));
+  if (object(value)) return Object.fromEntries(Object.entries(value).map(([k, v]) => [redact(k, key), redactValue(v, key, depth + 1)]));
+  return value;
+}
+
+/** Stop reading as soon as the decoded response exceeds the memory budget.
+ * The text-only fallback preserves the existing injectable fetch test contract. */
+async function boundedText(response) {
+  if (!response.body?.getReader) {
+    const text = await response.text();
+    if (Buffer.byteLength(text, 'utf8') > MAX_OUTPUT_BYTES) throw fail('REVIEW_OUTPUT_TOO_LARGE');
+    return text;
+  }
+  const reader = response.body.getReader(), chunks = [];
+  let size = 0, complete = false;
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) { complete = true; break; }
+      size += value.byteLength;
+      if (size > MAX_OUTPUT_BYTES) throw fail('REVIEW_OUTPUT_TOO_LARGE');
+      chunks.push(Buffer.from(value));
+    }
+    return Buffer.concat(chunks, size).toString('utf8');
+  } finally {
+    if (!complete) { try { await reader.cancel(); } catch { /* preserve the original refusal */ } }
+    reader.releaseLock();
+  }
 }
 
 /** Deterministic endpoint join (audit #10): rebuild through a URL object so a stray
@@ -96,6 +132,9 @@ function extractVerdict(content, sanitize = value => value) {
 export async function runModelReview({ gateway, target, prompt, fetchImpl = fetch, timeoutMs = 30000, env = process.env }) {
   // 1. Paid-call switch: anything but the exact string '1' refuses before any network move.
   if (env[SWITCH] !== '1') throw fail('MODEL_CALL_NOT_ENABLED');
+  // Inline callers historically omitted schemaVersion; retain that shorthand, not unchecked fields.
+  if (!object(gateway)) throw fail('INVALID_GATEWAY');
+  gateway = compileGateway({ schemaVersion: 1, ...gateway });
   // 2. Key: resolved from the env var the gateway NAMES (never stored); missing -> refuse.
   const key = resolveKey(gateway, env);
   // 3. Prompt assembly + size cap: the fixed review template plus each file's path and diff.
@@ -128,17 +167,18 @@ export async function runModelReview({ gateway, target, prompt, fetchImpl = fetc
     }
     // ECONNREFUSED, DNS and refused redirects all land here as a structured refusal.
     const why = error?.cause?.code ?? error?.code ?? error?.name ?? 'network error';
-    throw fail('GATEWAY_ERROR', `(network: ${why})`);
+    throw fail('GATEWAY_ERROR', `(network: ${redact(String(why), key).slice(0, 128)})`);
   }
   if (response.status >= 300 && response.status < 400) throw fail('GATEWAY_ERROR', `(redirect refused; status ${response.status})`);
   if (!response.ok) throw fail('GATEWAY_ERROR', `(status ${response.status})`); // never echo the body
   // 5. Parse: choices[0].message.content -> { verdict, findings }.
   let text;
-  try { text = await response.text(); }
+  try { text = await boundedText(response); }
   catch (error) {
+    if (error?.message === 'REVIEW_OUTPUT_TOO_LARGE') throw fail('REVIEW_OUTPUT_TOO_LARGE');
     // Mid-body abort/reset gets the same structured codes as the fetch phase.
     if (error?.name === 'AbortError' || error?.name === 'TimeoutError' || error?.cause?.name === 'TimeoutError') throw fail('GATEWAY_TIMEOUT');
-    throw fail('GATEWAY_ERROR', `(body read: ${error?.cause?.code ?? error?.name ?? 'failed'})`);
+    throw fail('GATEWAY_ERROR', `(body read: ${redact(String(error?.cause?.code ?? error?.name ?? 'failed'), key).slice(0, 128)})`);
   }
   let payload;
   try { payload = JSON.parse(text); }
@@ -149,5 +189,5 @@ export async function runModelReview({ gateway, target, prompt, fetchImpl = fetc
   }
   const { verdict, findings } = extractVerdict(content, value => redact(value, key));
   // 6. Frozen structured verdict.
-  return freeze({ verdict, findings, usage: payload.usage ?? null });
+  return freeze({ verdict, findings: findings.map(value => redact(value, key)), usage: redactValue(payload.usage ?? null, key) });
 }

@@ -4,8 +4,8 @@
 // cert (IP SANs 127.0.0.1/::1 + DNS localhost — IP-literal hosts only match IP
 // SANs). One route pair:
 //   GET  /healthz            — liveness probe, NOT counted against the cap.
-//   POST /chat/completions   — forwarded verbatim to DeepSeek's OpenAI-compatible
-//                              endpoint. The upstream request carries ONLY the
+//   POST /chat/completions   — forwarded to an EXPLICIT OpenAI-compatible
+//                              DEV_GATEWAY_UPSTREAM endpoint. The upstream request carries ONLY the
 //                              gateway's own env credentials; incoming headers are
 //                              never spread (the placeholder Bearer would 401).
 // Single-call cap: a second POST gets 429 — the repo-wide red line, belt #2 on
@@ -27,7 +27,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 const { key, cert } = JSON.parse(readFileSync(new URL('./dev-gateway-certs.json', import.meta.url), 'utf8'));
-const UPSTREAM = process.env.DEV_GATEWAY_UPSTREAM ?? 'https://api.deepseek.com/chat/completions'; // tests override to a local stub
+const UPSTREAM = process.env.DEV_GATEWAY_UPSTREAM; // no implicit provider or paid fallback
 let posts = 0;
 
 const server = https.createServer({ key, cert }, (req, res) => {
@@ -39,6 +39,12 @@ const server = https.createServer({ key, cert }, (req, res) => {
   if (req.method !== 'POST' || !req.url.replace(/\/+$/, '').endsWith('/chat/completions')) {
     res.writeHead(404, { 'content-type': 'application/json' });
     res.end(JSON.stringify({ error: 'not found' }));
+    return;
+  }
+  if (!UPSTREAM || !process.env.DEEPSEEK_API_KEY) {
+    req.resume();
+    res.writeHead(503, { 'content-type': 'application/json' });
+    res.end(JSON.stringify({ error: 'explicit upstream and credential required' }));
     return;
   }
   // Cap invariant (audit #7): at most ONE upstream POST per gateway process. The sole slot is
@@ -71,6 +77,7 @@ const server = https.createServer({ key, cert }, (req, res) => {
       const upstream = await fetch(UPSTREAM, {
         method: 'POST',
         headers: { Authorization: `Bearer ${process.env.DEEPSEEK_API_KEY}`, 'content-type': 'application/json' },
+        redirect: 'error', // a 307/308 must not spend the one-call budget a second time
         body: Buffer.concat(chunks), signal: AbortSignal.timeout(30000),
       });
       const body = await upstream.text();

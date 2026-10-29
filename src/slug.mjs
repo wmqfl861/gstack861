@@ -269,7 +269,8 @@ export function resolveIdentity({ cwd = process.cwd(), env = process.env, stateR
     let raw = readFileOr(entryFile);
     if (raw.startsWith('v2:')) { cacheV2 = true; raw = raw.slice(3); }
     const cached = sanitize(raw);
-    if (cached !== '') {
+    // Apply the env-pin path-segment invariant to persisted identities as well.
+    if (cached !== '' && cached !== '.' && cached !== '..') {
       const pwdBase = sanitize(path.basename(projectDir));
       const rootBase = projectRoot !== '' ? sanitize(path.basename(projectRoot)) : '';
       const originResolvable = dir => { try { runGit(['remote', 'get-url', 'origin'], dir); return true; } catch { return false; } };
