@@ -691,3 +691,15 @@ Lane A（渲染）：初审 Needs fixes（2 Critical）→ 修复轮 → 复审�
 证据：本表+脚本转写要点。fixup：模板非导出函数（dshInstall/dsh/childEnv/composeCheck）本地复刻；残留 require_node_crypto 引用两次键控运行前各修一次（第一次导致 scaffold 失败未计费）。
 
 批次 29 成果审查补记：4 项 Important 全部修复——(1) verify-offline 注册补齐（七键控冒烟，9/9 绿）；(2) FEATURE_MATRIX「浏览器/QA/设计」行 design-review 落地注记；(3) composeCheck 恢复 agent 栈断言（agent-default-model+headless）；(4) 键控发射补 DSH_PERMISSION_MODE=danger-full-access（家族惯例，头注释说明）。Minor 清理：未用 import 删除、actionFile 占位改省略+崩溃注释、blocked() 上限历史注记。
+
+# 第四十轮验证记录：批次 30——DSH 键控消费 freeze + cso（§一5 安全组收尾）（2026-10-29）
+
+| 项 | 结果 |
+|---|---|
+| `npm test` | 1016→1020/1000+20skip（+4：resolveSkills 矩阵[缺省顺序钉死/未知/空/重复拒绝+freeze,cso 字节解析]、白名单 8 条目 git-show 字节全钉、--skills fixture 形状、无效参数先于密钥门 exit 1） |
+| 审计划 | 6 必改全部落实（白名单=名称→字节钉定描述映射[8 条目计数更正]/校验先于密钥门+重复拒绝/线程路径补全[prepareConsumption 穿参]/恰-2 全去参数化/C30 标识/文档范围补全） |
+| 键控运行 | **首跑即全 PASS exit 0**（恰 2 计费）：freeze+cso 均经 index→read 消费（G861-C30 标记逐字+零码）；记账 completed×2 绑各自 action 文件；终检恰 2 条+subjectHash 绑定；安全组三技能（careful/freeze/cso）至此全部能力切片消费完毕 |
+| 参数化 | `--skills a,b`（白名单校验；缺省=careful,design-review 向后兼容）；blocked()/日志/记账计数全部由 N 派生 |
+| 密钥用量 | 本批 2 计费；项目 DSH 16 → 18 |
+
+证据：本表+脚本转写要点。§一5 剩余：设计组 4 技能（design-consultation/shotgun/html/devex）——同命令一键可续。

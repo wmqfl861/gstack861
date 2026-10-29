@@ -12,7 +12,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import {
-  CONSUMED_SKILLS, PROMPT_MAX_CHARS, buildConsumptionFixture, buildConsumptionPrompt,
+  CONSUMED_SKILLS, DEFAULT_CONSUMED_SKILLS, SKILL_WHITELIST, resolveSkills, PROMPT_MAX_CHARS, buildConsumptionFixture, buildConsumptionPrompt,
   buildMarkerLine, checkPromptCap, consumptionTasksArgs, parseEvents, parseGstackCodes,
   verdictConsumption, writeActionFile,
 } from '../scripts/dsh-keyed-consumption.mjs';
@@ -110,6 +110,49 @@ test('writeActionFile: one stable {phase,task} file per skill', (t) => {
   assert.notEqual(a, b);
   assert.deepEqual(JSON.parse(fs.readFileSync(a, 'utf8')), { phase: 'consume-careful', task: 'careful' });
 });
+
+test('resolveSkills: absent=defaults (order pinned); unknown/empty/duplicate rejected; freeze,cso resolves byte-pinned', () => {
+  const def = resolveSkills(undefined);
+  assert.deepEqual(def.map(s => s.name), DEFAULT_CONSUMED_SKILLS, 'default order load-bearing (entries[0]=careful)');
+  assert.equal(def[0].name, 'careful');
+  assert.equal(resolveSkills('freeze,cso').map(s => s.name).join(','), 'freeze,cso');
+  assert.equal(resolveSkills('freeze,cso')[0].description, SKILL_WHITELIST.freeze);
+  assert.throws(() => resolveSkills('freeze,'), /INVALID_SKILLS_SPEC/);
+  assert.throws(() => resolveSkills(''), /INVALID_SKILLS_SPEC/);
+  assert.throws(() => resolveSkills('careful,careful'), /DUPLICATE_SKILL/);
+  assert.throws(() => resolveSkills('nonexistent'), /UNKNOWN_SKILL/);
+});
+
+test('WHITELIST: every entry byte-matches the pinned upstream rendered frontmatter', () => {
+  for (const [name, description] of Object.entries(SKILL_WHITELIST)) {
+    const rendered = execFileSync('git', ['-C', path.join(repoRoot, 'upstream', 'gstack'), 'show', `5755601:${name}/SKILL.md`], { encoding: 'utf8' });
+    const desc = rendered.split('\n').find(l => l.startsWith('description:'));
+    assert.equal(description, desc.replace(/^description:[ ]?/, ''), `${name}: byte-exact`);
+  }
+});
+
+test('fixture parameterization: --skills freeze,cso builds a 3-entry store with the right markers', (t) => {
+  const root = base(t);
+  const skills = resolveSkills('freeze,cso');
+  const fixture = buildConsumptionFixture(root, skills);
+  assert.equal(fixture.entries.length, 2);
+  assert.equal(fixture.entries[0].name, 'freeze');
+  assert.equal(fixture.entries[1].name, 'cso');
+  assert.ok(fs.existsSync(path.join(fixture.skillsDir, 'gstack', 'SKILL.md')), 'root router (3rd entry)');
+  for (const entry of fixture.entries) {
+    const text = fs.readFileSync(entry.skillFile, 'utf8');
+    assert.ok(text.includes(entry.markerLine));
+    assert.match(text, new RegExp(`^name: ${entry.name}$`, 'm'));
+  }
+});
+
+test('invalid --skills fails BEFORE the key gate (keyless exit 1 with the rejection)', () => {
+  const child = spawnSync(process.execPath, [path.join(repoRoot, 'scripts/dsh-keyed-consumption.mjs'), '--skills', 'typo'], {
+    encoding: 'utf8', timeout: 60000, env: { ...process.env, DEEPSEEK_API_KEY: '' },
+  });
+  assert.equal(child.status, 1);
+  assert.match(child.stdout, /UNKNOWN_SKILL/);
+}, { timeout: 120000 });
 
 test('keyless invocation: exits 2 (BLOCKED) without touching DSH', () => {
   const child = spawnSync(process.execPath, [path.join(repoRoot, 'scripts/dsh-keyed-consumption.mjs')], {

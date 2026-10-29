@@ -18,7 +18,7 @@
 | 不可绕过的全宿主安全 | blocked | blocked | 多调用一致性已单次密钥实证（批次 13）；启动失败、工具替换、PTC、子 Agent、Shell/OS 隔离仍待；DSH apply() 抛错仅警告且退出码 0（实测），验收须解析警告 |
 | 相对路径/Session cwd | contract_tested | blocked | ZCode 用事件 cwd；DSH 暂只接受绝对路径（Session cwd 语义与继承待真实宿主事件源——环境受阻） |
 | 技能渲染（上游管线 CI 复用） | rendered-experimental | rendered-experimental | CI 渲染成功（run 40464085183）；0.4.1 起装载链接通：stage-render→install→uninstall 全链实测（多文件技能含 registry 锚定摘要）；0.4.2 fixture 工作区 `.zcode/skills` 装载实测（runbook §2.2/2.3/2.5 回填）；不宣称 conformance/full；新会话拾取：**工作区技能发现+Skill 装载已 host 级实证（批次 25 无头真实会话，标记逐字）**；上下文自动注入/UI 会话仍未验证 |
-| 渲染技能宿主消费 | workflow-evidence | runtime-consumption-verified+careful-slice | careful 能力切片消费（批次 29）； 15 例已实证（+context-save/context-restore/diagram/make-pdf——后两者 BLOCKED/降级按其原文如实）：上下文注入消费、方法论遵循、技能自带降级与验证门槛执行（deslop 零候选为门槛正确运转）、语义审查真实拦截（spec flagged）、机制差距如实记录（见五份消费证据文档）；自动拾取未验证，非 host_verified |
+| 渲染技能宿主消费 | workflow-evidence | runtime-consumption-verified+security-slices | 安全组 careful/freeze/cso 能力切片消费（批次 29-30）； 15 例已实证（+context-save/context-restore/diagram/make-pdf——后两者 BLOCKED/降级按其原文如实）：上下文注入消费、方法论遵循、技能自带降级与验证门槛执行（deslop 零候选为门槛正确运转）、语义审查真实拦截（spec flagged）、机制差距如实记录（见五份消费证据文档）；自动拾取未验证，非 host_verified |
 | 原生询问桥 | implemented | implemented | `approvals ask` 阻塞式应答（exit 3 不自动同意）；宿主内嵌 UI 未接通 |
 | 纵向流程（spec→ship） | workflow-harness-verified | ship-vertical-verified | ZCode 侧六阶段+审批+交付曾真实跑通（非 host_verified）；批次 16 增机器可检离线 harness（offline-workflow-journal-harness：六阶段 CLI 记账+review 恢复腿+审批门控 ship+策略腿，零模型调用）；DSH 侧 spec→implement→qa+TaskStore 记账 vertical-verified（批次 13）；ship+审批集成 vertical-verified（批次 14）；**恢复纵向 reap→resume 键控单次运行通过（批次 16：崩溃模拟→收割→恢复→密钥任务终态正确 attempts=2）** |
 | 开发/调查/review | planned | vertical-slice-verified | DSH 侧为**生命周期能力切片**键控实证（批次 13/14/16：逐字标记读、精确单写、回读校验、ship 负控+审批门、崩溃→收割→恢复复跑）——**非** /investigate、/review 技能方法论消费（两宿主均未跑）；ZCode 列仍 planned 待③ |
@@ -27,7 +27,7 @@
 | 浏览器/QA/设计 | planned | keyed-slice-consumed | design-review 经 DSH index→read 消费实证（批次 29 能力切片：装载→注入→真实读，非方法论消费）；设计组余 4 技能属键控预算类（密钥即可推进）；浏览器/QA 组受阻于浏览器栈 |
 | ship/部署/监控 | planned | vertical-slice-verified | 纵向切片实证（批次 14 DSH：审批门+特权发布+单次消费）；真实部署/监控交付仍 planned（审批、测试证据与幂等边界） |
 | 文档/记忆/GBrain | planned | planned | 对应原生工具与会话路径；learn/retro/document-generate 已实证消费（15 例计数内，批次 6 safety-suite），document-release 未消费，GBrain 前置③ |
-| CSO/iOS/远程等专项 | planned | planned | Docker/设备/账号等依赖验收；cso 消费属键控预算类（密钥即可推进，无需③） |
+| CSO/iOS/远程等专项 | planned | planned | Docker/设备/账号等依赖验收；cso 已能力切片消费（批次 30，非方法论）；iOS/远程受阻于设备/远端 |
 | 真实模型质量对等 | not_run | not_run | 未调用模型，未使用预算 |
 
 `contract_tested` 不是 `host_verified`。源码盘点仅枚举顶层源技能，不涵盖全部命令选项、独立二进制和生命周期语义；`fullParity` 固定为 false，避免空集合或局部盘点误报完整支持。macOS 仍未运行，不声明通过；CI 结果以 GitHub Actions 实际运行为准。
