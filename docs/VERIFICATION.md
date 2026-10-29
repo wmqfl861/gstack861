@@ -651,3 +651,13 @@ Lane A（渲染）：初审 Needs fixes（2 Critical）→ 修复轮 → 复审�
 | 密钥用量 | 桌面用户交互驱动（非代理计费） |
 
 遗留更新：STEPS §4 剩 F（钩子超时）/G（updatedInput 共存审计）/H（UI 回滚）。证据：`docs/evidence-2026-10-29-batch27-desktop-session.md` 补充 2。
+
+# 第三十七轮验证记录：F 探针处置——遗留项+验收包复原（2026-10-29）
+
+| 项 | 结果 |
+|---|---|
+| F（钩子超时） | 已备未执（挂起钩子+config 备份就绪，用户多次核查期未执行桌面探针）→ 按授权记为**遗留**；未来步骤与预期（宿主文档先验=超时不保证阻断）入 batch27 证据补充 3 |
+| 验收包复原 | config.json 逐字节还原（decl/bundle 摘要与信任存储**双匹配**——预登记信任继续有效）；hanging-hook.mjs 删除；stdin 探针 exit 0 `{}` 复原验证 |
+| 密钥用量 | 0 |
+
+遗留总表更新：⑨（网关配置）、F/G/H、④-⑧、macOS。证据：`docs/evidence-2026-10-29-batch27-desktop-session.md` 补充 3。

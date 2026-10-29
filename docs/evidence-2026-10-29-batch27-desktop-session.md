@@ -43,3 +43,7 @@
 { "hookSpecificOutput": { "hookEventName": "PreToolUse", "permissionDecision": "deny", "permissionDecisionReason": "gstack861:HOOK_INPUT_OR_POLICY_ERROR" } }
 ```
 isError=true；**文件未变（仍为 y）**；模型未绕过（其"内容策略"推测为模型误读，实际原因为策略损坏闭锁——证据即拒绝码本身）。机械复核：协调者以同一钩子命令+损坏策略直打 stdin → exit 2 + 同一 deny 载荷逐字一致；复原策略后同输入 → exit 0 + `{}`（放行）。**策略损坏 → 闭锁拒绝而非放行：E 验证完成。**（STEPS §4 F 超时/G updatedInput 共存/H 回滚仍为遗留。）
+
+## 补充 3：F 探针（钩子超时语义）——已备未执，记为遗留（2026-10-29）
+
+协调者已将钩子换成挂起版（hanging-hook.mjs，10s 超时保留；config 备份）并请用户在桌面执行（需先对新钩子声明再确认一次信任，然后范围内写入观察超时后闭锁/放行）。用户多次核查期未执行——按授权将 F 记为**遗留项**。**验收包已复原**：config.json 从备份逐字节还原（重算 decl/bundle 摘要与信任存储记录**双双精确匹配**，预登记信任继续有效）、hanging-hook.mjs 已删除、stdin 探针复原验证 exit 0 `{}`。未来执行 F 的精确步骤：换挂起钩子→桌面确认新信任→范围内写→观察 10s 超时后被拒（闭锁）或成功（放行，即钉定提交文档所述"超时不保证阻断"的实证）→复原。已知先验：宿主文档明示超时不保证阻断（README 安全边界节引述），故预期结果为放行——F 的价值在于把该缺口从"文档引述"升级为"本机实证"。
