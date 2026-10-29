@@ -197,8 +197,9 @@ export function tasksArgs({ sub, stateDir, sessionId, runId, policyHash, actionF
  */
 export function journalSequence(store, subject, outcome) {
   const id = store.create(subject);
-  store.start(id, subject);
-  const record = outcome === 'fail' ? store.fail(id, subject) : store.complete(id, subject);
+  const started = store.start(id, subject);
+  const opts = { attemptToken: started.attemptToken }; // fence the attempt (audit #5)
+  const record = outcome === 'fail' ? store.fail(id, subject, opts) : store.complete(id, subject, opts);
   return { id, record };
 }
 
@@ -325,8 +326,14 @@ async function main() {
       const args = { stateDir: prepared.stateDir, sessionId, runId, policyHash: prepared.policyHash, actionFile: prepared.actionFiles[def.key] };
       const id = journalRun(tasksArgs({ ...args, sub: 'create' }), `create ${def.key}`,
         value => typeof value === 'string' && value.length > 0, repoRoot);
-      journalRun(tasksArgs({ ...args, sub: 'start', id }), `start ${def.key}`,
+      const started = journalRun(tasksArgs({ ...args, sub: 'start', id }), `start ${def.key}`,
         value => value?.state === 'running', repoRoot);
+      // Audit #5/#19: every start mints an attempt fence token and the terminal call
+      // below MUST present it — a missing token is a wiring bug, never a silent skip.
+      const attemptToken = started?.attemptToken;
+      if (typeof attemptToken !== 'string' || !/^[a-f0-9]{32}$/.test(attemptToken)) {
+        throw new Error(`TASKS_CLI_FAILED start ${def.key}: the started record carries no attempt token`);
+      }
       const task = launchTask({ root: prepared.root, workspace: prepared.workspace, profile: PROFILE, prompt: prompts[def.key], label: `task${def.key}-${def.phase}` });
       const verdict = def.verdict(task);
       console.log(`      ${verdict.ok ? 'PASS' : 'FAIL'}  ${verdict.code}: ${verdict.reason}`);
@@ -335,7 +342,7 @@ async function main() {
         if (diagnosis) console.log(`      diagnosis: ${diagnosis}`);
       }
       const terminal = verdict.ok ? 'complete' : 'fail';
-      journalRun(tasksArgs({ ...args, sub: terminal, id }), `${terminal} ${def.key}`,
+      journalRun([...tasksArgs({ ...args, sub: terminal, id }), '--attempt-token', attemptToken], `${terminal} ${def.key}`,
         value => value?.state === (verdict.ok ? 'completed' : 'failed'), repoRoot);
       outcomes.push({ key: def.key, id, expectedState: verdict.ok ? 'completed' : 'failed', verdict });
     }

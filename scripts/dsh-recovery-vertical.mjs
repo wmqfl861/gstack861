@@ -231,7 +231,7 @@ async function main() {
     // Terminal journal discipline first: the recovered record must land in a
     // true terminal state even (especially) on a verdict FAIL.
     const terminal = verdict.ok ? 'complete' : 'fail';
-    cliExpect(runTasksCli(tasksLeaseArgs({ ...subject, sub: terminal, id: taskId }), { cwd: repoRoot }), `${terminal} R`,
+    cliExpect(runTasksCli([...tasksLeaseArgs({ ...subject, sub: terminal, id: taskId }), '--attempt-token', resumed.parsed.attemptToken], { cwd: repoRoot }), `${terminal} R`,
       value => value?.state === (verdict.ok ? 'completed' : 'failed'));
     if (!verdict.ok) {
       console.log(`RESULT: FAILURE — TASK_VERDICT_FAIL ${verdict.code}: ${verdict.reason}（已如实 journal 为 failed；模型不遵循=真实失败，不重试。）`);

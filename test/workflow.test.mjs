@@ -15,9 +15,9 @@ const subject = f => ({ host: 'zcode', runId: 'r1', sessionId: 's1', policyHash:
 const taskIn = (store, s, state) => {
   const id = store.create(s);
   if (state === 'running') store.start(id, s);
-  else if (state === 'interrupted') { store.start(id, s); store.interrupt(id, s); }
-  else if (state === 'completed') { store.start(id, s); store.complete(id, s); }
-  else if (state === 'failed') { store.start(id, s); store.fail(id, s); }
+  else if (state === 'interrupted') { store.start(id, s); store.interrupt(id, s); } // interrupt is supervisor-side: no token
+  else if (state === 'completed') { const a = store.start(id, s); store.complete(id, s, { attemptToken: a.attemptToken }); }
+  else if (state === 'failed') { const a = store.start(id, s); store.fail(id, s, { attemptToken: a.attemptToken }); }
   else if (state === 'cancelled') store.cancel(id, s);
   return id;
 };

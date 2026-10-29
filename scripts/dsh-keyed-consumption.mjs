@@ -291,7 +291,8 @@ async function main() {
       const prompt = checkPromptCap(buildConsumptionPrompt({ skillName: entry.name }), `consume-${entry.name}`);
       const subject = { ...prepared.subject, actionFile: writeActionFile(prepared.root, { phase: `consume-${entry.name}`, task: entry.name }) };
       const create = journalRun(consumptionTasksArgs({ ...subject, sub: 'create' }), `create ${entry.name}`, v => typeof v === 'string' && v.length > 0);
-      journalRun(consumptionTasksArgs({ ...subject, sub: 'start', id: create }), `start ${entry.name}`, r => r?.state === 'running');
+      const started = journalRun(consumptionTasksArgs({ ...subject, sub: 'start', id: create }), `start ${entry.name}`, r => r?.state === 'running');
+      const attemptToken = started?.attemptToken; // fence this attempt (audit #5)
       // DSH_PERMISSION_MODE=danger-full-access: family convention — approval becomes
       // 'never' and the pre-execute layer allows, so the gstack861 guard is the only
       // layer whose abstain/deny the verdict observes (verify-dsh-vertical runTask rationale).
@@ -302,7 +303,7 @@ async function main() {
       const verdict = verdictConsumption({ output: `${task.stdout}\n${task.stderr}`, events, markerLine: entry.markerLine, skillFile: entry.skillFile });
       console.log(`      ${verdict.ok ? 'PASS' : 'FAIL'}  ${verdict.code}: ${verdict.reason}`);
       const terminal = verdict.ok ? 'complete' : 'fail';
-      journalRun(consumptionTasksArgs({ ...subject, sub: terminal, id: create }), `${terminal} ${entry.name}`, r => r?.state === (verdict.ok ? 'completed' : 'failed'));
+      journalRun([...consumptionTasksArgs({ ...subject, sub: terminal, id: create }), ...(attemptToken ? ['--attempt-token', attemptToken] : [])], `${terminal} ${entry.name}`, r => r?.state === (verdict.ok ? 'completed' : 'failed'));
       outcomes.push({ name: entry.name, id: create, verdict });
     }
     console.log(`[4/4] journal check BEFORE cleanup: exactly ${prepared.entries.length} records, terminal-correct...`);

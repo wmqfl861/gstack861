@@ -420,6 +420,93 @@ test('--policy-from base reads the committed base copy; head reads the working t
 });
 
 // ---------------------------------------------------------------------------
+// real-path containment of the working-tree config read (audit finding #9;
+// upstream assertInsideRoot ship-policy.ts lines 538-556, called at
+// banned-terms.ts line 102): a `.gstack` dir — or the config file — linked
+// out of the repo must be refused with BANNED_TERMS_INVALID, never read.
+// ---------------------------------------------------------------------------
+
+/** A real temp dir OUTSIDE the repo holding an escaping config; removed on test end. */
+function outsideConfig(t, cfg) {
+  const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'gstack861-escape-')));
+  fs.writeFileSync(path.join(dir, 'banned-terms.json'), typeof cfg === 'string' ? cfg : JSON.stringify(cfg, null, 2) + '\n');
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  return dir;
+}
+
+/** Link `.gstack` at `target`: junction on win32 (privilege-free), dir symlink elsewhere. */
+function linkGstackAt(repo, target) {
+  fs.symlinkSync(target, path.join(repo.root, '.gstack'), process.platform === 'win32' ? 'junction' : 'dir');
+}
+
+test('.gstack linked out of the repo: BANNED_TERMS_INVALID, exit 3 — the audit repro', (t) => {
+  const repo = makeRepo(t, { 'README.md': 'x' });
+  repo.write('clean.txt', 'nothing wrong except a forbidden-token here\n');
+  const outside = outsideConfig(t, { terms: ['forbidden-token'] });
+  linkGstackAt(repo, outside);
+
+  // Before the fix this read the outside config and exited 0; the term IS in
+  // the file, so a regression that loads it would exit 1 with a finding.
+  const r = run(repo.root, 'check', '--policy-from', 'head', '--files', 'clean.txt', '--json');
+  assert.equal(r.status, 3);
+  assert.equal(r.stdout, ''); // nothing scanned under the escaped policy
+  const lines = r.stderr.split('\n').filter(Boolean);
+  assert.equal(lines.length, 1);
+  assert.match(lines[0], /^gstack861-banned-terms: BANNED_TERMS_INVALID: \.gstack\/banned-terms\.json resolves through a symlink to outside .+ at \.gstack\/banned-terms\.json \(\.gstack\/banned-terms\.json\)$/);
+});
+
+test('the config file itself symlinked out of the repo: BANNED_TERMS_INVALID, exit 3', (t) => {
+  const repo = makeRepo(t, { 'README.md': 'x' });
+  repo.write('clean.txt', 'also carries forbidden-token\n');
+  const outside = outsideConfig(t, { terms: ['forbidden-token'] });
+  fs.mkdirSync(path.join(repo.root, '.gstack'));
+  try {
+    fs.symlinkSync(path.join(outside, 'banned-terms.json'), path.join(repo.root, CFG));
+  } catch (e) {
+    // file symlinks need privilege/Developer Mode on some win32 hosts (policy.test.mjs assumes them; skip when absent)
+    if (process.platform === 'win32' && ['EPERM', 'EACCES', 'EINVAL'].includes(e.code)) return t.skip('file symlink creation unavailable on this host');
+    throw e;
+  }
+  const r = run(repo.root, 'check', '--policy-from', 'head', '--files', 'clean.txt', '--json');
+  assert.equal(r.status, 3);
+  assert.equal(r.stdout, '');
+  assert.match(r.stderr, /BANNED_TERMS_INVALID: \.gstack\/banned-terms\.json resolves through a symlink to outside /);
+});
+
+test('the base-missing working-tree fallback (RC1) passes through the same containment check', (t) => {
+  const repo = makeRepo(t, { 'README.md': 'x' }); // no config committed on main
+  repo.write('clean.txt', 'would be a forbidden-token hit under the escaped config\n');
+  const outside = outsideConfig(t, { terms: ['forbidden-token'] });
+  linkGstackAt(repo, outside);
+
+  // default --policy-from base → absent on main → bin re-loads the working
+  // tree (RC1); that fallback load must refuse, not read, the escaped file.
+  const r = run(repo.root, 'check', '--files', 'clean.txt');
+  assert.equal(r.status, 3);
+  assert.equal(r.stdout, ''); // no 'none' line: the fallback failed, it did not report absent
+  const line = r.stderr.trim();
+  assert.match(line, /^gstack861-banned-terms: BANNED_TERMS_INVALID: /);
+  assert.ok(line.includes('resolves through a symlink to outside '), 'escape message names the symlink');
+  assert.ok(line.endsWith(`at ${CFG} (${CFG})`));
+});
+
+test('containment is real-path based, not a symlink ban: an in-repo link target still loads', (t) => {
+  const repo = makeRepo(t, { 'README.md': 'x' });
+  repo.write('config-home/banned-terms.json', JSON.stringify({ terms: ['needle'] }, null, 2) + '\n');
+  repo.write('a.txt', 'a needle appears\n');
+  // win32 realpath replays a junction's STORED target verbatim, so the target
+  // must be written in the canonical root form the loader compares against
+  // (git reports the long form; mkdtemp may have given us the 8.3 short form).
+  const canonical = fs.realpathSync(repo.git('rev-parse', '--show-toplevel'));
+  linkGstackAt(repo, path.join(canonical, 'config-home')); // resolves INSIDE the root → upstream allows it
+  const r = run(repo.root, 'check', '--policy-from', 'head', '--files', 'a.txt', '--json');
+  assert.equal(r.status, 1); // loaded through the link and scanned, exactly as upstream
+  const result = JSON.parse(r.stdout);
+  assert.equal(result.source, CFG);
+  assert.deepEqual(result.findings.map((f) => f.term), ['needle']);
+});
+
+// ---------------------------------------------------------------------------
 // matching semantics: whitespace → \s+, word boundaries, case, literal specials
 // ---------------------------------------------------------------------------
 

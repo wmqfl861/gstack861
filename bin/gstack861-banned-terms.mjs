@@ -9,7 +9,7 @@
 // matchesAny (upstream lines 190-227) — were inlined here since the b20
 // port and are lifted into the shared src/ship-policy.mjs as of batch 23;
 // resolveBaseBranch follows it in batch 24; this bin now imports all four
-// (behavior-preserving refactor, the 29 tests below are the regression
+// (behavior-preserving refactor, the 33 tests below are the regression
 // gate). One standalone zero-dependency Node executable apart from that
 // intra-repo import.
 //
@@ -32,7 +32,10 @@
 //     committed copy via `git show <base>:.gstack/banned-terms.json`; when
 //     that copy is absent the BIN falls back to the working tree (RC1 —
 //     the lib-level loadBannedTerms itself only ever reports absent);
-//     `--policy-from head` reads the working tree directly.
+//     `--policy-from head` reads the working tree directly. Both
+//     working-tree reads are real-path-contained in the root
+//     (assertInsideRoot, upstream-exact): a `.gstack` dir or config file
+//     that is a symlink/junction out of the repo → BANNED_TERMS_INVALID.
 //   - Base resolution (RC4): `--base <ref>` (a leading origin/ is
 //     stripped) → `git symbolic-ref refs/remotes/origin/HEAD` → silent
 //     fallback `main`; a usage error (exit 2) only when the subsequent
@@ -79,13 +82,18 @@
 //      exact exit table; only the program name in the banner differs.
 //      resultLine/exitTableHelp are otherwise the only upstream imports
 //      not ported 1:1.
-//   3. assertInsideRoot dropped (upstream ship-policy.ts line 542): the
-//      working-tree config read realpath-guards against symlink escapes,
-//      but this port reads the FIXED constant `.gstack/banned-terms.json`
-//      joined to the git-reported root — trivially inside. A `.gstack`
-//      directory that is itself a symlink out of the repo would be read
-//      through here where upstream refuses; unreachable through any CLI
-//      input, recorded for honesty.
+//   3. assertInsideRoot RESTORED (audit finding #9; upstream ship-policy.ts
+//      lines 538-556, inlined above loadBannedTerms — not yet lifted to
+//      src/ship-policy.mjs): the working-tree config read refuses a real
+//      path outside the repo root (BANNED_TERMS_INVALID), as upstream
+//      banned-terms.ts line 102. b20 had dropped it claiming the FIXED
+//      constant joined to the git-reported root was trivially inside and
+//      unreachable through any CLI input — that reachability call was
+//      WRONG: `.gstack` (or the config file itself) can be a
+//      symlink/junction to an outside directory as plain working-tree
+//      state, and `check --policy-from head` then read an out-of-repo
+//      config where upstream refuses. Divergence closed; only the
+//      inline-vs-shared-module placement differs (see item 5).
 //   4. containedRelative absoluteness is platform-stable — now carried by
 //      src/ship-policy.mjs (the b20 note, lifted verbatim): upstream tests
 //      `path.isAbsolute(p) || /^[A-Za-z]:[\\/]/.test(p) ||
@@ -185,6 +193,29 @@ export function normalizeRules(config) {
     : { term: t.term, allowed_paths: [...(config.allowed_paths ?? []), ...(t.allowed_paths ?? [])], ...(t.reason ? { reason: t.reason } : {}) });
 }
 
+/**
+ * A working-tree path a stamp may write: inside `root` after realpath (a
+ * symlink out of the repository is refused even when the glob matched).
+ * Upstream ship-policy.ts lines 538-556 verbatim (types erased), restored
+ * by audit finding #9 — still inlined here, not lifted to the shared
+ * src/ship-policy.mjs (divergence ledger item 3 below).
+ */
+function assertInsideRoot(root, rel) {
+  const realRoot = fs.realpathSync(root);
+  const abs = path.resolve(realRoot, rel);
+  if (abs !== realRoot && !abs.startsWith(realRoot + path.sep)) return `${rel} resolves outside ${root}`;
+  let probe = abs;
+  while (!fs.existsSync(probe)) {
+    const parent = path.dirname(probe);
+    if (parent === probe) break;
+    probe = parent;
+  }
+  let real;
+  try { real = fs.realpathSync(probe); } catch { return null; }
+  if (real !== realRoot && !real.startsWith(realRoot + path.sep)) return `${rel} resolves through a symlink to outside ${root}`;
+  return null;
+}
+
 /** The committed copy on `<treeish>` when given (C1's reviewed-base posture), else the working tree. */
 export function loadBannedTerms(repoRoot, treeish) {
   let text = null;
@@ -193,8 +224,9 @@ export function loadBannedTerms(repoRoot, treeish) {
     const r = spawnSync('git', ['show', source], { cwd: repoRoot, encoding: 'utf8', timeout: 30_000 });
     text = r.status === 0 ? r.stdout : null;
   } else {
-    // Divergence 3: assertInsideRoot dropped — fixed constant path joined to the root.
     const file = path.join(repoRoot, BANNED_TERMS_PATH);
+    const escape = assertInsideRoot(repoRoot, BANNED_TERMS_PATH);
+    if (escape) return { config: null, source, errors: [{ code: 'BANNED_TERMS_INVALID', path: BANNED_TERMS_PATH, message: escape }] };
     text = fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : null;
   }
   if (text === null) return { config: null, source, absent: true };

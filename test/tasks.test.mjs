@@ -9,6 +9,19 @@ import { TaskStore } from '../src/tasks.mjs';
 import { ApprovalStore, subjectDigest } from '../src/approvals.mjs';
 import { fixture } from './helpers.mjs';
 const execute = promisify(execFile);
+// Dual-process helpers (audit #12): normalize execFile's nonzero-exit rejection so
+// winner and loser children share one {status, stdout} shape. A child that prints no
+// JSON (crash, module-load failure) fails the caller's JSON.parse by design.
+const run = (file, args) => execute(file, args)
+  .then(({ stdout }) => ({ status: 0, stdout }),
+    error => ({ status: typeof error.code === 'number' ? error.code : null, stdout: error.stdout ?? '' }));
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+/** Marker-file barrier: resolves once `file` exists; the deadline keeps a stuck child from hanging the suite. */
+async function waitUntil(file, what) {
+  for (const deadline = Date.now() + 15000; !fs.existsSync(file); await sleep(5)) {
+    if (Date.now() > deadline) assert.fail(`timed out waiting for ${what}`);
+  }
+}
 const cli = fileURLToPath(new URL('../bin/gstack861.mjs', import.meta.url));
 const subject = f => ({ host: 'zcode', runId: 'r1', sessionId: 's1', policyHash: f.policy.policyHash, action: { kind: 'publish', artifactHash: 'fixture' } });
 
@@ -23,10 +36,11 @@ test('task lifecycle create→start→complete tracks state and attempts', t => 
   assert.equal(planned.attempts, 0);
   assert.equal(planned.subjectHash, subjectDigest(s));
   assert.equal(Object.isFrozen(planned), true);
-  assert.equal(store.start(id, s).state, 'running');
+  const attempt = store.start(id, s);
+  assert.equal(attempt.state, 'running');
   assert.equal(store.get(id).attempts, 1);
   assert.throws(() => store.start(id, s), /TASK_WRONG_STATE/);
-  assert.equal(store.complete(id, s).state, 'completed');
+  assert.equal(store.complete(id, s, { attemptToken: attempt.attemptToken }).state, 'completed');
   assert.equal(store.get(id).attempts, 1);
 });
 test('a planned task cannot skip to completed or be interrupted', t => {
@@ -40,8 +54,8 @@ test('a planned task cannot skip to completed or be interrupted', t => {
 test('fail and cancel follow their allowed state orders', t => {
   const f = fixture(t), store = new TaskStore(path.join(f.base, 'tasks')), s = subject(f);
   const a = store.create(s);
-  store.start(a, s);
-  assert.equal(store.fail(a, s).state, 'failed');
+  const aAttempt = store.start(a, s);
+  assert.equal(store.fail(a, s, { attemptToken: aAttempt.attemptToken }).state, 'failed');
   assert.throws(() => store.complete(a, s), /TASK_WRONG_STATE/);
   const b = store.create(s);
   assert.equal(store.cancel(b, s).state, 'cancelled');
@@ -75,7 +89,7 @@ test('task records bind to host, session, run, policy and action', t => {
 test('get and list return frozen records with state filtering', t => {
   const f = fixture(t), store = new TaskStore(path.join(f.base, 'tasks')), s = subject(f);
   const ids = [store.create(s), store.create(s), store.create(s)];
-  store.start(ids[0], s); store.complete(ids[0], s);
+  const doneAttempt = store.start(ids[0], s); store.complete(ids[0], s, { attemptToken: doneAttempt.attemptToken });
   store.start(ids[1], s);
   assert.throws(() => store.get('00000000-0000-4000-8000-000000000000'), /NOT_FOUND/);
   for (const id of ['../task', '', 'constructor']) assert.throws(() => store.get(id), /INVALID_TASK_ID/);
@@ -144,9 +158,10 @@ test('shared state directory keeps task and approval stores namespaced and trans
   assert.deepEqual(tasks.list().map(r => r.id), [taskId]);
   assert.deepEqual(approvals.list().map(r => r.id), [approvalId]);
   // Foreign records must not break transitions in either store.
-  assert.equal(tasks.start(taskId, s).state, 'running');
+  const taskAttempt = tasks.start(taskId, s);
+  assert.equal(taskAttempt.state, 'running');
   assert.equal(approvals.approve(approvalId, s).state, 'approved');
-  assert.equal(tasks.complete(taskId, s).state, 'completed');
+  assert.equal(tasks.complete(taskId, s, { attemptToken: taskAttempt.attemptToken }).state, 'completed');
   assert.equal(approvals.consume(approvalId, s).state, 'consumed');
   // Operator CLI smoke: approvals show stays readable in the mixed directory.
   const show = await execute(process.execPath, [cli, 'approvals', 'show', '--state', dir, '--id', approvalId]);
@@ -219,15 +234,65 @@ test('tampered owner fields fail closed as INVALID_TASK_RECORD', t => {
   assert.throws(() => store.get(id), /INVALID_TASK_RECORD/);
   assert.throws(() => store.start(id, s), /INVALID_TASK_RECORD/);
 });
-test('two real processes cannot both start one task', async t => {
+// Audit #12 evidence classes — kept separate on purpose:
+// (a) the free race below proves ATOMICITY: exactly one starter wins, attempts bump once,
+//     the loser names a structured store code. A fully serial execution is still a legal
+//     race outcome (the loser then reports TASK_WRONG_STATE), so this class alone does
+//     NOT prove the lock path executed.
+// (b) the held-lock test after it proves CONTENTION by construction: another real process
+//     owns the store's lock directory while a starter runs, so TASK_BUSY is the only
+//     possible failure, the record must survive untouched, and the start must land
+//     exactly once after the lock is released.
+test('concurrent starts across real processes: exactly one wins, the loser names a structured contention code', { timeout: 120_000 }, async t => {
   const f = fixture(t), dir = path.join(f.base, 'tasks'), store = new TaskStore(dir), s = subject(f);
   const id = store.create(s);
   const module = new URL('../src/tasks.mjs', import.meta.url).href;
-  const code = `import { TaskStore } from ${JSON.stringify(module)}; try { new TaskStore(process.argv[1]).start(process.argv[2], JSON.parse(process.argv[3])); process.stdout.write('started'); } catch { process.exitCode = 2; }`;
-  const results = await Promise.allSettled([0, 1].map(() => execute(process.execPath, ['--input-type=module', '-e', code, dir, id, JSON.stringify(s)])));
-  assert.equal(results.filter(r => r.status === 'fulfilled' && r.value.stdout === 'started').length, 1);
-  assert.equal(results.filter(r => r.status === 'rejected').length, 1);
+  // Child contract: exactly one JSON line — {ok:true,state,attempts} or {ok:false,code}; exit 2 on failure.
+  // Leaseless start: no attemptToken is minted, so there is nothing fenced to thread here.
+  const code = `import { TaskStore } from ${JSON.stringify(module)}; try { const r = new TaskStore(process.argv[1]).start(process.argv[2], JSON.parse(process.argv[3])); process.stdout.write(JSON.stringify({ ok: true, state: r.state, attempts: r.attempts })); } catch (error) { process.stdout.write(JSON.stringify({ ok: false, code: error.message })); process.exitCode = 2; }`;
+  const results = await Promise.all([0, 1].map(() => run(process.execPath, ['--input-type=module', '-e', code, dir, id, JSON.stringify(s)])));
+  const winners = results.filter(r => r.status === 0);
+  assert.equal(winners.length, 1, `exactly one process may start (child reports: ${JSON.stringify(results.map(r => r.stdout))})`);
+  assert.equal(JSON.parse(winners[0].stdout).attempts, 1, 'the winning start is the first and only attempt bump');
+  const losers = results.filter(r => r.status !== 0);
+  assert.equal(losers.length, 1);
+  // A crashed or mis-loaded child prints no JSON and fails this parse: no arbitrary failure can satisfy the loser slot.
+  const report = JSON.parse(losers[0].stdout);
+  assert.equal(report.ok, false);
+  assert.match(report.code, /^TASK_(BUSY|WRONG_STATE)$/, 'the loser must fail for a race reason, not for any reason');
+  // Winner's transition is on disk exactly once: running at attempts 1, lock released.
   assert.equal(store.get(id).state, 'running');
+  assert.equal(store.get(id).attempts, 1);
+  assert.equal(fs.existsSync(store.file(id) + '.lock'), false, 'the winner must have released the lock');
+});
+test('a start against a lock held by another real process fails TASK_BUSY, never touches the record, and lands after release', { timeout: 120_000 }, async t => {
+  const f = fixture(t), dir = path.join(f.base, 'tasks'), store = new TaskStore(dir), s = subject(f);
+  const id = store.create(s);
+  const lock = store.file(id) + '.lock', held = path.join(f.base, 'lock-held'), release = path.join(f.base, 'release-lock');
+  // Holder child: takes the store's own mutex artifact (the lock dir transition() mkdirs and
+  // rmdirs in src/tasks.mjs) and holds it across the barrier until the parent releases.
+  const holderCode = `import fs from 'node:fs'; const [lock, held, release] = process.argv.slice(1); fs.mkdirSync(lock, { mode: 0o700 }); fs.writeFileSync(held, ''); const deadline = Date.now() + 15000; while (!fs.existsSync(release) && Date.now() < deadline) await new Promise(resolve => setTimeout(resolve, 5)); fs.rmdirSync(lock); process.exitCode = fs.existsSync(release) ? 0 : 3;`;
+  const holder = execute(process.execPath, ['--input-type=module', '-e', holderCode, lock, held, release]);
+  holder.catch(() => {}); // an earlier assertion failure must not surface as an unhandled rejection
+  await waitUntil(held, 'lock holder ready'); // barrier passed: another process owns the lock RIGHT NOW
+  const module = new URL('../src/tasks.mjs', import.meta.url).href;
+  const code = `import { TaskStore } from ${JSON.stringify(module)}; try { const r = new TaskStore(process.argv[1]).start(process.argv[2], JSON.parse(process.argv[3])); process.stdout.write(JSON.stringify({ ok: true, state: r.state, attempts: r.attempts })); } catch (error) { process.stdout.write(JSON.stringify({ ok: false, code: error.message })); process.exitCode = 2; }`;
+  const loser = await run(process.execPath, ['--input-type=module', '-e', code, dir, id, JSON.stringify(s)]);
+  assert.equal(loser.status, 2, `the locked-out starter must exit nonzero (stdout: ${loser.stdout})`);
+  const report = JSON.parse(loser.stdout);
+  assert.equal(report.ok, false);
+  assert.equal(report.code, 'TASK_BUSY', 'the held lock must be the failure reason, by construction');
+  // The refused start wrote nothing: the on-disk record is still planned at attempts 0.
+  assert.equal(store.get(id).state, 'planned');
+  assert.equal(store.get(id).attempts, 0);
+  fs.writeFileSync(release, '');
+  await holder; // exits 0 only if it observed the release marker (3 on its safety timeout)
+  assert.equal(fs.existsSync(lock), false, 'the holder must give the lock back');
+  const winner = await run(process.execPath, ['--input-type=module', '-e', code, dir, id, JSON.stringify(s)]);
+  assert.equal(winner.status, 0, `after release the start must succeed (stdout: ${winner.stdout})`);
+  assert.equal(JSON.parse(winner.stdout).state, 'running');
+  assert.equal(store.get(id).state, 'running');
+  assert.equal(store.get(id).attempts, 1, 'after release the start lands exactly once');
 });
 test('start and resume with leaseMs record the exact lease expiry from the clock', t => {
   const f = fixture(t); let time = 5000;
@@ -252,16 +317,18 @@ test('entering running without leaseMs clears stale leases instead of re-arming 
   assert.throws(() => store.reap(a, s), /TASK_LEASE_REQUIRED/);
   assert.equal(store.get(a).state, 'running', 'no lease signal means no reap, not a phantom crash');
   const b = store.create(s);
-  store.start(b, s, { leaseMs: 1000 });
-  store.fail(b, s);
+  const bAttempt = store.start(b, s, { leaseMs: 1000 });
+  store.fail(b, s, { attemptToken: bAttempt.attemptToken });
   store.requeue(b, s);
   assert.equal(store.start(b, s).state, 'running');
   assert.equal('leaseExpiresAt' in store.get(b), false);
   for (const leave of ['interrupt', 'cancel', 'complete']) {
     const id = store.create(s);
-    store.start(id, s, { leaseMs: 1000 });
-    store[leave](id, s);
+    const { attemptToken } = store.start(id, s, { leaseMs: 1000 });
+    if (leave === 'complete') store.complete(id, s, { attemptToken }); // executor-side: fenced
+    else store[leave](id, s); // supervisor-side: acts on the record, never token-checked
     assert.equal('leaseExpiresAt' in store.get(id), false, `${leave} must clear the lease`);
+    assert.equal('attemptToken' in store.get(id), false, `${leave} must retire the attempt token`);
   }
 });
 test('heartbeat extends a lease but never invents one', t => {
@@ -269,26 +336,27 @@ test('heartbeat extends a lease but never invents one', t => {
   const store = new TaskStore(path.join(f.base, 'tasks'), { clock: () => time }), s = subject(f);
   const id = store.create(s);
   assert.throws(() => store.heartbeat(id, s, { leaseMs: 1000 }), /TASK_WRONG_STATE/); // planned, not running
-  store.start(id, s);
+  const early = store.start(id, s); // leaseless, but the attempt is still fenced
   assert.throws(() => store.heartbeat(id, s, { leaseMs: 1000 }), /TASK_LEASE_REQUIRED/); // started leaseless
   assert.throws(() => store.heartbeat(id, s), /INVALID_LEASE/); // leaseMs is required: no updatedAt-only no-op
-  store.fail(id, s); store.requeue(id, s);
-  store.start(id, s, { leaseMs: 1000 });
+  store.fail(id, s, { attemptToken: early.attemptToken }); store.requeue(id, s);
+  const leased = store.start(id, s, { leaseMs: 1000 });
+  assert.match(leased.attemptToken, /^[a-f0-9]{32}$/, 'a leased start mints its fence token');
   time = 5500;
-  assert.equal(store.heartbeat(id, s, { leaseMs: 2000 }).state, 'running');
+  assert.equal(store.heartbeat(id, s, { leaseMs: 2000, attemptToken: leased.attemptToken }).state, 'running');
   assert.equal(store.get(id).leaseExpiresAt, 7500);
   assert.equal(store.get(id).attempts, 2, 'heartbeats are not attempts');
   time = 8000; // past the 7500 expiry: liveness is proven by the call itself
-  assert.equal(store.heartbeat(id, s, { leaseMs: 1000 }).leaseExpiresAt, 9000);
+  assert.equal(store.heartbeat(id, s, { leaseMs: 1000, attemptToken: leased.attemptToken }).leaseExpiresAt, 9000);
 });
 test('reap interrupts only an expired lease; recovery re-arms fresh and bumps attempts', t => {
   const f = fixture(t); let time = 5000;
   const store = new TaskStore(path.join(f.base, 'tasks'), { clock: () => time }), s = subject(f);
   const id = store.create(s);
-  store.start(id, s);
+  const opener = store.start(id, s);
   assert.throws(() => store.reap(id, s), /TASK_LEASE_REQUIRED/); // lease absence is not crash proof
   assert.equal(store.get(id).state, 'running');
-  store.fail(id, s); store.requeue(id, s);
+  store.fail(id, s, { attemptToken: opener.attemptToken }); store.requeue(id, s);
   store.start(id, s, { leaseMs: 1000 });
   assert.throws(() => store.reap(id, s), /TASK_LEASE_ACTIVE/); // 5000 < 6000: live lease
   assert.equal(store.get(id).state, 'running');
@@ -306,25 +374,77 @@ test('a heartbeat landing before the reaper re-arms the lease and blocks the rea
   const f = fixture(t); let time = 5000;
   const store = new TaskStore(path.join(f.base, 'tasks'), { clock: () => time }), s = subject(f);
   const id = store.create(s);
-  store.start(id, s, { leaseMs: 1000 }); // expiry 6000
+  const leased = store.start(id, s, { leaseMs: 1000 }); // expiry 6000
   time = 6000;
-  assert.equal(store.heartbeat(id, s, { leaseMs: 1000 }).leaseExpiresAt, 7000);
+  assert.equal(store.heartbeat(id, s, { leaseMs: 1000, attemptToken: leased.attemptToken }).leaseExpiresAt, 7000);
   assert.throws(() => store.reap(id, s), /TASK_LEASE_ACTIVE/);
   assert.equal(store.get(id).state, 'running');
   time = 7000;
   assert.equal(store.reap(id, s).state, 'interrupted'); // the same serialized check now passes
-  assert.throws(() => store.heartbeat(id, s, { leaseMs: 1000 }), /TASK_WRONG_STATE/); // reaped: liveness lost
+  assert.throws(() => store.heartbeat(id, s, { leaseMs: 1000, attemptToken: leased.attemptToken }), /TASK_WRONG_STATE/); // reaped: liveness lost
 });
+
+test('attempt fencing: a stale leased executor cannot complete the reaper-resumed attempt (codex audit #5)', t => {
+  const f = fixture(t); let time = 5000;
+  const store = new TaskStore(path.join(f.base, 'tasks'), { clock: () => time }), s = subject(f);
+  const id = store.create(s);
+  const workerA = store.start(id, s, { owner: 'worker-a', leaseMs: 1000 }); // attempt 1, expiry 6000
+  time = 6000; // A's lease expires; the reaper interrupts...
+  assert.equal(store.reap(id, s).state, 'interrupted');
+  time = 7000;
+  const workerB = store.resume(id, s, { leaseMs: 900000 }); // attempt 2 with a FRESH token
+  assert.notEqual(workerB.attemptToken, workerA.attemptToken, 'each attempt mints its own token');
+  // A's late executor-side transitions must all fail against attempt 2...
+  assert.throws(() => store.complete(id, s, { attemptToken: workerA.attemptToken }), /TASK_ATTEMPT_MISMATCH/);
+  assert.throws(() => store.fail(id, s, { attemptToken: workerA.attemptToken }), /TASK_ATTEMPT_MISMATCH/);
+  assert.throws(() => store.heartbeat(id, s, { leaseMs: 1000, attemptToken: workerA.attemptToken }), /TASK_ATTEMPT_MISMATCH/);
+  assert.throws(() => store.complete(id, s), /TASK_ATTEMPT_TOKEN_REQUIRED/, 'a fenced record refuses tokenless completion');
+  // ...while B's own transitions succeed, and the record reflects attempt 2.
+  assert.equal(store.heartbeat(id, s, { leaseMs: 900000, attemptToken: workerB.attemptToken }).state, 'running');
+  assert.equal(store.complete(id, s, { attemptToken: workerB.attemptToken }).state, 'completed');
+  assert.equal(store.get(id).owner, 'worker-a', 'owner is a label; fencing lives on the token');
+  assert.equal(store.get(id).attempts, 2);
+});
+
+test('attempt fencing: a stale executor cannot complete a leaseless reaper-resumed attempt either (codex audit #5, round 3)', t => {
+  const f = fixture(t); let time = 5000;
+  const store = new TaskStore(path.join(f.base, 'tasks'), { clock: () => time }), s = subject(f);
+  const id = store.create(s);
+  const workerA = store.start(id, s, { owner: 'worker-a', leaseMs: 1000 }); // attempt 1
+  time = 6000; // the lease expires; the reaper interrupts...
+  assert.equal(store.reap(id, s).state, 'interrupted');
+  time = 7000;
+  // B resumes WITHOUT a lease: fencing is per-attempt (round 3), so a fresh token is
+  // minted anyway — otherwise A would walk back in and complete B's attempt.
+  const workerB = store.resume(id, s);
+  assert.match(workerB.attemptToken, /^[a-f0-9]{32}$/, 'a leaseless resume still fences its attempt');
+  assert.notEqual(workerB.attemptToken, workerA.attemptToken, 'each attempt mints its own token');
+  assert.throws(() => store.complete(id, s, { attemptToken: workerA.attemptToken }), /TASK_ATTEMPT_MISMATCH/, 'A\'s late complete against attempt 2');
+  assert.throws(() => store.complete(id, s), /TASK_ATTEMPT_TOKEN_REQUIRED/, 'tokenless completion of a fenced record');
+  assert.equal(store.complete(id, s, { attemptToken: workerB.attemptToken }).state, 'completed');
+  assert.equal(store.get(id).attempts, 2);
+});
+
+test('attempt fencing: leaseless attempts are fenced from mint to completion', t => {
+  const f = fixture(t), store = new TaskStore(path.join(f.base, 'tasks')), s = subject(f);
+  const id = store.create(s);
+  const started = store.start(id, s); // no lease — the attempt still gets its fence
+  assert.match(started.attemptToken, /^[a-f0-9]{32}$/, 'every start mints a token, leased or not');
+  assert.throws(() => store.complete(id, s), /TASK_ATTEMPT_TOKEN_REQUIRED/, 'tokenless completion is refused');
+  assert.equal(store.complete(id, s, { attemptToken: started.attemptToken }).state, 'completed');
+});
+
 test('requeue moves failed back to planned; every other state is enumerated and rejected', t => {
   const f = fixture(t), store = new TaskStore(path.join(f.base, 'tasks')), s = subject(f);
   const id = store.create(s);
-  store.start(id, s); store.fail(id, s);
+  const first = store.start(id, s);
+  store.fail(id, s, { attemptToken: first.attemptToken });
   assert.equal(store.requeue(id, s).state, 'planned');
   assert.equal(store.start(id, s).state, 'running');
   assert.equal(store.get(id).attempts, 2, 'the retry start bumps across the cycle');
   assert.throws(() => store.requeue(id, s), /TASK_WRONG_STATE/); // running
   assert.throws(() => store.requeue(store.create(s), s), /TASK_WRONG_STATE/); // planned
-  const done = store.create(s); store.start(done, s); store.complete(done, s);
+  const done = store.create(s); const doneAttempt = store.start(done, s); store.complete(done, s, { attemptToken: doneAttempt.attemptToken });
   assert.throws(() => store.requeue(done, s), /TASK_WRONG_STATE/); // completed
   const cancelled = store.create(s); store.cancel(cancelled, s);
   assert.throws(() => store.requeue(cancelled, s), /TASK_WRONG_STATE/); // cancelled stays terminal
@@ -339,8 +459,9 @@ test('leaseMs must be a safe integer within 1..86400000', t => {
     assert.throws(() => store.resume(id, s, { leaseMs }), /INVALID_LEASE/);
     assert.throws(() => store.heartbeat(id, s, { leaseMs }), /INVALID_LEASE/);
   }
-  assert.equal(store.start(id, s, { leaseMs: 1 }).state, 'running');
-  assert.equal(Number.isSafeInteger(store.heartbeat(id, s, { leaseMs: 86400000 }).leaseExpiresAt), true);
+  const armed = store.start(id, s, { leaseMs: 1 });
+  assert.equal(armed.state, 'running');
+  assert.equal(Number.isSafeInteger(store.heartbeat(id, s, { leaseMs: 86400000, attemptToken: armed.attemptToken }).leaseExpiresAt), true);
 });
 test('legacy records without leaseExpiresAt stay readable and transitional', t => {
   const f = fixture(t), store = new TaskStore(path.join(f.base, 'tasks')), s = subject(f);
@@ -374,6 +495,18 @@ test('tasks CLI requires --lease-ms on heartbeat and refuses bad leases before c
   await assert.rejects(execute(process.execPath, [cli, 'tasks', 'start', '--state', state, '--id', '00000000-0000-4000-8000-000000000000', ...binding, '--lease-ms', '0']),
     error => error.code === 1 && /INVALID_LEASE/.test(error.stderr));
   assert.equal(fs.existsSync(state), false, 'a refused lease must not leave a state directory behind');
+});
+test('tasks CLI refuses --attempt-token off-scope or malformed before creating any state (audit #5)', async t => {
+  const f = fixture(t), state = path.join(f.base, 'never-created');
+  const actionFile = path.join(f.base, 'action.json');
+  fs.writeFileSync(actionFile, JSON.stringify({ kind: 'publish', artifactHash: 'fixture' }));
+  const binding = ['--host', 'zcode', '--session', 's1', '--run', 'r1', '--policy-hash', f.policy.policyHash, '--action-file', actionFile];
+  const id = '00000000-0000-4000-8000-000000000000';
+  await assert.rejects(execute(process.execPath, [cli, 'tasks', 'start', '--state', state, '--id', id, ...binding, '--attempt-token', 'a'.repeat(32)]),
+    error => error.code === 1 && /INVALID_ARGUMENTS/.test(error.stderr), 'the flag is scoped to heartbeat/complete/fail');
+  await assert.rejects(execute(process.execPath, [cli, 'tasks', 'complete', '--state', state, '--id', id, ...binding, '--attempt-token', 'not-hex']),
+    error => error.code === 1 && /INVALID_ATTEMPT_TOKEN/.test(error.stderr), 'the token is 32 lowercase hex');
+  assert.equal(fs.existsSync(state), false, 'a refused token must not leave a state directory behind');
 });
 test('tasks CLI start --lease-ms arms a lease the reaper must respect until expiry', async t => {
   const f = fixture(t), state = path.join(f.base, 'tasks');

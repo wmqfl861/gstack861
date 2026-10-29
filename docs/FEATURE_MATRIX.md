@@ -1,6 +1,6 @@
 # 功能与证据矩阵
 
-状态：2026-10-28，0.4.18：M2 前置 + 纵向批次 + 批次 2–19（+ migrate-state 关闭 0.3.1 命名空间债务 + jsonl-merge 零依赖移植 + 二进制全量前提审计落盘）（状态目录命名空间、上游渲染 CI 复用 rendered-experimental、原生询问桥 approvals ask、apply-patch/参数 effect、approvals/tasks CLI 全量、ZCode 工作流层纵向流程已实证、渲染产物 stage-render→install→uninstall 装载链全链实测、宿主装载 runbook 实测回填、渲染技能宿主消费 15 例已实证、install --dry-run 零写入预检）；除纯工具二进制移植/原生迁移工具等离线余量（OFFLINE-COMPLETE §二：第一波已于批次 19 落地——migrate-state+jsonl-merge；余 slug/redact 等 5 项 deferred，后续批次）外，其余受阻于用户解锁或环境（OFFLINE-COMPLETE 三分类）。两个宿主均未获得 `host_verified` 或 `full`。
+状态：2026-10-29，0.4.32：M2 前置 + 纵向批次 + 批次 2–32 + 批次 33（codex 审计整改：attemptToken 围栏、错误脱敏、网关并发封顶、开发证书收窄为非签发叶证书、banned-terms 真实路径边界恢复、URL 拼接规范化、审批/双进程测试补强、状态文档刷新）（状态目录命名空间、上游渲染 CI 复用 rendered-experimental、原生询问桥 approvals ask、apply-patch/参数 effect、approvals/tasks CLI 全量、ZCode 工作流层纵向流程已实证、渲染产物 stage-render→install→uninstall 装载链全链实测、宿主装载 runbook 实测回填、渲染技能宿主消费 15 例已实证 + 键控能力切片 8 技能（非方法论计数）、install --dry-run 零写入预检）；二进制离线余量已全部收口（OFFLINE-COMPLETE §二：批次 19–24——migrate-state/jsonl-merge/banned-terms/team-init/slug/redact+hook 子命令/redact-prepush/issue-links 均已 ported/mapped，无 deferred），唯一剩余离线余量为命令别名 1 项（蓝图 M3 生命周期组），其余受阻于用户解锁或环境（OFFLINE-COMPLETE 三分类）。两个宿主均未获得 `host_verified` 或 `full`。
 
 | 范围 | ZCode | DSH | 已有证据 / 剩余工作 |
 |---|---|---|---|

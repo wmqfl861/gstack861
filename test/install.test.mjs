@@ -907,6 +907,143 @@ test('an I/O failure mid-install leaves every skill whole and the target recover
   assert.deepEqual(uninstallSkills({ target, now: NOW }).uninstalled.sort(), ['alpha', 'beta']);
 });
 
+// --- codex audit #2/#3/#4 regression battery ------------------------------------
+
+test('registry lost + a user-added file refuses takeover; a pristine directory still recovers (audit #2)', t => {
+  const root = base(t), s1 = path.join(root, 's1'), s2 = path.join(root, 's2'), target = path.join(root, 'target');
+  fs.mkdirSync(s1); fs.mkdirSync(s2);
+  // A files-bearing skill: the on-disk manifest then carries its own claims to verify
+  // against once the registry is gone (a files-less manifest has nothing to check).
+  const SCOPE = 'scope body';
+  stageMulti(s1, 'alpha', ALPHA_V1, { 'sections/scope.md': SCOPE });
+  installSkills({ staging: s1, target, now: NOW });
+  fs.rmSync(registryFile(target));
+  fs.writeFileSync(path.join(target, 'alpha', 'user-notes.txt'), 'user content');
+  stageMulti(s2, 'alpha', ALPHA_V2, { 'sections/scope.md': SCOPE });
+  // No registry record: classify validates the directory against the on-disk manifest's
+  // OWN claims — the user file is not in them, so takeover is refused, never backed up.
+  assert.throws(() => installSkills({ staging: s2, target, now: NOW }), /USER_FILE_REFUSED/);
+  assert.equal(fs.readFileSync(path.join(target, 'alpha', 'SKILL.md'), 'utf8'), ALPHA_V1, 'nothing moved on refusal');
+  assert.equal(fs.readFileSync(path.join(target, 'alpha', 'user-notes.txt'), 'utf8'), 'user content', 'the user file stays');
+  assert.ok(!fs.existsSync(path.join(target, BACKUPS)), 'no backup root was taken on refusal');
+  // The recovery path survives: pristine + registry lost still backs up and replaces.
+  fs.rmSync(path.join(target, 'alpha', 'user-notes.txt'));
+  assert.deepEqual(installSkills({ staging: s2, target, now: NOW }), { installed: ['alpha'], skipped: [], backedUp: ['alpha'] });
+  assert.equal(fs.readFileSync(path.join(target, 'alpha', 'SKILL.md'), 'utf8'), ALPHA_V2);
+  assert.equal(readRegistry(target).skills[0].sha256, textDigest(ALPHA_V2));
+});
+
+test('registry lost + user-added file refuses takeover for files-LESS skills too (audit #2, round 3)', t => {
+  const root = base(t), s1 = path.join(root, 's1'), s2 = path.join(root, 's2'), target = path.join(root, 'target');
+  fs.mkdirSync(s1); fs.mkdirSync(s2);
+  stage(s1, 'alpha', ALPHA_V1); // no files map: the manifest's claim is "nothing beyond SKILL.md/manifest.json"
+  installSkills({ staging: s1, target, now: NOW });
+  fs.rmSync(registryFile(target));
+  fs.writeFileSync(path.join(target, 'alpha', 'user-notes.txt'), 'user content');
+  stage(s2, 'alpha', ALPHA_V2);
+  assert.throws(() => installSkills({ staging: s2, target, now: NOW }), /USER_FILE_REFUSED/,
+    'a files-less directory with an extra file is just as unowned as a files-bearing one');
+  assert.equal(fs.readFileSync(path.join(target, 'alpha', 'user-notes.txt'), 'utf8'), 'user content', 'the user file survives');
+  assert.ok(!fs.existsSync(path.join(target, BACKUPS)), 'nothing was moved into purgeable backups');
+  // Pristine files-less recovery still works.
+  fs.rmSync(path.join(target, 'alpha', 'user-notes.txt'));
+  assert.deepEqual(installSkills({ staging: s2, target, now: NOW }).backedUp, ['alpha']);
+});
+
+test('a fault at the new-dir rename restores the moved backup and leaves the registry untouched (audit #3a)', t => {
+  const root = base(t), s1 = path.join(root, 's1'), s2 = path.join(root, 's2'), target = path.join(root, 'target');
+  fs.mkdirSync(s1); fs.mkdirSync(s2);
+  stage(s1, 'alpha', ALPHA_V1);
+  installSkills({ staging: s1, target, now: NOW });
+  const before = fs.readFileSync(registryFile(target), 'utf8');
+  stage(s2, 'alpha', ALPHA_V2);
+  const real = fs.renameSync; let swaps = 0;
+  fs.renameSync = function (src, dest, ...rest) {
+    // The only rename landing ON target/alpha is temp -> final name; fail exactly it
+    // (the old dir moves to the backups root first, a different destination).
+    if (dest === path.join(target, 'alpha') && ++swaps === 1) throw Object.assign(new Error('EIO'), { code: 'EIO' });
+    return real.call(this, src, dest, ...rest);
+  };
+  try { assert.throws(() => installSkills({ staging: s2, target, now: NOW }), /EIO/); } finally { fs.renameSync = real; }
+  assert.equal(fs.readFileSync(path.join(target, 'alpha', 'SKILL.md'), 'utf8'), ALPHA_V1, 'the moved-out backup is restored in place');
+  assert.equal(fs.readFileSync(registryFile(target), 'utf8'), before, 'the registry never recorded the failed swap');
+  assert.deepEqual(fs.readdirSync(path.join(target, BACKUPS)), [], 'no backup entry is left behind');
+  assert.deepEqual(installSkills({ staging: s2, target, now: NOW }), { installed: ['alpha'], skipped: [], backedUp: ['alpha'] }, 'the target recovers cleanly');
+});
+
+test('a fault at the registry commit rolls the skill directory back too (audit #3b)', t => {
+  const root = base(t), s1 = path.join(root, 's1'), s2 = path.join(root, 's2'), target = path.join(root, 'target');
+  fs.mkdirSync(s1); fs.mkdirSync(s2);
+  stage(s1, 'alpha', ALPHA_V1); stage(s1, 'beta', BETA_V1);
+  installSkills({ staging: s1, target, now: NOW });
+  const before = fs.readFileSync(registryFile(target), 'utf8');
+  stage(s2, 'alpha', ALPHA_V2); stage(s2, 'beta', 'beta skill body v2');
+  const real = fs.writeFileSync; let registryWrites = 0;
+  fs.writeFileSync = function (file, ...rest) {
+    // writeRegistry is temp+rename: failing the first registry temp write is atomic.
+    if (String(file).includes(REGISTRY) && String(file).endsWith('.tmp') && ++registryWrites === 1) {
+      throw Object.assign(new Error('EIO'), { code: 'EIO' });
+    }
+    return real.call(this, file, ...rest);
+  };
+  try { assert.throws(() => installSkills({ staging: s2, target, now: NOW }), /EIO/); } finally { fs.writeFileSync = real; }
+  // Registry and disk never disagree at rest: everything is exactly the pre-install state.
+  assert.equal(fs.readFileSync(registryFile(target), 'utf8'), before);
+  assert.equal(fs.readFileSync(path.join(target, 'alpha', 'SKILL.md'), 'utf8'), ALPHA_V1);
+  assert.equal(fs.readFileSync(path.join(target, 'beta', 'SKILL.md'), 'utf8'), BETA_V1);
+  assert.deepEqual(fs.readdirSync(path.join(target, BACKUPS)), []);
+  assert.deepEqual(installSkills({ staging: s2, target, now: NOW }).backedUp.sort(), ['alpha', 'beta'], 'the target recovers cleanly');
+});
+
+test('a combined fault (commit fails AND the rollback delete fails) keeps the old version in the backup (audit #15)', t => {
+  const root = base(t), s1 = path.join(root, 's1'), s2 = path.join(root, 's2'), target = path.join(root, 'target');
+  fs.mkdirSync(s1); fs.mkdirSync(s2);
+  stage(s1, 'alpha', ALPHA_V1);
+  installSkills({ staging: s1, target, now: NOW });
+  stage(s2, 'alpha', ALPHA_V2);
+  const realWrite = fs.writeFileSync, realRm = fs.rmSync;
+  let registryWrites = 0, rmBlocked = false;
+  fs.writeFileSync = function (file, ...rest) {
+    if (String(file).includes(REGISTRY) && String(file).endsWith('.tmp') && ++registryWrites === 1) {
+      rmBlocked = true; // arm the second fault only inside the window the first one opens
+      throw Object.assign(new Error('EIO'), { code: 'EIO' });
+    }
+    return realWrite.call(this, file, ...rest);
+  };
+  fs.rmSync = function (target_, ...rest) {
+    if (rmBlocked && String(target_) === path.join(target, 'alpha')) {
+      throw Object.assign(new Error('EPERM'), { code: 'EPERM' }); // the new dir cannot be removed
+    }
+    return realRm.call(this, target_, ...rest);
+  };
+  try {
+    assert.throws(() => installSkills({ staging: s2, target, now: NOW }), /EIO|EPERM/);
+  } finally { fs.writeFileSync = realWrite; fs.rmSync = realRm; }
+  // The active directory is the unverifiable NEW version, so the OLD version must
+  // survive somewhere — here, in the backup the rollback was forbidden to delete.
+  const backups = fs.readdirSync(path.join(target, BACKUPS)).filter(name => name.startsWith('alpha-'));
+  assert.equal(backups.length, 1, 'the old version survives in exactly one backup entry');
+  assert.equal(fs.readFileSync(path.join(target, BACKUPS, backups[0], 'SKILL.md'), 'utf8'), ALPHA_V1,
+    'the surviving backup holds the pre-install version');
+});
+
+test('multi-segment listed files survive the reinstall and uninstall lifecycle (audit #4)', t => {
+  const root = base(t), staging = path.join(root, 'staging'), target = path.join(root, 'target');
+  fs.mkdirSync(staging);
+  const DEEP = 'deep file body';
+  stageMulti(staging, 'alpha', ALPHA_V1, { 'sections/deep/nested/detail.md': DEEP, 'templates/report.md': 'template body' });
+  installSkills({ staging, target, now: NOW });
+  // The skip path re-runs verifyOwned: every ACCUMULATED directory (sections,
+  // sections/deep, sections/deep/nested) must be legal on-path, or reinstall refuses.
+  assert.deepEqual(installSkills({ staging, target, now: NOW }), { installed: [], skipped: ['alpha'], backedUp: [] });
+  const reStaged = path.join(root, 'staging-v2'); fs.mkdirSync(reStaged);
+  stageMulti(reStaged, 'alpha', ALPHA_V2, { 'sections/deep/nested/detail.md': DEEP, 'templates/report.md': 'template body' });
+  assert.deepEqual(installSkills({ staging: reStaged, target, now: NOW }), { installed: ['alpha'], skipped: [], backedUp: ['alpha'] });
+  assert.equal(fs.readFileSync(path.join(target, 'alpha', 'sections', 'deep', 'nested', 'detail.md'), 'utf8'), DEEP);
+  assert.deepEqual(uninstallSkills({ target, now: NOW }).uninstalled, ['alpha']);
+  assert.ok(!fs.existsSync(path.join(target, 'alpha')), 'the whole multi-level tree is removed');
+});
+
 // --- install --dry-run (read-only report) ---------------------------------------
 
 const CLI = fileURLToPath(new URL('../bin/gstack861.mjs', import.meta.url));

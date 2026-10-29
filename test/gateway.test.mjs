@@ -104,6 +104,27 @@ test('non-blocklisted custom gateways pass; matching is domain-anchored, not sub
   }
 });
 
+test('baseUrl query, fragment and userinfo are refused at load; trailing slashes normalize away (audit #10)', t => {
+  const f = fixture(t);
+  // These components would misroute the executor's joined request path, so load refuses.
+  for (const baseUrl of [
+    'https://custom-gw.example.test/v1?api-version=x',
+    'https://custom-gw.example.test/v1#fragment',
+    'https://user@example.test/v1',
+    // Round 3 (audit #18): userinfo comes in a password-only form too.
+    'https://:password@example.test/v1',
+    'https://user@example.test/v1',
+    'https://user:pass@example.test/v1',
+  ]) refuses(() => loadGateway(f.write({ ...VALID, baseUrl }), { workspace: f.workspace }), /UNSAFE_BASEURL/, baseUrl);
+  // A trailing slash is harmless and normalizes away, keeping the join exact.
+  for (const [configured, normalized] of [
+    ['https://custom-gw.example.test/v1/', 'https://custom-gw.example.test/v1'],
+    ['https://custom-gw.example.test/v1///', 'https://custom-gw.example.test/v1'],
+    ['https://custom-gw.example.test/', 'https://custom-gw.example.test'],
+    ['https://custom-gw.example.test', 'https://custom-gw.example.test'],
+  ]) assert.equal(loadGateway(f.write({ ...VALID, baseUrl: configured }), { workspace: f.workspace }).baseUrl, normalized, configured);
+});
+
 test('every malformed schema field, unknown key and broken JSON is INVALID_GATEWAY', t => {
   const f = fixture(t);
   const cases = [

@@ -225,7 +225,7 @@ if (args[0] === 'hook') {
           : store.reject(options['--id'], subject));
       }
     } else if (args[0] === 'tasks') {
-      const options = flags(args.slice(2), ['--state', '--id', '--host', '--session', '--run', '--policy-hash', '--action-file', '--owner', '--lease-ms']);
+      const options = flags(args.slice(2), ['--state', '--id', '--host', '--session', '--run', '--policy-hash', '--action-file', '--owner', '--lease-ms', '--attempt-token']);
       // Validate before constructing the store: a rejected subcommand or argument
       // must not leave a state directory behind.
       if (!['create', 'start', 'resume', 'heartbeat', 'reap', 'requeue', 'complete', 'fail', 'cancel', 'interrupt', 'show', 'list'].includes(args[1])) throw new Error('UNKNOWN_SUBCOMMAND');
@@ -242,13 +242,23 @@ if (args[0] === 'hook') {
       // Same bounds as TaskStore.start/heartbeat, checked here so a refused value cannot
       // leave a freshly created state directory behind.
       if (leaseMs !== undefined && (!Number.isSafeInteger(leaseMs) || leaseMs < 1 || leaseMs > 86400000)) throw new Error('INVALID_LEASE');
+      // Attempt fencing (codex audit #5): --attempt-token presents the token the
+      // executor received from its start/resume; executor-side transitions require it
+      // once the record carries one (heartbeat/complete/fail). The store enforces the
+      // match; here we only scope the flag to the transitions that can carry it —
+      // checked before the store exists for the same no-state-directory-on-refusal reason.
+      const attemptToken = options['--attempt-token'];
+      if (attemptToken !== undefined && !['heartbeat', 'complete', 'fail'].includes(args[1])) throw new Error('INVALID_ARGUMENTS');
+      if (attemptToken !== undefined && !/^[a-f0-9]{32}$/.test(attemptToken)) throw new Error('INVALID_ATTEMPT_TOKEN');
       const store = new TaskStore(absolute(options['--state']));
       if (args[1] === 'list') print(store.list());
       else if (args[1] === 'show') print(store.get(options['--id']));
       else if (args[1] === 'create') print(store.create(subjectFrom(options), owner === undefined ? {} : { owner }));
       else if (args[1] === 'start') print(store.start(options['--id'], subjectFrom(options), { owner, leaseMs }));
-      else if (args[1] === 'heartbeat') print(store.heartbeat(options['--id'], subjectFrom(options), { leaseMs }));
+      else if (args[1] === 'heartbeat') print(store.heartbeat(options['--id'], subjectFrom(options), { leaseMs, attemptToken }));
       else if (args[1] === 'resume') print(store.resume(options['--id'], subjectFrom(options), leaseMs === undefined ? {} : { leaseMs }));
+      else if (args[1] === 'complete') print(store.complete(options['--id'], subjectFrom(options), attemptToken === undefined ? {} : { attemptToken }));
+      else if (args[1] === 'fail') print(store.fail(options['--id'], subjectFrom(options), attemptToken === undefined ? {} : { attemptToken }));
       else print(store[args[1]](options['--id'], subjectFrom(options)));
     } else if (args[0] === 'migrate-state') {
       const options = flags(args.slice(1), ['--state'], ['--dry-run']);

@@ -80,19 +80,25 @@ const fwd = p => p.split(/[\\/]/).join('/');
  * builders' discipline, re-authored here because they hardcode --host dsh);
  * `--lease-ms` arms a lease and is scoped to start|resume ONLY (the CLI also
  * accepts it on heartbeat, which this harness never issues — interrupt,
- * complete and friends would be refused INVALID_ARGUMENTS).
+ * complete and friends would be refused INVALID_ARGUMENTS). `--attempt-token`
+ * is the lease-minted fence (audit #5), scoped to complete ONLY here (this
+ * harness never heartbeats or fails a stage).
  */
-export function zcodeTasksArgs({ sub, stateDir, sessionId, runId, policyHash, actionFile, id, leaseMs }) {
+export function zcodeTasksArgs({ sub, stateDir, sessionId, runId, policyHash, actionFile, id, leaseMs, attemptToken }) {
   if (sub === 'list') return ['tasks', 'list', '--state', stateDir];
-  // Scoped flag refuses to build rather than silently dropping (lane-A pattern):
+  // Scoped flags refuse to build rather than silently dropping (lane-A pattern):
   // a caller mistake surfaces here instead of being masked into a valid vector.
   if (leaseMs !== undefined && sub !== 'start' && sub !== 'resume') {
     throw new Error(`LEASE_SCOPE_VIOLATION --lease-ms belongs to start/resume only, saw sub=${sub}`);
+  }
+  if (attemptToken !== undefined && sub !== 'complete') {
+    throw new Error(`TOKEN_SCOPE_VIOLATION --attempt-token belongs to complete only here, saw sub=${sub}`);
   }
   const args = ['tasks', sub, '--state', stateDir, '--host', 'zcode',
     '--session', sessionId, '--run', runId, '--policy-hash', policyHash, '--action-file', actionFile];
   if (id !== undefined) args.push('--id', id);
   if (leaseMs !== undefined) args.push('--lease-ms', String(leaseMs));
+  if (attemptToken !== undefined) args.push('--attempt-token', attemptToken);
   return args;
 }
 
@@ -281,19 +287,22 @@ async function main() {
         runZcodeCli(zcodeTasksArgs({ ...stage(phase), sub, ...extra }), { cwd: repoRoot }),
         'STAGE_JOURNAL_FAILED', `${sub} ${phase}`, validate);
       const id = cli('create', {}, value => typeof value === 'string' && value.length > 0);
-      cli('start', { id, leaseMs: STAGE_LEASE_MS }, value => value?.state === 'running' && value?.attempts === 1);
+      const started = cli('start', { id, leaseMs: STAGE_LEASE_MS }, value => value?.state === 'running' && value?.attempts === 1);
+      // The leased start minted an attempt fence token (audit #5); complete must present it.
+      let attemptToken = started.attemptToken;
       const expectedAttempts = phase === 'review' ? 2 : 1;
       if (phase === 'review') {
         // The recovery leg: the running stage is interrupted (a crash stand-in),
         // then resumed under a fresh lease — the resume output itself must show
         // attempts=2 (the interrupt never counts as an attempt; the resume does).
         cli('interrupt', { id }, value => value?.state === 'interrupted');
-        cli('resume', { id, leaseMs: STAGE_LEASE_MS }, value => value?.state === 'running' && value?.attempts === 2);
+        const resumed = cli('resume', { id, leaseMs: STAGE_LEASE_MS }, value => value?.state === 'running' && value?.attempts === 2);
+        attemptToken = resumed.attemptToken; // the resume minted a fresh fence; the old token died with the interrupt
       }
       const marker = buildStageMarkerLine(phase);
       const artifactFile = path.join(prepared.artifactsDir, `${phase}.md`);
       fs.writeFileSync(artifactFile, `# zcode workflow stage: ${phase}\n\n${marker}\n`); // controller stand-in, honestly labeled
-      cli('complete', { id }, value => value?.state === 'completed' && value?.attempts === expectedAttempts);
+      cli('complete', { id, attemptToken }, value => value?.state === 'completed' && value?.attempts === expectedAttempts);
       artifacts[phase] = { file: artifactFile, marker };
       console.log(`      ${phase}: completed (attempts=${expectedAttempts}${phase === 'review' ? ', interrupt→resume recovery leg' : ''})`);
     }
@@ -352,10 +361,10 @@ async function main() {
     const shipArtifact = path.join(prepared.artifactsDir, 'ship.md');
     const shipId = cliExpect(runZcodeCli(zcodeTasksArgs({ ...stage('ship'), sub: 'create' }), { cwd: repoRoot }),
       'STAGE_JOURNAL_FAILED', 'create ship', value => typeof value === 'string' && value.length > 0);
-    cliExpect(runZcodeCli(zcodeTasksArgs({ ...stage('ship'), sub: 'start', id: shipId, leaseMs: STAGE_LEASE_MS }), { cwd: repoRoot }),
+    const shipStart = cliExpect(runZcodeCli(zcodeTasksArgs({ ...stage('ship'), sub: 'start', id: shipId, leaseMs: STAGE_LEASE_MS }), { cwd: repoRoot }),
       'STAGE_JOURNAL_FAILED', 'start ship', value => value?.state === 'running' && value?.attempts === 1);
     fs.writeFileSync(shipArtifact, `# zcode workflow stage: ship\n\n${shipMarker}\n\nshipped: ${fwd(prepared.shipTarget)}\n`);
-    cliExpect(runZcodeCli(zcodeTasksArgs({ ...stage('ship'), sub: 'complete', id: shipId }), { cwd: repoRoot }),
+    cliExpect(runZcodeCli([...zcodeTasksArgs({ ...stage('ship'), sub: 'complete', id: shipId }), '--attempt-token', shipStart.attemptToken], { cwd: repoRoot }),
       'STAGE_JOURNAL_FAILED', 'complete ship', value => value?.state === 'completed' && value?.attempts === 1);
     artifacts.ship = { file: shipArtifact, marker: shipMarker };
     // The policy leg needs the COMPILED policy object (loadPolicy's return):

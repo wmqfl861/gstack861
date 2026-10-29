@@ -12,10 +12,14 @@
 // top of runModelReview's single-fetch guarantee. Prints a machine-readable
 // `PORT <n>` line, then per-request status/duration lines (never bodies/keys).
 //
-// LEDGER: scripts/dev-gateway-certs.json commits an intentionally-PUBLIC dev-only key pair
-// (self-signed, loopback SANs only, trusted solely via explicit NODE_EXTRA_CA_CERTS). This pattern
-// must never extend to any key with value — the redaction engine rightly flags the PRIVATE KEY
-// marker; this file is the sole, documented exception.
+// LEDGER: scripts/dev-gateway-certs.json commits an intentionally-PUBLIC dev-only key pair — a
+// self-signed LEAF (BasicConstraints CA:FALSE, keyUsage without keyCertSign, SANs exactly
+// 127.0.0.1/::1/localhost, trusted solely via explicit NODE_EXTRA_CA_CERTS). Being a leaf, the
+// public key cannot sign certificates for any other identity: trusting it pins ONLY these
+// loopback names. Still set NODE_EXTRA_CA_CERTS just for the dedicated child process / test run,
+// never globally or long-term. This pattern must never extend to any key with value — the
+// redaction engine rightly flags the PRIVATE KEY marker; this file is the sole, documented
+// exception.
 // The DEEPSEEK_API_KEY comes exclusively from this process's environment (the
 // coordinator passes it at spawn); it is never printed, never written.
 import https from 'node:https';
@@ -37,16 +41,31 @@ const server = https.createServer({ key, cert }, (req, res) => {
     res.end(JSON.stringify({ error: 'not found' }));
     return;
   }
+  // Cap invariant (audit #7): at most ONE upstream POST per gateway process. The sole slot is
+  // claimed SYNCHRONOUSLY at gate passage — before the body is read — so two half-written bodies
+  // can never both pass the gate. A claimed request that disconnects BEFORE the upstream POST is
+  // issued releases the slot (the cap counts upstream calls, not connection attempts); once the
+  // upstream POST is sent, the slot is spent forever.
   if (posts >= 1) { // single-call red line, belt #2
+    req.resume(); // drain the refused body so a still-writing client can finish and read the 429
     res.writeHead(429, { 'content-type': 'application/json' });
     res.end(JSON.stringify({ error: 'single-call cap exceeded' }));
     console.log('CAP: second POST refused 429');
     return;
   }
+  posts += 1; // claim the sole slot SYNCHRONOUSLY at gate passage, BEFORE reading the body —
+              // the await-free gate must not leave a TOCTOU window during body reads (audit #7)
+  let upstreamIssued = false; // once the upstream POST is sent, the slot is spent permanently
   const chunks = [];
   req.on('data', c => chunks.push(c));
+  req.on('error', () => {}); // aborted reads surface here; the 'close' handler below releases
+  req.on('close', () => {
+    if (upstreamIssued || req.complete) return; // slot spent, or normal close after body 'end'
+    posts = 0; // client disconnected mid-body before the upstream call — release the claimed slot
+    console.log('ABORT: client disconnected mid-body, slot released');
+  });
   req.on('end', async () => {
-    posts += 1; // increment SYNCHRONOUSLY at gate passage — the await below must not open a TOCTOU window
+    upstreamIssued = true; // the upstream POST is being sent NOW — the slot is spent forever
     const started = Date.now();
     try {
       const upstream = await fetch(UPSTREAM, {

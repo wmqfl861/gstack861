@@ -204,9 +204,11 @@ function writeDenial(policy, target) {
   // predate the guarded session.
   const protectRedirect = (pointer) => {
     if (fs.statSync(pointer).size > 65536) return; // same cap as loadPolicy; oversized entries are not parsed
-    const match = fs.readFileSync(pointer, 'utf8').match(/^gitdir:\s*(\S+)\s*$/m);
+    // Git writes the gitdir path verbatim and legal paths may contain spaces (codex
+    // audit #1) — capture the rest of the line and trim, like git's own gitfile parse.
+    const match = fs.readFileSync(pointer, 'utf8').match(/^gitdir:\s*(.+)$/m);
     if (!match) return; // content without a gitdir: line is not a pointer — ignore
-    const dir = path.resolve(path.dirname(pointer), match[1]);
+    const dir = path.resolve(path.dirname(pointer), match[1].trim());
     protectedPaths.push(dir); // unresolved form, so future children of a missing gitdir stay denied
     try {
       const identity = existingIdentity(fs.realpathSync.native(dir));

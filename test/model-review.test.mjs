@@ -33,9 +33,9 @@ function json(body) { return new Response(body, { status: 200, headers: { 'conte
 
 /** A call whose every documented precondition holds; returns a promise to inspect. */
 function review(overrides = {}) {
-  const { respond = () => json(completion(APPROVE)), env = ENV_ON, ...rest } = overrides;
+  const { respond = () => json(completion(APPROVE)), env = ENV_ON, gateway = GATEWAY, ...rest } = overrides;
   const { calls, fetchImpl } = recorder(respond);
-  const outcome = runModelReview({ gateway: GATEWAY, target: TARGET, fetchImpl, env, ...rest });
+  const outcome = runModelReview({ gateway, target: TARGET, fetchImpl, env, ...rest });
   return { outcome, calls };
 }
 
@@ -186,6 +186,73 @@ test('no error thrown on any path ever contains the key value', async () => {
     assert.ok(!(error.message + error.stack).includes(KEY), 'errors must stay inert');
     return true;
   });
+});
+
+test('HTTP 200 bodies that echo the key are redacted on all three error-echo paths (audit #6)', async () => {
+  const raw = body => () => new Response(body, { status: 200, headers: { 'content-type': 'application/json' } });
+  // The audit's exact repro: an echoing gateway returns 200 with our Authorization value
+  // embedded, on each of the three paths that attach raw response bytes to an error.
+  const paths = [
+    ['invalid JSON body', raw(`{"echo":"Bearer ${KEY}","x":[`)], // body parse failure
+    ['missing content', raw(JSON.stringify({ note: `seen Authorization: Bearer ${KEY}` }))], // no choices[0].message.content
+    ['invalid verdict', raw(completion(`your key was ${KEY} and sk-other-secret-9f2c41ab too`))], // extractVerdict failure
+  ];
+  for (const [label, respond] of paths) {
+    await assert.rejects(review({ respond }).outcome, error => {
+      assert.match(error.message, /REVIEW_OUTPUT_UNPARSEABLE/, label);
+      assert.ok(!(error.message + error.stack).includes(KEY), `the echoed key must be redacted: ${label}`);
+      assert.ok(error.message.includes('[REDACTED]'), `redaction is visible in the diagnostic: ${label}`);
+      assert.ok(!error.message.includes('sk-other-secret-9f2c41ab'), `sk- shaped secrets redact too: ${label}`);
+      return true;
+    }, label);
+  }
+});
+
+test('a 7-character key is redacted like any other accepted key (audit #6, round 3)', async () => {
+  // The key carries NO Bearer/Authorization/api-key prefix, so only the LITERAL
+  // replacement can catch it — reverting the threshold to >=8 leaks it (round 4 #21:
+  // the previous shape of this test passed under the old code vacuously).
+  const shortKey = 'a7B2c9D';
+  const raw = body => () => new Response(body, { status: 200, headers: { 'content-type': 'application/json' } });
+  const paths = [
+    ['invalid JSON body', raw(`diag ${shortKey} tail`)], // body parse failure
+    ['missing content', raw(JSON.stringify({ note: `diag ${shortKey}` }))], // no choices[0].message.content
+    ['invalid verdict', raw(completion(`echo ${shortKey}`))], // extractVerdict failure
+  ];
+  for (const [label, respond] of paths) {
+    const { outcome } = review({ env: { GSTACK861_MODEL_CALL: '1', [KEY_ENV]: shortKey }, respond });
+    await assert.rejects(outcome, error => {
+      assert.match(error.message, /REVIEW_OUTPUT_UNPARSEABLE/, label);
+      assert.ok(!(error.message + error.stack).includes(shortKey), `the bare short key is redacted: ${label}`);
+      assert.ok(error.message.includes('[REDACTED]'), `redaction is visible: ${label}`);
+      return true;
+    }, label);
+  }
+});
+
+test('redaction runs before truncation: a key straddling the 1 KiB cut is fully redacted (audit #6)', async () => {
+  // 990 bytes of filler put the echoed Bearer key across the 1024-byte boundary;
+  // truncating first would leak a key fragment — redacting first cannot.
+  const body = 'x'.repeat(990) + ` tail Bearer ${KEY} end`;
+  const { outcome } = review({ respond: () => new Response(body, { status: 200, headers: { 'content-type': 'application/json' } }) });
+  await assert.rejects(outcome, error => {
+    assert.match(error.message, /REVIEW_OUTPUT_UNPARSEABLE/);
+    assert.ok(!error.message.includes(KEY), 'the whole key is absent');
+    assert.ok(!error.message.includes(KEY.slice(10, 30)), 'no fragment of the key survives the cut');
+    assert.ok(error.message.includes('Bearer [REDACTED]'), 'the secret shape was replaced before truncating');
+    return true;
+  });
+});
+
+test('the request target is exactly `<base>/chat/completions` even with a stray trailing slash (audit #10)', async () => {
+  // loadGateway normalizes trailing slashes away and refuses query/fragment (gateway.test);
+  // this is the executor half: the join itself can never produce a double slash.
+  for (const baseUrl of ['https://custom-gw.example.test/v1', 'https://custom-gw.example.test/v1/']) {
+    const { outcome, calls } = review({ gateway: { ...GATEWAY, baseUrl } });
+    await outcome;
+    assert.equal(calls.length, 1, 'exactly one call');
+    assert.equal(calls[0].url, 'https://custom-gw.example.test/v1/chat/completions', baseUrl);
+  }
 });
 
 test('mid-body abort during response.text() maps to GATEWAY_TIMEOUT', async () => {

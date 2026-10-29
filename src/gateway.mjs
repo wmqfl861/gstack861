@@ -41,10 +41,15 @@ function compileGateway(raw) {
   let url;
   try { url = new URL(raw.baseUrl); }
   catch { throw new Error('UNSAFE_BASEURL'); }
+  // Audit #10: query, fragment and userinfo (username AND a password-only form) are
+  // legal URL components but they misroute or silently mutate the executor's joined
+  // request path — refuse them at load, and normalize trailing slashes away so joining
+  // `${baseUrl}/chat/completions` is exact.
+  if (url.search || url.hash || url.username || url.password) throw new Error('UNSAFE_BASEURL');
   const hostname = hostnameOf(url);
   if (!hostname || (url.protocol !== 'https:' && (url.protocol !== 'http:' || !LOOPBACK_HOSTS.has(hostname)))) throw new Error('UNSAFE_BASEURL');
   if (BLOCKED_HOSTS.some(blocked => hostname === blocked || hostname.endsWith('.' + blocked))) throw new Error('OFFICIAL_ENDPOINT_FORBIDDEN');
-  const gateway = { schemaVersion: 1, baseUrl: raw.baseUrl, apiKeyEnv: raw.apiKeyEnv, model: raw.model, maxTokens: raw.maxTokens };
+  const gateway = { schemaVersion: 1, baseUrl: `${url.origin}${url.pathname.replace(/\/+$/, '')}`, apiKeyEnv: raw.apiKeyEnv, model: raw.model, maxTokens: raw.maxTokens };
   if (Object.hasOwn(raw, 'note')) gateway.note = raw.note; // absent optionals stay out of the normalized shape
   return freeze(gateway);
 }

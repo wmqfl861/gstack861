@@ -237,8 +237,15 @@ function classify(plan, target, previous) {
     const manifest = readJson(path.join(dest, 'manifest.json'));
     if (!object(manifest) || manifest.generator !== GENERATOR) fail('USER_FILE_REFUSED');
     // Same proof as uninstall: a user-edited or extended skill is never moved into purgeable backups.
+    // Registry lost (codex audit #2): the generator tag alone must NOT authorize takeover —
+    // validate the directory against the on-disk manifest's OWN claims, so a user-added
+    // file refuses instead of being purged later with the backup. This holds for
+    // files-bearing AND files-less manifests (round 3: a files-less claim is "nothing
+    // beyond SKILL.md/manifest.json", and an extra file violates it just the same).
+    // A pristine directory still takeovers (recovery path).
     const record = recorded.get(item.name);
     if (record) verifyOwned(dest, record);
+    else verifyOwned(dest, object(manifest.files) ? { sha256: manifest.sha256, files: manifest.files } : { sha256: manifest.sha256 });
     // Files-aware skip: an identical SKILL.md digest alone is not enough — the staged
     // files map (key set + digests) must also agree with the registry record (or,
     // without one, with the on-disk manifest's own map). Any disagreement routes to
@@ -297,6 +304,10 @@ export function installSkills({ staging, target, now = () => new Date().toISOStr
         // Build the new directory completely beside the old one, then swap with renames:
         // a failure leaves either the old skill or the new one in place, never a half-written dir.
         const temp = path.join(target, `${TMP_PREFIX}${randomUUID()}`);
+        // Rollback state (codex audit #3): once the old directory has been moved into the
+        // backups root, ANY later failure in this block (new-dir rename, registry commit)
+        // restores it, so the documented backup-rollback claim holds under fault injection.
+        let backupPath = null;
         try {
           fs.mkdirSync(temp, { mode: 0o755 });
           fs.writeFileSync(path.join(temp, 'SKILL.md'), item.skillBytes, { flag: 'wx', mode: 0o644 });
@@ -310,18 +321,40 @@ export function installSkills({ staging, target, now = () => new Date().toISOStr
           if (item.action === 'backup') {
             let stamp = Date.now();
             while (fs.existsSync(path.join(backupsRoot, `${item.name}-${stamp}`))) stamp += 1;
-            fs.renameSync(path.join(target, item.name), path.join(backupsRoot, `${item.name}-${stamp}`));
+            backupPath = path.join(backupsRoot, `${item.name}-${stamp}`);
+            fs.renameSync(path.join(target, item.name), backupPath);
             backedUp.push(item.name);
           }
           fs.renameSync(temp, path.join(target, item.name));
+          installed.push(item.name);
+          // The registry entry carries the files map exactly when the manifest listed files.
+          const entry = { name: item.name, sha256: item.sha256 };
+          if (item.files) entry.files = item.files;
+          merged.set(item.name, entry);
+          // Commit each skill to the registry as soon as it is in place — a failure here
+          // rolls the directory back too (registry and disk never disagree at rest).
+          try {
+            writeRegistry(target, [...merged.values()].sort(byName), now);
+          } catch (error) {
+            fs.rmSync(path.join(target, item.name), { recursive: true, force: true });
+            merged.delete(item.name);
+            installed.pop();
+            throw error;
+          }
+        } catch (error) {
+          // Restore the pre-install state: old dir back in place, no backup entry left.
+          // Round 3 (audit #15): when the active directory could NOT be removed (e.g.
+          // the new dir survived a failed registry-commit rollback), "target exists" is
+          // NOT evidence the old version is in place — the backup may be the ONLY
+          // surviving old copy, so it is kept, never deleted, in that state.
+          if (backupPath !== null && fs.existsSync(backupPath) && !fs.existsSync(path.join(target, item.name))) {
+            fs.renameSync(backupPath, path.join(target, item.name));
+            backedUp.pop();
+          }
+          throw error;
         } finally {
           fs.rmSync(temp, { recursive: true, force: true });
         }
-        installed.push(item.name);
-        // The registry entry carries the files map exactly when the manifest listed files.
-        const entry = { name: item.name, sha256: item.sha256 };
-        if (item.files) entry.files = item.files;
-        merged.set(item.name, entry);
       } else {
         skipped.push(item.name);
         // A skipped skill keeps its recorded entry byte-for-byte; only an unrecorded
@@ -331,9 +364,8 @@ export function installSkills({ staging, target, now = () => new Date().toISOStr
           if (item.files) entry.files = item.files;
           merged.set(item.name, entry);
         }
+        writeRegistry(target, [...merged.values()].sort(byName), now);
       }
-      // Commit each skill to the registry as soon as it is in place.
-      writeRegistry(target, [...merged.values()].sort(byName), now);
     }
     return { installed, skipped, backedUp };
   });
@@ -370,7 +402,14 @@ function verifyOwned(dir, record) {
   walk('', dir);
   const expected = new Set(['SKILL.md', 'manifest.json', ...listed]);
   if (found.length !== expected.size || found.some(file => !expected.has(file))) fail('USER_FILE_REFUSED');
-  const onPath = new Set(listed.flatMap(key => key.split('/').slice(0, -1)));
+  // Cumulative prefixes of every listed file path (codex audit #4): `sections/deep/x.md`
+  // allows BOTH `sections` and `sections/deep` — the walker reports accumulated relative
+  // directories, so a single-segment set made legal multi-segment files un-reinstallable.
+  const onPath = new Set();
+  for (const key of listed) {
+    const parts = key.split('/');
+    for (let i = 1; i < parts.length; i += 1) onPath.add(parts.slice(0, i).join('/'));
+  }
   if (dirs.some(dir => !onPath.has(dir))) fail('USER_FILE_REFUSED'); // no empty or stray subdirectories
   const manifest = readJson(path.join(dir, 'manifest.json'));
   if (!object(manifest) || manifest.generator !== GENERATOR || manifest.sha256 !== record.sha256) fail('USER_FILE_REFUSED');

@@ -1,6 +1,6 @@
 # 蓝图剩余项终版逐项盘点（OFFLINE-COMPLETE）
 
-截至 2026-10-28（批次 18 / 0.4.17 进行中，本清单随本批合并落盘）对 BLUEPRINT 全部剩余项的逐项判定。**结论：离线余量显式存在——纯工具二进制移植与原生迁移工具（第二节）列为后续批次工作，本清单不宣称"离线已尽"。** 其余剩余项分两类：待用户解锁（第一节，每项给出精确触发方式）与环境受阻（第三节，每项一句"缺什么"）。已完成项的证据入口见文末交叉引用；本清单不新增任何"完成"宣称，一切分级以 `docs/FEATURE_MATRIX.md` 为准。
+截至 2026-10-29（批次 33 / 0.4.32——codex 审计整改批；批次 18（0.4.17）为历史快照，其"进行中/deferred"表述已按当前仓库状态重写，历史批次结论以各批验证记录为准）对 BLUEPRINT 全部剩余项的逐项判定。**结论：第二节纯工具二进制移植已全部收口（slug/redact/issue-links/prepush 均 ported，批次 19–24），离线余量仅剩命令别名（蓝图 M3 生命周期组）1 项——本清单不宣称"离线已尽"。** 其余剩余项分两类：待用户解锁（第一节，每项给出精确触发方式）与环境受阻（第三节，每项一句"缺什么"）。已完成项的证据入口见文末交叉引用；本清单不新增任何"完成"宣称，一切分级以 `docs/FEATURE_MATRIX.md` 为准。
 
 判定基线：BLUEPRINT M2–M4 + FEATURE_MATRIX 全部 planned/blocked 行 + README「离线边界」节 13 项 + 批次 18 审计划逐行复核补洞。上游事实以固定子模块 `upstream/gstack`（commit 5755601，v1.91.248.0）实测为准——`bin/` 目录已逐一检视（见第二节所列实际名字）。
 
@@ -17,6 +17,8 @@
 - **触发后做什么**：FEATURE_MATRIX ③ 相关行（「技能渲染（上游管线 CI 复用）」「原生入口」「审批状态」）升级评估；`bin/gstack861.mjs doctor` hosts 面评估；本节第 3/4 项（④ 与宿主级安装类）随之可排。
 
 ### 2. **⑨ model-review runtime：已完成（批次 28）**——单次真调用经本机显式网关（协调者/操作员在用户持续授权下放置配置；密钥仅子进程 env；单次封顶 posts=1 独立证实）。重跑：启动 `node scripts/dev-gateway.mjs`（打印 PORT）→ 写网关配置（样例见批次 28 计划）→ NODE_EXTRA_CA_CERTS=<ca> GSTACK861_MODEL_CALL=1 <apiKeyEnv>=x node scripts/verify-model-review.mjs --gateway-config <abs>。
+
+- **开发网关证书信任范围（codex 审计 #8 披露，批次 33 更新）**：`scripts/dev-gateway-certs.json` 的私钥**有意公开**（仓库内测试 fixture）。批次 33 起该证书已重新生成为**自签叶证书**（BasicConstraints CA:FALSE、keyUsage 无 keyCertSign、SAN 恰为 `127.0.0.1`/`::1`/`localhost`，由测试钉死），因此把 `NODE_EXTRA_CA_CERTS` 指向它**只信任这三个回环名**，无法用于签发/验证其他任何身份。仍需纪律：只为专用子进程/测试运行设置该变量，绝不安装为全局长期信任。
 
 - **是什么**：独立模型复核的 runtime 半边——对真实网关发起**恰好一次**模型复核调用（机制半边已就绪：批次 11 五段就绪验证全绿）。
 - **为什么需要你**：真调用消耗付费预算；网关配置与密钥必须由你亲手放置（配置在工作区外、键只引用环境变量名——模型不可触达），项目纪律绝不替用户发起付费调用。
@@ -44,14 +46,14 @@
 
 ### 5. DSH 键控预算类消费（**§一5 全部收口**：安全组 3 + 设计组 5 共 8 技能能力切片消费完毕[批次 29-31]）
 
-- **是什么**：渲染技能消费的延续——与既有 15 例消费计划同款方法论（装载技能 → 真实任务消费 → 降级/验证门槛按技能原文执行 → 边界如实记录），候选覆盖安全组 `careful`/`freeze`/`cso` 与设计组 `design-consultation`/`design-shotgun`/`design-html`/`design-review`/`devex-review`（目录名以固定上游实测）。
+- **是什么**：渲染技能消费的延续——能力切片口径（`scripts/dsh-keyed-consumption.mjs` 实测边界，批次 29–31）：装载/索引 → 读取技能正文 → 随机标记回显 → 键控记账链路。技能正文为**合成 fixture**（`body of <skill>` + 随机标记），验证的是装载、索引、读取与记账链路本身——**非**技能方法论消费，**不增加**既有 15 例方法论消费计数（与 `FEATURE_MATRIX.md`「浏览器/QA/设计」「CSO/iOS/远程等专项」行的"非方法论消费"口径一致）；原始技能行为及其降级/验证门槛仍列为独立待验收项。候选覆盖安全组 `careful`/`freeze`/`cso` 与设计组 `design-consultation`/`design-shotgun`/`design-html`/`design-review`/`devex-review`（目录名以固定上游实测）。
 - **为什么需要你**：需要密钥与预算批准。项目纪律：默认 0 密钥/批，累计键控计费 22 次（截至批次 31；VERIFICATION.md 为准），逐批计划明示上限。
 - **精确触发方式**：与既有键控纵向同款约束——密钥只进子进程 env、提示词 ≤200 字符 throw-before-launch 红线；具体任务集与上限由该批计划定义。此类**无需 ③**（DSH 键控即可推进），故独立于第 1 项单列。
 - **触发后做什么**：消费计数与 FEATURE_MATRIX「浏览器/QA/设计」「文档/记忆/GBrain」「CSO/iOS/远程等专项」相关行按实测升级。
 
 ## 二、离线余量（批次 19 起逐项收口，不宣称已尽）
 
-批次 19 对固定子模块（5755601）`bin/` 实名二进制完成全量前提审计并落盘如下；批次 20 收口其中两项（banned-terms → ported、team-init → mapped，双 lane 并行）。判定口径：**ported**=已移植；**covered**=本项目已有等价实现；**N/A**=前提属本项目不支持的宿主；**mapped**=语义映射为本项目原生工具；**deferred**=留独立批次集中做。**3 项 deferred 仍是离线余量——本清单不宣称"离线已尽"。**
+批次 19 对固定子模块（5755601）`bin/` 实名二进制完成全量前提审计并落盘如下；批次 20 收口两项（banned-terms → ported、team-init → mapped，双 lane 并行）；批次 21（slug）、22（redact 扫描核心）、23（redact hook 子命令回填 + redact-prepush）、24（issue-links）陆续收口。判定口径：**ported**=已移植；**covered**=本项目已有等价实现；**N/A**=前提属本项目不支持的宿主；**mapped**=语义映射为本项目原生工具。**表内已无 deferred；唯一剩余离线余量是命令别名（蓝图 M3 生命周期组，见下）——本清单不宣称"离线已尽"。**
 
 | 二进制 | 规模 | 判定 | 依据（一句话） |
 |---|---|---|---|
@@ -60,13 +62,13 @@
 | `gstack-paths` | 160 行 | **N/A** | 前提=Claude 插件运行时环境（CLAUDE_PLUGIN_DATA / ~/.claude/plans 链）；本项目状态根为显式绝对 `--state`（安全设计：模型不可写工作区外），移植=为不支持的宿主发明需求 |
 | `gstack-migrate-claude-code` | 20+270 | **mapped** | 语义属上游安装域（重命名上游在其他宿主的技能安装）；映射为本项目原生 `migrate-state`（批次 19 Lane A，偿还本项目自己的 0.3.1 状态命名空间断裂债务） |
 | `gstack-slug` | 880+147+109 | **ported**（批次 21，两段+薄 CLI） | remote-identity 27 向量金样回放；身份解析 v2 缓存零 git spawn；checkpoint 簿记活体上游对照 41/41 原语字节相等；状态根映射 ~/.gstack861（绝不触碰 ~/.gstack） |
-| `gstack-redact` | 341+1075+817（CLI+patterns+引擎） | 扫描核心 **本批完成**（批次 22） | patterns 1075+engine 817 零依赖移植，上游 9 个测试文件向量回放；CLI 扫描路径同批；hook install/uninstall 子命令不在本批——整支 binary 未全量移植，随下行 prepush 批 deferred |
-| `gstack-redact-prepush` | 790+27 | **deferred**（独立批次） | 连带闭包：CLI hook install/uninstall + `lib/fs-utils` mkdirpSync（27 行，随 prepush 批）。特征：pre-push stdin refs 解析、remote..local 增行扫描、新分支 merge-base 回退、删分支跳过、force-push 净新增语义、`GSTACK_REDACT_PREPUSH=skip` 旁路、guardrail 非 enforcement；另依赖 `lib/state-root` 与 `lib/sealed-guard`；上游有 5 个专属测试文件（prepush-{emails,hook,rebase-force-push,scan-range,target}） |
+| `gstack-redact` | 341+1075+817（CLI+patterns+引擎） | **ported**（批次 22 扫描核心 + 批次 23 hook 子命令回填） | patterns 1075+engine 817 零依赖移植，上游 9 个测试文件向量回放；`install-prepush-hook`/`uninstall-prepush-hook` 子命令批次 23 回填（链式保留既有 hook；上游 #2635 mkdirp 语义保留）；整支 binary 全量移植完毕 |
+| `gstack-redact-prepush` | 790+27 | **ported**（批次 23 Lane B） | pre-push stdin refs 解析、remote..local 增行扫描、新分支 merge-base 回退、删分支跳过、force-push 净新增语义、`GSTACK_REDACT_PREPUSH=skip` 旁路、guardrail 非 enforcement；连带闭包（`lib/fs-utils` mkdirpSync、`lib/state-root`、`lib/sealed-guard`）同批移植；上游 5 个专属测试文件向量回放（prepush-{emails,hook,rebase-force-push,scan-range,target}） |
 | `gstack-issue-links` | 202+188+98+117 | **ported**（批次 24：lib 纯分类逐字+两 bin+tracker-guard 信封；上游 ship-issue-intent 13 向量+tracker-guard 14 向量适配，gh 缺失极性双腿可测） |
 | `gstack-banned-terms` | 90 行 | **ported**（批次 20 Lane A） | 宿主无关、零依赖 Node 移植为 `bin/gstack861-banned-terms.mjs`（`check|init|validate` 三命令；`.gstack/banned-terms.json` 词表在 diff 新增行扫描 + 允许路径豁免；退出码 0/1/2/3 对齐上游 ok/fail/usage/refused） |
 | `gstack-team-init` | 269 行 | **mapped**（批次 20 Lane B） | Claude 专属面（CLAUDE.md、.claude/settings.json+check-gstack.cjs、vendored 迁移）不逐字移植：映射为 `gstack861 team-init {optional|required} [--root DIR]`——AGENTS.md 段（宿主侧约定[验收项]标注）+ 复用既有 zcode PreToolUse 接线（zcode-config）与 DSH guard profile 指引，不发明新 hook 文件；幂等 grep-skip；`--root` 显式绕过 git（记录在案的映射差异） |
 
-原清单其余两条随本表收口：原生迁移工具即上行 **mapped**（`migrate-state` 批次 19 落地）；命令别名（蓝图 M3 生命周期组）不在二进制审计面内，仍为离线余量，可随装载/迁移先例离线先行。
+原生迁移工具已随上表收口（**mapped**：`migrate-state` 批次 19 落地）；命令别名（蓝图 M3 生命周期组）不在二进制审计面内，是**唯一的剩余离线余量**，可随装载/迁移先例离线先行。
 
 ## 三、环境受阻（每项一句"缺什么"）
 
@@ -84,4 +86,4 @@
 
 - 功能状态权威表：`docs/FEATURE_MATRIX.md`（本清单各项均标注对应行）；边界 13 项：README「离线边界」节。
 - 验证脚本总表：`docs/VERIFICATION-SCRIPTS.md`（10 脚本；三方一致性由 `test/verification-scripts.test.mjs` 钉死）。
-- 逐轮验证记录：`docs/VERIFICATION.md`（截至批次 17 共 25 轮；批次 18 为第二十六轮，合并后落盘）。
+- 逐轮验证记录：`docs/VERIFICATION.md`（截至批次 32 共 42 轮；批次 33——codex 审计整改——为第四十三轮，合并后落盘）。

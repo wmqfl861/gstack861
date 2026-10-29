@@ -53,6 +53,7 @@ export class TaskStore {
       || !Number.isSafeInteger(record.createdAt) || !Number.isSafeInteger(record.updatedAt)
       || typeof record.subjectHash !== 'string' || !/^[a-f0-9]{64}$/.test(record.subjectHash)
       || (record.owner !== undefined && !validOwner(record.owner))
+      || (record.attemptToken !== undefined && !/^[a-f0-9]{32}$/.test(record.attemptToken))
       || (record.leaseExpiresAt !== undefined && (!Number.isSafeInteger(record.leaseExpiresAt) || record.leaseExpiresAt < 0))) fail('INVALID_TASK_RECORD');
     return record;
   }
@@ -75,7 +76,7 @@ export class TaskStore {
     }
     return records;
   }
-  transition(id, subject, from, to, { bumpAttempts = false, owner, lease, guard } = {}) {
+  transition(id, subject, from, to, { bumpAttempts = false, owner, lease, guard, attemptToken, freshToken = false, fence = false } = {}) {
     if (owner !== undefined && !validOwner(owner)) fail('INVALID_OWNER');
     const filename = this.file(id), lock = `${filename}.lock`;
     try { fs.mkdirSync(lock, { mode: 0o700 }); } catch { fail('TASK_BUSY'); }
@@ -86,12 +87,25 @@ export class TaskStore {
       if (record.subjectHash !== subjectDigest(subject)) fail('TASK_BINDING_MISMATCH');
       if (!from.includes(record.state)) fail('TASK_WRONG_STATE');
       if (guard !== undefined) guard(record);
+      // Attempt fencing (codex audit #5): EVERY start/resume mints a fresh token —
+      // decoupled from leasing (round 3: a LEASELESS resume must fence too, or the
+      // executor of a reaped-away attempt simply walks back in). Only the executor-
+      // side transitions (fence) demand the token back; supervisor transitions (reap,
+      // interrupt, cancel, requeue) act on the record, not on an attempt's behalf.
+      // Records without a token predate the field and stay accepted without one.
+      if (fence && record.attemptToken !== undefined && attemptToken !== record.attemptToken) {
+        fail(attemptToken === undefined ? 'TASK_ATTEMPT_TOKEN_REQUIRED' : 'TASK_ATTEMPT_MISMATCH');
+      }
       const next = { ...record, state: to, updatedAt: this.now() };
       if (bumpAttempts) next.attempts = record.attempts + 1;
       if (owner !== undefined) next.owner = owner;
       // lease: a number arms leaseExpiresAt, null clears it, undefined leaves it untouched.
       if (lease === null) delete next.leaseExpiresAt;
       else if (lease !== undefined) next.leaseExpiresAt = lease;
+      // The token fences the attempt itself, leased or not; it lives only while
+      // running — every exit (reap/interrupt/complete/fail/...) drops it.
+      if (freshToken) next.attemptToken = randomUUID().replace(/-/g, '');
+      if (to !== 'running') delete next.attemptToken;
       const temp = `${filename}.${randomUUID()}.tmp`;
       try {
         fs.writeFileSync(temp, JSON.stringify(next) + '\n', { flag: 'wx', mode: 0o600 });
@@ -104,21 +118,23 @@ export class TaskStore {
     if (leaseMs !== undefined && !validLeaseMs(leaseMs)) fail('INVALID_LEASE');
     // Entering running leaseless clears any stale lease: "omitted" constrains the
     // resulting record, so a leaseless start/resume can never be phantom-reaped.
+    // A fresh attemptToken fences this attempt (codex audit #5): the returned record
+    // carries it and heartbeat/complete/fail must present it back.
     return this.transition(id, subject, ['planned', 'interrupted'], 'running',
-      { bumpAttempts: true, owner, lease: leaseMs === undefined ? null : this.now() + leaseMs });
+      { bumpAttempts: true, owner, lease: leaseMs === undefined ? null : this.now() + leaseMs, freshToken: true });
   }
   resume(id, subject, { leaseMs } = {}) {
     if (leaseMs !== undefined && !validLeaseMs(leaseMs)) fail('INVALID_LEASE');
     return this.transition(id, subject, ['interrupted'], 'running',
-      { bumpAttempts: true, lease: leaseMs === undefined ? null : this.now() + leaseMs });
+      { bumpAttempts: true, lease: leaseMs === undefined ? null : this.now() + leaseMs, freshToken: true });
   }
   // Liveness is proven by the call itself: an expired-but-present lease may still be
   // extended (GC lag); a leaseless record may not invent one, and a reaped task fails
   // the from-state check above.
-  heartbeat(id, subject, { leaseMs } = {}) {
+  heartbeat(id, subject, { leaseMs, attemptToken } = {}) {
     if (!validLeaseMs(leaseMs)) fail('INVALID_LEASE');
     return this.transition(id, subject, ['running'], 'running',
-      { lease: this.now() + leaseMs, guard: record => { if (record.leaseExpiresAt === undefined) fail('TASK_LEASE_REQUIRED'); } });
+      { lease: this.now() + leaseMs, attemptToken, fence: true, guard: record => { if (record.leaseExpiresAt === undefined) fail('TASK_LEASE_REQUIRED'); } });
   }
   // Fail-closed crash proof: only an expired lease is evidence; lease absence is not.
   reap(id, subject) {
@@ -129,8 +145,8 @@ export class TaskStore {
   }
   requeue(id, subject) { return this.transition(id, subject, ['failed'], 'planned', { lease: null }); }
   // Every path leaving running drops the lease: parked and terminal states carry no expiry claim.
-  complete(id, subject) { return this.transition(id, subject, ['running'], 'completed', { lease: null }); }
-  fail(id, subject) { return this.transition(id, subject, ['running'], 'failed', { lease: null }); }
+  complete(id, subject, { attemptToken } = {}) { return this.transition(id, subject, ['running'], 'completed', { lease: null, attemptToken, fence: true }); }
+  fail(id, subject, { attemptToken } = {}) { return this.transition(id, subject, ['running'], 'failed', { lease: null, attemptToken, fence: true }); }
   cancel(id, subject) { return this.transition(id, subject, ['planned', 'running', 'interrupted'], 'cancelled', { lease: null }); }
   interrupt(id, subject) { return this.transition(id, subject, ['running'], 'interrupted', { lease: null }); }
 }

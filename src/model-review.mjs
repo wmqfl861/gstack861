@@ -22,6 +22,35 @@ function fail(code, detail = '') {
   return new Error(detail ? `${code} ${detail}` : code);
 }
 
+// Audit #6: the gateway sits on the network path and can echo our own Authorization
+// value back inside an HTTP 200 body; any raw response bytes attached to an error pass
+// through here — the literal key first, then the common secret shapes — BEFORE the
+// 1 KiB truncation, so a diagnostic tail can never carry a live secret.
+const SECRET_SHAPES = [
+  [/Bearer\s+[A-Za-z0-9._~+/=-]{8,}/gi, 'Bearer [REDACTED]'],
+  [/\bsk-[A-Za-z0-9_-]{8,}\b/g, 'sk-[REDACTED]'],
+  [/(authorization|api[-_]?key|x-api-key)(\s*["':=]\s*)[^\s"',;]{4,}/gi, '$1$2[REDACTED]'],
+];
+
+function redact(text, key) {
+  // Round 3 (audit #6): resolveKey accepts ANY non-empty key, so the literal redaction
+  // must too — a 7-character key leaks exactly like a 41-character one.
+  let out = text;
+  if (typeof key === 'string' && key.length >= 1) out = out.split(key).join('[REDACTED]');
+  for (const [shape, replacement] of SECRET_SHAPES) out = out.replace(shape, replacement);
+  return out;
+}
+
+/** Deterministic endpoint join (audit #10): rebuild through a URL object so a stray
+ *  trailing slash can never double-slash the path and query/fragment never survive. */
+function joinUrl(baseUrl, pathname) {
+  const url = new URL(baseUrl);
+  url.pathname = url.pathname.replace(/\/+$/, '') + `/${pathname}`;
+  url.search = '';
+  url.hash = '';
+  return url.href;
+}
+
 /** Validate the review target/prompt shape before anything is assembled. */
 function checkedTarget(target, prompt) {
   if (prompt !== undefined && typeof prompt !== 'string') throw fail('REVIEW_INPUT_INVALID', '(prompt must be a string)');
@@ -38,8 +67,8 @@ function checkedTarget(target, prompt) {
 }
 
 /** Extract { verdict, findings } from the completion content; tolerate fences and prose. */
-function extractVerdict(content) {
-  const unparseable = () => fail('REVIEW_OUTPUT_UNPARSEABLE', `(first 1KiB of raw content) ${content.slice(0, 1024)}`);
+function extractVerdict(content, sanitize = value => value) {
+  const unparseable = () => fail('REVIEW_OUTPUT_UNPARSEABLE', `(first 1KiB of raw content) ${sanitize(content).slice(0, 1024)}`);
   let parsed;
   try { parsed = JSON.parse(content); }
   catch {
@@ -79,7 +108,7 @@ export async function runModelReview({ gateway, target, prompt, fetchImpl = fetc
   // 4. The single capped call.
   let response;
   try {
-    response = await fetchImpl(`${gateway.baseUrl}/chat/completions`, {
+    response = await fetchImpl(joinUrl(gateway.baseUrl, 'chat/completions'), {
       method: 'POST',
       headers: { Authorization: `Bearer ${key}`, 'content-type': 'application/json' },
       body: JSON.stringify({
@@ -113,12 +142,12 @@ export async function runModelReview({ gateway, target, prompt, fetchImpl = fetc
   }
   let payload;
   try { payload = JSON.parse(text); }
-  catch { throw fail('REVIEW_OUTPUT_UNPARSEABLE', `(first 1KiB of raw body) ${text.slice(0, 1024)}`); }
+  catch { throw fail('REVIEW_OUTPUT_UNPARSEABLE', `(first 1KiB of raw body) ${redact(text, key).slice(0, 1024)}`); }
   const content = payload?.choices?.[0]?.message?.content;
   if (typeof content !== 'string') {
-    throw fail('REVIEW_OUTPUT_UNPARSEABLE', `(first 1KiB of raw body) ${text.slice(0, 1024)}`);
+    throw fail('REVIEW_OUTPUT_UNPARSEABLE', `(first 1KiB of raw body) ${redact(text, key).slice(0, 1024)}`);
   }
-  const { verdict, findings } = extractVerdict(content);
+  const { verdict, findings } = extractVerdict(content, value => redact(value, key));
   // 6. Frozen structured verdict.
   return freeze({ verdict, findings, usage: payload.usage ?? null });
 }

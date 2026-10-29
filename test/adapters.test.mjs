@@ -271,15 +271,16 @@ test('tasks CLI create→start→interrupt→resume→complete smoke records own
   const shown = () => JSON.parse(run('show', '--state', state, '--id', id).stdout);
   assert.equal(shown().state, 'planned');
   assert.equal(shown().owner, 'operator-a');
-  const step = sub => {
-    const child = run(sub, '--state', state, '--id', id, ...subject);
+  const step = (sub, ...extra) => { // executor subs carry the start-minted attempt token
+    const child = run(sub, '--state', state, '--id', id, ...subject, ...extra);
     assert.equal(child.status, 0, `${sub}: ${child.stderr}`);
     return JSON.parse(child.stdout);
   };
   assert.equal(step('start').state, 'running');
-  assert.equal(step('interrupt').state, 'interrupted');
-  assert.equal(step('resume').state, 'running');
-  assert.equal(step('complete').state, 'completed');
+  assert.equal(step('interrupt').state, 'interrupted'); // supervisor-side: no token
+  const resumed = step('resume');
+  assert.equal(resumed.state, 'running');
+  assert.equal(step('complete', '--attempt-token', resumed.attemptToken).state, 'completed');
   const final = shown();
   assert.equal(final.state, 'completed');
   assert.equal(final.owner, 'operator-a');

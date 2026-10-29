@@ -277,6 +277,13 @@ async function main() {
     const taskId = JSON.parse(createRun.stdout);
     const startRun = runCli(tasksArgs({ ...subject, sub: 'start', id: taskId }), { cwd: repoRoot });
     cliExpect(startRun, 'start D', run => JSON.parse(run.stdout).state === 'running');
+    // Audit #5/#20: runCli returns raw stdout (no .parsed) — parse the started record
+    // itself, and REQUIRE its minted token: a missing token is a wiring bug, never a
+    // silent skip of the fence.
+    const attemptToken = JSON.parse(startRun.stdout).attemptToken;
+    if (typeof attemptToken !== 'string' || !/^[a-f0-9]{32}$/.test(attemptToken)) {
+      throw new Error('TASKS_CLI_FAILED start D: the started record carries no attempt token');
+    }
     const task = launchTask({ root: prepared.root, workspace: prepared.workspace, profile: PROFILE, prompt, label: 'taskD-ship-deny' });
     const verdict = verdictShipDeny({ events: pickEvents(task.stdout, task.stderr), shipTarget: prepared.shipTarget, shipFileExists: fs.existsSync(prepared.shipTarget) });
     console.log(`      ${verdict.ok ? 'PASS' : 'FAIL'}  ${verdict.code}: ${verdict.reason}`);
@@ -286,7 +293,7 @@ async function main() {
     }
     // Terminal journal discipline first — even (especially) on SHIP_FILE_LEAKED.
     const terminal = verdict.ok ? 'complete' : 'fail';
-    const terminalRun = runCli(tasksArgs({ ...subject, sub: terminal, id: taskId }), { cwd: repoRoot });
+    const terminalRun = runCli([...tasksArgs({ ...subject, sub: terminal, id: taskId }), '--attempt-token', attemptToken], { cwd: repoRoot });
     cliExpect(terminalRun, `${terminal} D`, run => JSON.parse(run.stdout).state === (verdict.ok ? 'completed' : 'failed'));
     if (!verdict.ok) {
       console.log('RESULT: FAILURE — task D failed (journaled failed); no publish, approval left unconsumed. Honest fail, no auto-retry.');

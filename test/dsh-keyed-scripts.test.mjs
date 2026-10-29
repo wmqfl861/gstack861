@@ -612,8 +612,42 @@ test('action-file stability: identical file across create/start/complete; mutate
   fs.writeFileSync(actionFile, `${JSON.stringify({ phase: 'qa', task: 'C', extra: 1 }, null, 2)}\n`);
   assert.throws(() => store.start(id, mk()), /TASK_BINDING_MISMATCH/, 'drift between transitions must abort, not silently continue');
   fs.writeFileSync(actionFile, original); // identical bytes again
-  assert.equal(store.start(id, mk()).state, 'running');
-  assert.equal(store.complete(id, mk()).state, 'completed');
+  const attempt = store.start(id, mk()); // mints the attempt fence token (audit #5)
+  assert.equal(attempt.state, 'running');
+  assert.equal(store.complete(id, mk(), { attemptToken: attempt.attemptToken }).state, 'completed');
+});
+
+test('mini/ship journaling orchestration through the REAL CLI threads the attempt token (audit #19/#20)', (t) => {
+  // The keyed mains cannot run here, but their exact CLI shape can: the exported
+  // tasksArgs builder + the real binary, create -> start -> terminal, both legs.
+  // Round 4 found two mains reading a token field that did not exist; this pins the
+  // wiring contract the mains must follow (token comes from start's stdout record).
+  const root = base(t);
+  const fixture = writeMiniFixture(root);
+  const policyPath = path.join(root, 'policy.json');
+  fs.writeFileSync(policyPath, `${JSON.stringify(policyJson({
+    workspace: fixture.workspace, readRoots: [fixture.workspace], writeRoots: [fixture.srcDir],
+  }), null, 2)}
+`);
+  const { policyHash } = loadPolicy(policyPath);
+  const run = args => {
+    const child = spawnSync(process.execPath, [path.join(repoRoot, 'bin/gstack861.mjs'), ...args],
+      { encoding: 'utf8', timeout: 20000 });
+    assert.equal(child.status, 0, `${args[0]}: ${child.stderr}`);
+    return JSON.parse(child.stdout);
+  };
+  for (const leg of [{ sub: 'complete', state: 'completed' }, { sub: 'fail', state: 'failed' }]) {
+    const actionFile = writeActionFile(root, { phase: 'qa', task: leg.sub === 'complete' ? 'C' : 'D' });
+    const args = { stateDir: path.join(root, 'tasks-' + leg.sub), sessionId: 's-uuid', runId: 'mv1a2b3c', policyHash, actionFile };
+    const subject = subjectFor(args); // action/subject digest source; stateDir rides in args
+    const id = run(tasksArgs({ ...args, sub: 'create' }));
+    const started = run(tasksArgs({ ...args, sub: 'start', id }));
+    assert.equal(started.state, 'running');
+    assert.match(started.attemptToken, /^[a-f0-9]{32}$/, 'start stdout record carries the minted fence token');
+    const sub = leg.sub;
+    const final = run([...tasksArgs({ ...args, sub, id }), '--attempt-token', started.attemptToken]);
+    assert.equal(final.state, leg.state, `${sub} with the token lands the terminal state`);
+  }
 });
 
 /** Compile helper for the policyJson test: writes the policy OUTSIDE the workspace and loads it for real. */

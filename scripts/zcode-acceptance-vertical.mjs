@@ -209,11 +209,15 @@ async function main() {
       return parsed;
     };
     const journal = {};
+    const tokens = {}; // per-task attemptToken (audit #5): executor-side transitions present it
     const openTask = name => {
       journal[name] = run(zcodeTasksArgs({ ...subject, sub: 'create' }), `create ${name}`, s => typeof s === 'string' && s.length > 0);
-      run(zcodeTasksArgs({ ...subject, sub: 'start', id: journal[name] }), `start ${name}`, r => r?.state === 'running');
+      const started = run(zcodeTasksArgs({ ...subject, sub: 'start', id: journal[name] }), `start ${name}`, r => r?.state === 'running');
+      tokens[name] = started?.attemptToken; // fence this attempt (audit #5)
     };
-    const closeTask = (name, outcome, state) => run(zcodeTasksArgs({ ...subject, sub: outcome, id: journal[name] }), `${outcome} ${name}`, r => r?.state === state);
+    const closeTask = (name, outcome, state) => run(
+      [...zcodeTasksArgs({ ...subject, sub: outcome, id: journal[name] }), ...(tokens[name] ? ['--attempt-token', tokens[name]] : [])],
+      `${outcome} ${name}`, r => r?.state === state);
 
     console.log('[1/4] keyed SMOKE (1 paid call): one in-scope Read through a real session — pins auth + summary shape...');
     const smokePrompt = checkPromptCap('Read the file src/notes.md in this workspace and reply with exactly: OK', 'zcode-smoke');

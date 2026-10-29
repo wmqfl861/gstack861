@@ -168,6 +168,30 @@ test('gitfile pointers with garbage content are ignored without crashing', t => 
   assert.equal(evaluate(policy, call(f, 'src/new.txt')).decision, 'abstain');
 });
 
+test('gitfile pointers accept gitdir paths containing spaces (codex audit #1)', t => {
+  const f = fixture(t), policy = compilePolicy({ ...f.raw, writeRoots: [f.workspace] });
+  // The audit's exact repro: real git writes the pointer itself via --separate-git-dir,
+  // and legal gitdir paths may contain spaces — the parse must capture the whole line.
+  const wt = path.join(f.workspace, 'spaced worktree'), gitData = path.join(f.workspace, 'spaced git data');
+  fs.mkdirSync(wt);
+  execFileSync('git', ['init', '--separate-git-dir', gitData, wt], { encoding: 'utf8' });
+  assert.match(fs.readFileSync(path.join(wt, '.git'), 'utf8'), /^gitdir: .*spaced git data/m,
+    'the fixture premise: git itself wrote a spaced path into the pointer');
+  assert.equal(evaluate(policy, call(f, 'spaced git data/hooks/pre-commit')).code, 'PROTECTED_PATH');
+  assert.equal(evaluate(policy, call(f, 'spaced git data/config')).code, 'PROTECTED_PATH');
+  assert.equal(evaluate(policy, call(f, 'src/new.txt')).decision, 'abstain');
+  // Hand-written pointers, relative and absolute, with spaces in the gitdir path.
+  fs.mkdirSync(path.join(f.workspace, 'wt 2'));
+  fs.writeFileSync(path.join(f.workspace, 'wt 2', '.git'), 'gitdir: ../real git data 2\n');
+  fs.mkdirSync(path.join(f.workspace, 'real git data 2', 'hooks'), { recursive: true });
+  assert.equal(evaluate(policy, call(f, 'real git data 2/config')).code, 'PROTECTED_PATH');
+  const gitData3 = path.join(f.workspace, 'abs git data 3');
+  fs.mkdirSync(path.join(f.workspace, 'wt 3'));
+  fs.mkdirSync(path.join(gitData3, 'hooks'), { recursive: true });
+  fs.writeFileSync(path.join(f.workspace, 'wt 3', '.git'), `gitdir: ${gitData3}\n`);
+  assert.equal(evaluate(policy, call(f, 'abs git data 3/hooks/pre-commit')).code, 'PROTECTED_PATH');
+});
+
 test('missing gitdir targets neither crash nor unprotect their future children', t => {
   const f = fixture(t), policy = compilePolicy({ ...f.raw, writeRoots: [f.workspace] });
   fs.mkdirSync(path.join(f.workspace, 'wt'));

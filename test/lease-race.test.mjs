@@ -52,7 +52,8 @@ async function leasedTask(state, binding) {
   const started = JSON.parse((await execute(process.execPath, [cli, 'tasks', 'start', '--state', state, '--id', id, ...binding, '--lease-ms', '40'])).stdout);
   assert.equal(started.state, 'running');
   assert.equal(started.attempts, 1, 'the initial start is the only attempt-bump in every scenario');
-  return id;
+  assert.match(started.attemptToken, /^[a-f0-9]{32}$/, 'the leased start mints the attempt fence');
+  return { id, attemptToken: started.attemptToken };
 }
 
 /** Post-race invariants shared by all scenarios. Returns the final record. */
@@ -86,9 +87,11 @@ test('reap vs heartbeat: two real CLI processes race past lease expiry (order-se
   const actionBytes = fs.readFileSync(actionFile);
   const binding = ['--host', subject.host, '--session', subject.sessionId, '--run', subject.runId, '--policy-hash', subject.policyHash, '--action-file', actionFile];
   const state = path.join(f.base, 'tasks');
-  const id = await leasedTask(state, binding); // lease armed for 40ms at start time
+  const { id, attemptToken } = await leasedTask(state, binding); // lease armed for 40ms at start time
   const reapArgs = [cli, 'tasks', 'reap', '--state', state, '--id', id, ...binding];
-  const heartbeatArgs = [cli, 'tasks', 'heartbeat', '--state', state, '--id', id, ...binding, '--lease-ms', '60000']; // 60s margin: never flakes on a slow parent
+  // The heartbeat child plays the executor (audit #5/#16): it must present the attempt
+  // token the start minted, or its wins would be TASK_ATTEMPT_TOKEN_REQUIRED refusals.
+  const heartbeatArgs = [cli, 'tasks', 'heartbeat', '--state', state, '--id', id, ...binding, '--lease-ms', '60000', '--attempt-token', attemptToken]; // 60s margin: never flakes on a slow parent
   // Both children wake at (own start + 60ms) >= 60ms after the 40ms lease armed: always past expiry.
   const [reap, heartbeat] = await Promise.all([runChild(60, reapArgs), runChild(60, heartbeatArgs)]);
   // Exactly one exit 0 — the lock directory mkdir serializes the transitions.
@@ -124,7 +127,7 @@ test('reap vs reap: dual reapers race past lease expiry (exactly one interrupts,
   const actionBytes = fs.readFileSync(actionFile);
   const binding = ['--host', subject.host, '--session', subject.sessionId, '--run', subject.runId, '--policy-hash', subject.policyHash, '--action-file', actionFile];
   const state = path.join(f.base, 'tasks');
-  const id = await leasedTask(state, binding);
+  const { id } = await leasedTask(state, binding);
   const reapArgs = [cli, 'tasks', 'reap', '--state', state, '--id', id, ...binding];
   const [first, second] = await Promise.all([runChild(60, reapArgs), runChild(60, reapArgs)]);
   assert.equal([first, second].filter(r => r.status === 0).length, 1,
@@ -147,7 +150,7 @@ test('control: a single reaper after lease expiry must succeed (apparatus validi
   const actionBytes = fs.readFileSync(actionFile);
   const binding = ['--host', subject.host, '--session', subject.sessionId, '--run', subject.runId, '--policy-hash', subject.policyHash, '--action-file', actionFile];
   const state = path.join(f.base, 'tasks');
-  const id = await leasedTask(state, binding);
+  const { id } = await leasedTask(state, binding);
   const solo = await runChild(60, [cli, 'tasks', 'reap', '--state', state, '--id', id, ...binding]);
   assert.equal(solo.status, 0, `the control reaper must succeed (stderr: ${solo.stderr})`);
   const final = invariants(state, id, subject, actionFile, actionBytes);
