@@ -52,11 +52,27 @@ function redactValue(value, key, depth = 0) {
   return value;
 }
 
+// Cancellation itself is best-effort cleanup, never an unbounded prerequisite
+// for reporting a timeout/refusal. Observe a rejected cancel promise, but do not
+// await a transport-controlled promise that is allowed to remain pending.
+function cancelQuietly(stream) {
+  try { Promise.resolve(stream?.cancel()).catch(() => {}); } catch { /* already locked/closed */ }
+}
+
+function abortable(operation, signal) {
+  if (signal.aborted) return Promise.reject(signal.reason);
+  return new Promise((resolve, reject) => {
+    const abort = () => reject(signal.reason);
+    signal.addEventListener('abort', abort, { once: true });
+    Promise.resolve(operation).then(resolve, reject).finally(() => signal.removeEventListener('abort', abort));
+  });
+}
+
 /** Stop reading as soon as the decoded response exceeds the memory budget.
  * The text-only fallback preserves the existing injectable fetch test contract. */
-async function boundedText(response) {
+async function boundedText(response, signal) {
   if (!response.body?.getReader) {
-    const text = await response.text();
+    const text = await abortable(response.text(), signal);
     if (Buffer.byteLength(text, 'utf8') > MAX_OUTPUT_BYTES) throw fail('REVIEW_OUTPUT_TOO_LARGE');
     return text;
   }
@@ -64,7 +80,7 @@ async function boundedText(response) {
   let size = 0, complete = false;
   try {
     for (;;) {
-      const { done, value } = await reader.read();
+      const { done, value } = await abortable(reader.read(), signal);
       if (done) { complete = true; break; }
       size += value.byteLength;
       if (size > MAX_OUTPUT_BYTES) throw fail('REVIEW_OUTPUT_TOO_LARGE');
@@ -72,8 +88,8 @@ async function boundedText(response) {
     }
     return Buffer.concat(chunks, size).toString('utf8');
   } finally {
-    if (!complete) { try { await reader.cancel(); } catch { /* preserve the original refusal */ } }
-    reader.releaseLock();
+    if (!complete) cancelQuietly(reader);
+    try { reader.releaseLock(); } catch { /* preserve the original refusal */ }
   }
 }
 
@@ -124,7 +140,7 @@ function extractVerdict(content, sanitize = value => value) {
 /**
  * Run one independent model review through the user-configured OpenAI-compatible gateway.
  * Exactly one POST ${baseUrl}/chat/completions per call; redirects are refused
- * (redirect: 'error'), the request is armed with AbortSignal.timeout(timeoutMs), and every
+ * (redirect: 'error'), one deadline covers headers, body and cleanup, and every
  * refusal path (switch off, key missing, input too large, network/HTTP failure, unparseable
  * output) throws a structured code instead of degrading. Resolves to a frozen
  * { verdict, findings, usage } (usage is the gateway-reported token usage or null).
@@ -144,50 +160,61 @@ export async function runModelReview({ gateway, target, prompt, fetchImpl = fetc
     ...files.map(file => `--- ${file.path} ---\n${file.diff}`),
   ].join('\n');
   if (Buffer.byteLength(SYSTEM_TEMPLATE + user, 'utf8') > MAX_INPUT_BYTES) throw fail('REVIEW_INPUT_TOO_LARGE');
-  // 4. The single capped call.
-  let response;
+  // Validate the entire wait budget before dispatch; Node's timer must not coerce
+  // an out-of-range value to 1 ms. Keep it referenced until the request settles.
+  if (!Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 2147483647) throw fail('INVALID_REVIEW_TIMEOUT');
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(new DOMException('Review deadline exceeded', 'TimeoutError')), timeoutMs);
   try {
-    response = await fetchImpl(joinUrl(gateway.baseUrl, 'chat/completions'), {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${key}`, 'content-type': 'application/json' },
-      body: JSON.stringify({
-        model: gateway.model,
-        messages: [
-          { role: 'system', content: SYSTEM_TEMPLATE },
-          { role: 'user', content: user },
-        ],
-        max_tokens: gateway.maxTokens,
-      }),
-      redirect: 'error', // a redirect could bypass the blocklist and double the call
-      signal: AbortSignal.timeout(timeoutMs),
-    });
-  } catch (error) {
-    if (error?.name === 'AbortError' || error?.name === 'TimeoutError' || error?.cause?.name === 'TimeoutError') {
-      throw fail('GATEWAY_TIMEOUT');
+    // 4. The single capped call.
+    let response;
+    try {
+      const dispatched = Promise.resolve(fetchImpl(joinUrl(gateway.baseUrl, 'chat/completions'), {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${key}`, 'content-type': 'application/json' },
+        body: JSON.stringify({
+          model: gateway.model,
+          messages: [
+            { role: 'system', content: SYSTEM_TEMPLATE },
+            { role: 'user', content: user },
+          ],
+          max_tokens: gateway.maxTokens,
+        }),
+        redirect: 'error', // a redirect could bypass the blocklist and double the call
+        signal: controller.signal,
+      }));
+      // An injected transport can ignore abort and eventually return a response.
+      // Dispose that late body rather than leaving an unread connection behind.
+      dispatched.then(late => { if (controller.signal.aborted) cancelQuietly(late?.body); }, () => {});
+      response = await abortable(dispatched, controller.signal);
+    } catch (error) {
+      if (error?.name === 'AbortError' || error?.name === 'TimeoutError' || error?.cause?.name === 'TimeoutError') {
+        throw fail('GATEWAY_TIMEOUT');
+      }
+      // ECONNREFUSED, DNS and refused redirects all land here as a structured refusal.
+      const why = error?.cause?.code ?? error?.code ?? error?.name ?? 'network error';
+      throw fail('GATEWAY_ERROR', `(network: ${redact(String(why), key).slice(0, 128)})`);
     }
-    // ECONNREFUSED, DNS and refused redirects all land here as a structured refusal.
-    const why = error?.cause?.code ?? error?.code ?? error?.name ?? 'network error';
-    throw fail('GATEWAY_ERROR', `(network: ${redact(String(why), key).slice(0, 128)})`);
-  }
-  if (response.status >= 300 && response.status < 400) throw fail('GATEWAY_ERROR', `(redirect refused; status ${response.status})`);
-  if (!response.ok) throw fail('GATEWAY_ERROR', `(status ${response.status})`); // never echo the body
-  // 5. Parse: choices[0].message.content -> { verdict, findings }.
-  let text;
-  try { text = await boundedText(response); }
-  catch (error) {
-    if (error?.message === 'REVIEW_OUTPUT_TOO_LARGE') throw fail('REVIEW_OUTPUT_TOO_LARGE');
-    // Mid-body abort/reset gets the same structured codes as the fetch phase.
-    if (error?.name === 'AbortError' || error?.name === 'TimeoutError' || error?.cause?.name === 'TimeoutError') throw fail('GATEWAY_TIMEOUT');
-    throw fail('GATEWAY_ERROR', `(body read: ${redact(String(error?.cause?.code ?? error?.name ?? 'failed'), key).slice(0, 128)})`);
-  }
-  let payload;
-  try { payload = JSON.parse(text); }
-  catch { throw fail('REVIEW_OUTPUT_UNPARSEABLE', `(first 1KiB of raw body) ${redact(text, key).slice(0, 1024)}`); }
-  const content = payload?.choices?.[0]?.message?.content;
-  if (typeof content !== 'string') {
-    throw fail('REVIEW_OUTPUT_UNPARSEABLE', `(first 1KiB of raw body) ${redact(text, key).slice(0, 1024)}`);
-  }
-  const { verdict, findings } = extractVerdict(content, value => redact(value, key));
-  // 6. Frozen structured verdict.
-  return freeze({ verdict, findings: findings.map(value => redact(value, key)), usage: redactValue(payload.usage ?? null, key) });
+    if (response.status >= 300 && response.status < 400) { cancelQuietly(response.body); throw fail('GATEWAY_ERROR', `(redirect refused; status ${response.status})`); }
+    if (!response.ok) { cancelQuietly(response.body); throw fail('GATEWAY_ERROR', `(status ${response.status})`); } // never echo the body
+    // 5. Parse: choices[0].message.content -> { verdict, findings }.
+    let text;
+    try { text = await boundedText(response, controller.signal); }
+    catch (error) {
+      if (error?.message === 'REVIEW_OUTPUT_TOO_LARGE') throw fail('REVIEW_OUTPUT_TOO_LARGE');
+      // Mid-body abort/reset gets the same structured codes as the fetch phase.
+      if (error?.name === 'AbortError' || error?.name === 'TimeoutError' || error?.cause?.name === 'TimeoutError') throw fail('GATEWAY_TIMEOUT');
+      throw fail('GATEWAY_ERROR', `(body read: ${redact(String(error?.cause?.code ?? error?.name ?? 'failed'), key).slice(0, 128)})`);
+    }
+    let payload;
+    try { payload = JSON.parse(text); }
+    catch { throw fail('REVIEW_OUTPUT_UNPARSEABLE', `(first 1KiB of raw body) ${redact(text, key).slice(0, 1024)}`); }
+    const content = payload?.choices?.[0]?.message?.content;
+    if (typeof content !== 'string') {
+      throw fail('REVIEW_OUTPUT_UNPARSEABLE', `(first 1KiB of raw body) ${redact(text, key).slice(0, 1024)}`);
+    }
+    const { verdict, findings } = extractVerdict(content, value => redact(value, key));
+    // 6. Frozen structured verdict.
+    return freeze({ verdict, findings: findings.map(value => redact(value, key)), usage: redactValue(payload.usage ?? null, key) });
+  } finally { clearTimeout(timer); }
 }

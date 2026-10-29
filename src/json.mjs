@@ -15,7 +15,10 @@ export function canonical(value, seen = new Set(), depth = 0) {
   seen.add(value);
   try {
     if (Array.isArray(value)) {
-      if (Object.keys(value).length !== value.length) throw new Error('SPARSE_ARRAY');
+      // A hole plus an unrelated property can have the same key count as length.
+      // Require the exact dense index set; otherwise [<hole>] could hash like [].
+      const keys = Object.keys(value);
+      if (keys.length !== value.length || keys.some((key, index) => key !== String(index))) throw new Error('SPARSE_ARRAY');
       return `[${value.map(v => canonical(v, seen, depth + 1)).join(',')}]`;
     }
     return `{${Object.keys(value).sort().map(k => `${JSON.stringify(k)}:${canonical(value[k], seen, depth + 1)}`).join(',')}}`;

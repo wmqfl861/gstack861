@@ -26,6 +26,25 @@ function contains(parent, child) {
   return rel === '' || (!rel.startsWith('..') && !path.isAbsolute(rel));
 }
 
+// Resolve the existing prefix without creating output directories. This catches
+// output aliases through an ancestor symlink/junction, including non-existing leaves.
+function realOutput(value) {
+  const suffix = [];
+  let current = path.resolve(value);
+  for (;;) {
+    const stat = fs.lstatSync(current, { throwIfNoEntry: false });
+    if (stat) {
+      const real = fs.realpathSync.native(current);
+      if (suffix.length && !fs.statSync(real).isDirectory()) fail('INVALID_STAGING');
+      return path.join(real, ...suffix);
+    }
+    const parent = path.dirname(current);
+    if (parent === current) fail('INVALID_STAGING');
+    suffix.unshift(path.basename(current));
+    current = parent;
+  }
+}
+
 // Inventory name -> rendered dir, mirroring the upstream renderer exactly
 // (scripts/render-upstream.mjs, gen-skill-docs.ts): already-prefixed names pass
 // through (`gstack-upgrade` renders as dir `gstack-upgrade`), everything else
@@ -62,9 +81,14 @@ function assertSubPath(segments) {
 function walkAux(dir, prefix = []) {
   const files = [];
   const entries = fs.readdirSync(dir, { withFileTypes: true }).sort((a, b) => byString(a.name, b.name));
+  const names = new Set();
   for (const entry of entries) {
+    const folded = entry.name.toLowerCase();
+    if (names.has(folded)) fail('RENDER_TREE_INVALID');
+    names.add(folded);
     if (prefix.length === 0 && entry.name === 'SKILL.md') continue; // the skill body itself
     const segments = [...prefix, entry.name];
+    assertSubPath(segments); // bound depth before descending, not after reaching a file
     if (entry.isDirectory()) {
       const nested = walkAux(path.join(dir, entry.name), segments);
       if (nested.length === 0) fail('RENDER_TREE_INVALID'); // empty subdir = torn or hand-edited tree
@@ -111,7 +135,8 @@ export function stageRender({ rendered, manifestFile, host, staging, now = () =>
   const renderedStat = fs.lstatSync(rendered, { throwIfNoEntry: false });
   if (!renderedStat?.isDirectory()) fail('INVALID_RENDERED');
   if (typeof staging !== 'string' || !path.isAbsolute(staging)) fail('INVALID_STAGING');
-  if (contains(rendered, staging) || contains(staging, rendered)) fail('OVERLAPPING_PATHS');
+  const realRendered = fs.realpathSync.native(rendered), realStaging = realOutput(staging);
+  if (contains(realRendered, realStaging) || contains(realStaging, realRendered)) fail('OVERLAPPING_PATHS');
   // Render manifest: any read or parse problem is the same refusal.
   let manifest = null;
   try { manifest = JSON.parse(fs.readFileSync(manifestFile, 'utf8')); } catch { manifest = null; }
@@ -134,7 +159,11 @@ export function stageRender({ rendered, manifestFile, host, staging, now = () =>
   if (existing && (!existing.isDirectory() || fs.readdirSync(staging).length > 0)) fail('STAGING_NOT_EMPTY');
   // Tree scan: set equality in RENDERED-DIR space (forward mapping only, above).
   // Anything that is not a plain directory at the skills root fails the same check.
-  const skillsRoot = path.join(rendered, `.${host}`, 'skills');
+  const hostRoot = path.join(rendered, `.${host}`), skillsRoot = path.join(hostRoot, 'skills');
+  for (const dir of [hostRoot, skillsRoot]) {
+    const stat = fs.lstatSync(dir, { throwIfNoEntry: false });
+    if (!stat?.isDirectory() || stat.isSymbolicLink()) fail('RENDER_TREE_INVALID');
+  }
   let entries;
   try { entries = fs.readdirSync(skillsRoot, { withFileTypes: true }); }
   catch { fail('RENDER_TREE_INVALID'); }

@@ -163,7 +163,10 @@ test('audit: development proxy refuses a 307 rather than issuing a second upstre
 
 function hookRepo(t) {
   const base = temp(t), repo = path.join(base, 'repo'); fs.mkdirSync(repo);
-  const env = { ...process.env, GIT_CONFIG_GLOBAL: os.devNull, GIT_CONFIG_SYSTEM: os.devNull, GIT_CONFIG_NOSYSTEM: '1' };
+  // Git for Windows does not accept Node's \\.\\nul device path as a config file.
+  // A private empty file isolates user/system config identically on every platform.
+  const gitConfig = path.join(base, 'empty-git-config'); fs.writeFileSync(gitConfig, '');
+  const env = { ...process.env, GIT_CONFIG_GLOBAL: gitConfig, GIT_CONFIG_SYSTEM: gitConfig, GIT_CONFIG_NOSYSTEM: '1' };
   for (const key of Object.keys(env)) if (/^GIT_CONFIG_(?:COUNT|KEY_\d+|VALUE_\d+|PARAMETERS)$/.test(key)) delete env[key];
   execFileSync('git', ['init', '-q'], { cwd: repo, env });
   return { base, repo, hooks: path.join(repo, '.git/hooks'), env };

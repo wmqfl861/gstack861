@@ -301,12 +301,10 @@ export function installSkills({ staging, target, now = () => new Date().toISOStr
   if (dryRun) return dryRunReport(plan, target);
   prepareTarget(target);
   return withInstallLock(target, () => {
-    // Inside the lock only: clear temp entries a previously crashed run may have left
-    // (build-beside-then-rename orphans). The TMP_PREFIX namespace is exclusively ours;
-    // every other entry in the target is never touched by this sweep.
-    for (const name of fs.readdirSync(target)) {
-      if (name.startsWith(TMP_PREFIX)) fs.rmSync(path.join(target, name), { recursive: true, force: true });
-    }
+    // A temporary-looking name is not proof of ownership. In particular, a
+    // failed preflight must not delete an operator's recovery files. Only clean
+    // the unique directory THIS invocation created (the per-item finally below).
+    // Preserve old orphans for explicit operator recovery rather than guessing.
     assertRegistryPathSafe(target);
     // Read-modify-write inside the lock: a concurrent installer can never lose updates.
     const previous = loadRegistry(target);

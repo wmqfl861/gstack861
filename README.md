@@ -118,3 +118,7 @@ node bin/gstack861.mjs zcode-config --policy /absolute/private/policy.json
 ## 许可
 
 新增代码使用 MIT 许可。上游 gstack 在子模块内保留其原始许可与版权声明。ZCode、DSH 仅作为接口审查和目标宿主，没有把其源码复制进本仓库。
+
+## 2026-10-29 二次复核
+
+在既有全库审核分支上修复网关等待/响应清理、安装误删临时项、渲染路径链接与大小写冲突，以及稀疏数组规范化碰撞。详见 [复核报告](docs/AUDIT-RECHECK-2026-10-29.md) 和 [测试摘要](docs/verification-2026-10-29-recheck.json)。安装器不再仅凭 `.gstack861-tmp-*` 前缀删除旧文件，历史临时项需操作员核对；只自动清理本次创建的临时目录。
