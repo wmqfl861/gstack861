@@ -28,7 +28,7 @@
 - **触发后做什么**：FEATURE_MATRIX「独立模型复核」行 mechanism-ready → runtime 升级评估；真实模型质量对等（第三节末项）随之具备两前提之一。
 
 ### 3. ④ 宿主内嵌询问/审批 UI + ⑩⑪宿主内执行器中断/子 Agent 接线：需宿主侧会话/API（同③触发场景）。
-3b. **③-guard 残余（批次 26 更新：无头不可达为架构性——zcode 0.17.0 无头 --prompt 整体禁用工作区钩子，仅 app-server 会话路径[桌面所用协议层]启用）**：(1) 在桌面客户端打开 `C:UsersAdministratorgstack861-acceptancepackworkspace` 并发一条消息；(2) 若弹信任确认则确认（信任决定已按你的授权登记——若桌面重算摘要与登记一致则直接 trusted_persistent，不一致则再点一次，两步内完成）；(3) 按 STEPS.md 第 5 节在桌面内手工跑三个钩子探针（src 放行/outside 拒绝/.git 拒绝——stdin 直打级已验证，桌面级待此步）即完成 guard 验收。
+3b. **③-guard：已完成（批次 27）**——桌面三探针全过（src 放行/outside 拒绝/.git 拒绝，deny 为规范 hookSpecificOutput 载荷）；Bash 通道为声明边界；STEPS §4 E/F/G/H（fail-closed/超时/updatedInput 共存/回滚）为遗留项，需时按 zcode-acceptance.md §6 逐项执行。
 
 - **是什么**：宿主进程内的询问/审批 UI 接通（区别于已接通的操作员 CLI `approvals ask`）；宿主内执行器中断源、子 Agent 继承与恢复接线（README 边界④⑩）。
 - **为什么需要你**：事件源在宿主进程内（宿主侧会话/API），仓库代码无法自行产生。

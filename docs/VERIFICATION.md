@@ -625,3 +625,20 @@ Lane A（渲染）：初审 Needs fixes（2 Critical）→ 修复轮 → 复审�
 | 独立审核 | 拒绝现稿→三项修正全部落实：计费 8/13+中止运行披露；摘要分歧重写；措辞收紧（app-server 协议层非"桌面路径"） |
 
 证据：本表+客户端日志（zcode-2026-10-29.jsonl 的 feature_disabled 条目）+bundle 反解片段（审核报告在案）。OFFLINE-COMPLETE §一 3b 同步重写：桌面打开 `…\pack\workspace` 发一条消息即弹信任确认（若修正摘要与桌面重算一致则直接 trusted_persistent，否则按提示再点一次确认——两步内完成），随后桌面内手工跑 STEPS.md §5 探针（钩子三态已在 stdin 直打级验证）即完成 guard 验收。
+
+# 第三十五轮验证记录：批次 27——③ 桌面端 guard 验收（用户交互执行）（2026-10-29）
+
+| 项 | 结果 |
+|---|---|
+| `npm test` | 1004/984+20skip（无代码改动；纯验收批次+两份证据文档） |
+| 桌面会话 | 用户在真实桌面客户端打开验收包工作区（session_3ffdfab2…，日志核对 workspaceKey 一致） |
+| ③ 拾取（桌面半段） | 系统提示词含 `zc-g861-marker`（rollout 捕获）——加上批次 25 无头 Skill 装载，拾取双宿主形态齐 |
+| ③ guard deny | `Write(outside.txt)` → PreToolUse 钩子以规范载荷拒绝：`{"hookSpecificOutput":{"permissionDecision":"deny","permissionDecisionReason":"gstack861:OUTSIDE_SCOPE"}}`（rollout 捕获原文；当前二进制对同输入复现逐字一致） |
+| ③ guard allow | `Write(src/ok.txt)` → 完成、文件精确 y、该请求后对话零 guard 码 |
+| ③ .git 探针 | `Write(.git/config)` → deny 同码、文件原样（用户逐字转述+日志 deny 形状+文件字节三重核） |
+| 信任命中 | 无弹窗=批 26 预登记信任记录精确命中（审核者用运行时真实管线重算摘要 b665fe62… 逐字匹配） |
+| Bash 绕过 | 首次发生（经用户确认后执行）——Shell 不在 matcher 为声明边界（README 安全边界节；DSH 批 14 pwsh 同型）；.git 探针时模型未擅自绕过 |
+| 独立审核 | 七项实证全过+多处超文档主张的独立佐证（mtime 对齐/tool-result artifact/唯一性排查）；必改措辞落实：定级收窄为"主链路+三探针桌面 host 级实证"，STEPS §4 E/F/G/H 为遗留 |
+| 密钥用量 | 本批桌面会话模型调用由用户交互产生（约 8 次请求；非代理计费——如实分类） |
+
+证据：`docs/evidence-2026-10-29-batch27-desktop-session.md` + `-desktop-log.jsonl`。
