@@ -89,6 +89,14 @@ function hooksPath() {
   return r.stdout.trim();
 }
 
+// A filesystem path is data even when it contains quotes, backticks or $(...).
+const shellQuote = value => "'" + value.replace(/'/g, "'\\''") + "'";
+function safeHookFile(file) {
+  const stat = fs.lstatSync(file, { throwIfNoEntry: false });
+  if (stat && (!stat.isFile() || stat.isSymbolicLink() || stat.nlink !== 1)) throw new Error('PREPUSH_USER_FILE_REFUSED');
+  return stat;
+}
+
 function installPrepushHook() {
   const dir = hooksPath();
   // mkdirpSync, not bare mkdirSync: bun on Windows throws EEXIST from a
@@ -111,11 +119,11 @@ _local="$(git rev-parse --git-path hooks/pre-push.local)"
 if [ -x "$_local" ]; then
   printf '%s' "$_input" | "$_local" "$@" || exit $?
 fi
-printf '%s' "$_input" | node "${prepushBin}" "$@"
+printf '%s' "$_input" | node ${shellQuote(prepushBin)} "$@"
 `;
 
   // If a non-managed hook exists, preserve it as pre-push.local and chain it.
-  if (fs.existsSync(hookPath)) {
+  if (safeHookFile(hookPath)) {
     const existing = fs.readFileSync(hookPath, "utf8");
     if (existing.split("\n").includes(MANAGED_MARKER)) {
       // A hook we already own. Returning here unconditionally froze every
@@ -141,6 +149,9 @@ printf '%s' "$_input" | node "${prepushBin}" "$@"
       return;
     }
     const localPath = path.join(dir, "pre-push.local");
+    // A prior chained hook is user data, not a disposable backup. Refuse before
+    // moving either file, even if the occupied name is a dangling symlink.
+    if (fs.lstatSync(localPath, { throwIfNoEntry: false })) throw new Error('PREPUSH_BACKUP_EXISTS');
     fs.renameSync(hookPath, localPath);
     fs.chmodSync(localPath, 0o755);
     process.stdout.write("gstack861-redact: preserved existing hook as pre-push.local (chained).\n");
@@ -155,11 +166,11 @@ function uninstallPrepushHook() {
   const dir = hooksPath();
   const hookPath = path.join(dir, "pre-push");
   const localPath = path.join(dir, "pre-push.local");
-  if (!fs.existsSync(hookPath) || !fs.readFileSync(hookPath, "utf8").includes(MANAGED_MARKER)) {
+  if (!safeHookFile(hookPath) || !fs.readFileSync(hookPath, "utf8").split("\n").includes(MANAGED_MARKER)) {
     process.stdout.write("gstack861-redact: no managed pre-push hook to remove.\n");
     return;
   }
-  if (fs.existsSync(localPath)) {
+  if (safeHookFile(localPath)) {
     fs.renameSync(localPath, hookPath); // restore the chained original
     process.stdout.write("gstack861-redact: removed managed hook, restored pre-push.local.\n");
   } else {

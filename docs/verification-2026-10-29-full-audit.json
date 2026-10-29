@@ -1,0 +1,91 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-29",
+  "version": "0.4.33",
+  "baselineCommit": "15c32ae2e4afc0b2de600b346d7977921059caa0",
+  "upstreamCommit": "5755601dac5d35ebd7dde181fdefe52a023c73d9",
+  "environment": {
+    "kind": "isolated-cloud-container",
+    "platform": "linux",
+    "node": "v22.16.0"
+  },
+  "baselineNewRegressions": {
+    "tests": 24,
+    "passed": 1,
+    "failed": 23
+  },
+  "commands": [
+    {
+      "command": "npm run check",
+      "result": "passed",
+      "modules": 107
+    },
+    {
+      "command": "npm test",
+      "result": "passed",
+      "tests": 1074,
+      "pass": 1073,
+      "fail": 0,
+      "skipped": 1,
+      "cancelled": 0
+    },
+    {
+      "command": "npm run verify-offline",
+      "result": "passed",
+      "steps": 9
+    },
+    {
+      "command": "npm run doctor",
+      "result": "passed"
+    },
+    {
+      "command": "node bin/gstack861.mjs inventory --upstream upstream/gstack",
+      "result": "passed"
+    }
+  ],
+  "skips": [
+    "existing Win32-only 8.3 protected-root test (Linux run)"
+  ],
+  "ciEvidence": "This file records local execution. See the delivered PR/commit checks for independent Windows, Linux and render CI.",
+  "hostQualification": "not-run-in-this-audit",
+  "userDevice": "offline; not modified",
+  "paidModelCalls": 0,
+  "testedFiles": [
+    {
+      "path": "bin/gstack861-redact.mjs",
+      "sha256": "9a1104a1dab28055572cd8f055f1a4c20e00d8892b15ea281849b60c77ccbf6d"
+    },
+    {
+      "path": "package.json",
+      "sha256": "dbd0bab301e4b93354ae61f46c696548032eec4e6f366ee8cfe3667652d05d93"
+    },
+    {
+      "path": "scripts/dev-gateway.mjs",
+      "sha256": "587478b5544093c691761cdd947a5516ed90fd046838ac0ef703863afc5d16e8"
+    },
+    {
+      "path": "src/gateway.mjs",
+      "sha256": "64c9b953552b4f010b1fc8e99f610b52b3600244266cdfeeef7854919d9108ac"
+    },
+    {
+      "path": "src/install.mjs",
+      "sha256": "58a4a859b071923bae172d20a1d2147bb1929a89dae3543cfd59202a5d7d86c3"
+    },
+    {
+      "path": "src/model-review.mjs",
+      "sha256": "11d16ca588ecdc82ff667978e0292192f6d73867a50fc3ecb4adedbbaa83c1aa"
+    },
+    {
+      "path": "src/sealed-guard.mjs",
+      "sha256": "34f33e6ad5b9d3e7dc943e854efa5d9092f2b963189789f8891deb7cddd37c00"
+    },
+    {
+      "path": "src/slug.mjs",
+      "sha256": "d9c002b2fe345929a07068054a74894a85cd6834694e1ec172bb73799d66a973"
+    },
+    {
+      "path": "test/full-audit.test.mjs",
+      "sha256": "951b01e34440c5a1cab667f0bca1e9c1590ad53eaa5bcef45802db069385c8f3"
+    }
+  ]
+}

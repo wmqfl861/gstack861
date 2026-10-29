@@ -50,6 +50,20 @@ function regularFile(filename) {
   return stat?.isFile() ? stat : null;
 }
 
+/** A staging leaf is trusted only when ALL ancestors beneath the skill directory
+ * are plain directories. lstat on the leaf alone follows parent symlinks/junctions. */
+function stagingFile(dir, key) {
+  const parts = key.split('/');
+  let current = dir;
+  for (let i = 0; i < parts.length; i++) {
+    current = path.join(current, parts[i]);
+    const stat = fs.lstatSync(current, { throwIfNoEntry: false });
+    if (!stat || stat.isSymbolicLink()) return null;
+    if (i < parts.length - 1 ? !stat.isDirectory() : !stat.isFile() || stat.nlink !== 1) return null;
+  }
+  return current;
+}
+
 /** Registry writes go through tmp + rename so readers never observe a torn file. */
 function writeRegistry(target, skills, now) {
   const filename = path.join(target, REGISTRY);
@@ -151,6 +165,7 @@ function stagingPlan(staging) {
     if (!entry.isDirectory() || entry.isSymbolicLink()) fail('STAGING_INVALID');
     const dir = path.join(staging, entry.name);
     // Read the manifest once: these exact bytes are both validated and later installed.
+    if (!stagingFile(dir, 'manifest.json')) fail('STAGING_INVALID');
     let manifestBytes = null, manifest = null;
     try { manifestBytes = fs.readFileSync(path.join(dir, 'manifest.json')); manifest = JSON.parse(manifestBytes.toString('utf8')); } catch { manifest = null; }
     if (!object(manifest) || manifest.schemaVersion !== 1 || manifest.generator !== GENERATOR
@@ -183,7 +198,7 @@ function stagingPlan(staging) {
     }
     const files = manifest.files !== undefined && Object.keys(manifest.files).length > 0 ? { ...manifest.files } : undefined;
     const skillFile = path.join(dir, 'SKILL.md');
-    const statSkill = regularFile(skillFile);
+    const statSkill = stagingFile(dir, 'SKILL.md');
     if (!statSkill) fail('STAGING_INVALID');
     // Digest the raw Buffer: the staged copy is byte-exact, so verification must be too.
     const skillBytes = fs.readFileSync(skillFile);
@@ -194,7 +209,7 @@ function stagingPlan(staging) {
     if (files) {
       for (const key of Object.keys(files)) {
         const listed = path.join(dir, ...key.split('/'));
-        if (!regularFile(listed)) fail('TAMPERED_STAGING');
+        if (!stagingFile(dir, key)) fail('TAMPERED_STAGING');
         const bytes = fs.readFileSync(listed);
         if (textDigest(bytes) !== files[key]) fail('TAMPERED_STAGING');
         filesBytes.set(key, bytes);
@@ -286,12 +301,10 @@ export function installSkills({ staging, target, now = () => new Date().toISOStr
   if (dryRun) return dryRunReport(plan, target);
   prepareTarget(target);
   return withInstallLock(target, () => {
-    // Inside the lock only: clear temp entries a previously crashed run may have left
-    // (build-beside-then-rename orphans). The TMP_PREFIX namespace is exclusively ours;
-    // every other entry in the target is never touched by this sweep.
-    for (const name of fs.readdirSync(target)) {
-      if (name.startsWith(TMP_PREFIX)) fs.rmSync(path.join(target, name), { recursive: true, force: true });
-    }
+    // A temporary-looking name is not proof of ownership. In particular, a
+    // failed preflight must not delete an operator's recovery files. Only clean
+    // the unique directory THIS invocation created (the per-item finally below).
+    // Preserve old orphans for explicit operator recovery rather than guessing.
     assertRegistryPathSafe(target);
     // Read-modify-write inside the lock: a concurrent installer can never lose updates.
     const previous = loadRegistry(target);
@@ -423,16 +436,25 @@ function verifyOwned(dir, record) {
 /**
  * The read-only listing both purge paths share: backup entries the real purge would
  * remove — only our own <name>-<13-digit-ms-timestamp> directories whose manifest
- * still proves our generator. User archives and tampered entries always stay,
+ * still proves our generator AND exact file contents. User archives and edited entries stay,
  * uncounted — ownership for deletion is proven by content, not by name alone.
  */
 function purgeableEntries(backupsRoot) {
   const purgeable = [];
   for (const entry of fs.readdirSync(backupsRoot)) {
     if (!OUR_BACKUP.test(entry)) continue;
-    const manifest = readJson(path.join(backupsRoot, entry, 'manifest.json'));
-    if (!object(manifest) || manifest.generator !== GENERATOR) continue;
-    purgeable.push(entry);
+    const dir = path.join(backupsRoot, entry);
+    try {
+      if (!stagingFile(dir, 'manifest.json')) continue;
+      const stat = fs.lstatSync(dir);
+      if (!stat.isDirectory() || stat.isSymbolicLink()) continue;
+      const manifest = readJson(path.join(dir, 'manifest.json'));
+      if (!object(manifest) || manifest.generator !== GENERATOR || !SHA256.test(manifest.sha256 ?? '')) continue;
+      if (manifest.files !== undefined && (!object(manifest.files) || Object.entries(manifest.files).some(([key, hash]) => !listedKey(key) || typeof hash !== 'string' || !SHA256.test(hash)))) continue;
+      // Backups can be edited after creation. A generator tag authorizes neither
+      // deleting added notes nor removing modified skills or auxiliary files.
+      if (verifyOwned(dir, { sha256: manifest.sha256, files: manifest.files })) purgeable.push(entry);
+    } catch { /* unreadable or changed backup: preserve it, never count it as purgeable */ }
   }
   return purgeable;
 }

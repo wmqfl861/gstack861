@@ -11,7 +11,7 @@ const GATEWAY_KEYS = ['schemaVersion', 'baseUrl', 'apiKeyEnv', 'model', 'maxToke
 const API_KEY_ENV = /^[A-Z_][A-Z0-9_]*$/;
 // Plain http may only reach the loopback hosts the local echo smoke test needs.
 const LOOPBACK_HOSTS = new Set(['127.0.0.1', '::1', 'localhost']);
-const BLOCKED_HOSTS = ['api.openai.com', 'api.deepseek.com', 'generativelanguage.googleapis.com'];
+const BLOCKED_HOSTS = ['api.openai.com', 'api.anthropic.com', 'api.deepseek.com', 'generativelanguage.googleapis.com'];
 
 function absolute(value) {
   if (typeof value !== 'string' || !path.isAbsolute(value) || /[\x00-\x1f]/.test(value)) throw new Error('ABSOLUTE_PATH_REQUIRED');
@@ -30,11 +30,11 @@ function hostnameOf(url) {
   return url.hostname.toLowerCase().replace(/^\[(.+)\]$/, '$1').replace(/\.$/, '');
 }
 
-function compileGateway(raw) {
+export function compileGateway(raw) {
   if (!object(raw) || raw.schemaVersion !== 1) throw new Error('INVALID_GATEWAY');
   if (Object.keys(raw).some(k => !GATEWAY_KEYS.includes(k))) throw new Error('INVALID_GATEWAY');
   if (typeof raw.baseUrl !== 'string' || !raw.baseUrl) throw new Error('INVALID_GATEWAY');
-  if (!API_KEY_ENV.test(raw.apiKeyEnv)) throw new Error('INVALID_GATEWAY');
+  if (typeof raw.apiKeyEnv !== 'string' || !API_KEY_ENV.test(raw.apiKeyEnv)) throw new Error('INVALID_GATEWAY');
   if (typeof raw.model !== 'string' || !raw.model || raw.model.length > 128) throw new Error('INVALID_GATEWAY');
   if (!Number.isInteger(raw.maxTokens) || raw.maxTokens < 1 || raw.maxTokens > 8192) throw new Error('INVALID_GATEWAY');
   if (Object.hasOwn(raw, 'note') && (typeof raw.note !== 'string' || raw.note.length > 256)) throw new Error('INVALID_GATEWAY');

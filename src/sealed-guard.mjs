@@ -53,7 +53,10 @@
 //      inside a try/catch — deliberately NOT src/fs-utils.mjs mkdirpSync:
 //      upstream has no bun-#2635 EEXIST tolerance here and an unwritable
 //      cache only costs a lookup (plan 审计划 item 4: cache write fidelity).
-//   4. Structural: TypeScript types erased to JSDoc typedefs (no runtime
+//   4. Audit 2026-10-29: invalid/future cache timestamps are ignored; unreadable
+//      trees and ALL malformed configuration JSON fail closed (escaped keys
+//      cannot make a broken policy look absent).
+//   5. Structural: TypeScript types erased to JSDoc typedefs (no runtime
 //      change); non-null assertions dropped; `catch {}` kept. git stays
 //      spawnSync (120 s timeout, 256 MiB maxBuffer), the gh probe stays
 //      spawnSync 'gh' with a 5 s timeout, both verbatim.
@@ -114,12 +117,15 @@ function git(repoRoot, args, input) {
 /** The `sealed` key of `.gstack/pregate.json` at a commit; null when absent; an error when present but unreadable. */
 export function sealedPolicyAt(repoRoot, treeish, label) {
   const spec = `${treeish}:${SEALED_CONFIG_PATH}`;
-  if (!git(repoRoot, ['cat-file', '-e', spec]).ok) return { policy: null, label };
+  // ls-tree distinguishes an absent config from an invalid/unreadable tree.
+  const entry = git(repoRoot, ['ls-tree', '-z', treeish, '--', SEALED_CONFIG_PATH]);
+  if (!entry.ok) return { error: `cannot inspect ${SEALED_CONFIG_PATH}`, label };
+  if (!entry.out) return { policy: null, label };
   const show = git(repoRoot, ['cat-file', 'blob', spec]);
   if (!show.ok) return { error: `cannot read ${SEALED_CONFIG_PATH} (${show.err})`, label };
   let raw;
   try { raw = JSON.parse(show.out); }
-  catch (e) { return /"sealed"/.test(show.out) ? { error: `${SEALED_CONFIG_PATH} is not valid JSON (${e.message})`, label } : { policy: null, label }; }
+  catch { return { error: `${SEALED_CONFIG_PATH} is not valid JSON`, label }; }
   if (!raw || typeof raw !== 'object' || !('sealed' in raw)) return { policy: null, label };
   const errors = sealedErrors(raw.sealed);
   if (errors.length) return { error: errors.map(e => `${e.path}: ${e.message}`).join('; '), label };
@@ -240,8 +246,11 @@ export function resolveVisibility(url, o = {}) {
   const file = path.join(o.stateRoot ?? defaultStateRoot(o.env ?? process.env), 'sealed-visibility.json');
   let cache = {};
   try { cache = JSON.parse(fs.readFileSync(file, 'utf8')).entries ?? {}; } catch { cache = {}; }
+  // Invalid cache types and future timestamps must never downgrade a public push to private.
+  if (!cache || typeof cache !== 'object' || Array.isArray(cache)) cache = {};
   const hit = cache[slug];
-  if (hit && ((hit.visibility === 'public' && now - hit.checked_at < PUBLIC_TTL_MS) || (hit.visibility === 'private' && now - hit.checked_at < PRIVATE_TTL_MS))) return { visibility: hit.visibility, source: `cache ${new Date(hit.checked_at).toISOString()}` };
+  const validTime = Number.isSafeInteger(hit?.checked_at) && hit.checked_at >= 0 && hit.checked_at <= now;
+  if (validTime && ((hit.visibility === 'public' && now - hit.checked_at < PUBLIC_TTL_MS) || (hit.visibility === 'private' && now - hit.checked_at < PRIVATE_TTL_MS))) return { visibility: hit.visibility, source: `cache ${new Date(hit.checked_at).toISOString()}` };
   const gh = o.gh ?? ((args) => { const r = spawnSync('gh', args, { encoding: 'utf8', timeout: 5_000, env: o.env ?? process.env }); return { ok: r.status === 0, out: r.stdout ?? '' }; });
   const r = gh(['repo', 'view', slug, '--json', 'visibility']);
   let v;

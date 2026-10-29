@@ -260,7 +260,7 @@ test('installSkills refuses staging manifests carrying an illegal host value', t
   assert.ok(!fs.existsSync(target));
 });
 
-test('installSkills cleans leftover .gstack861-tmp-* entries under the lock and touches nothing else', t => {
+test('installSkills preserves unproven temporary-prefix entries and touches nothing else', t => {
   const root = base(t), staging = path.join(root, 'staging'), target = path.join(root, 'target');
   fs.mkdirSync(staging);
   stage(staging, 'alpha', ALPHA_V1);
@@ -274,11 +274,11 @@ test('installSkills cleans leftover .gstack861-tmp-* entries under the lock and 
   fs.writeFileSync(path.join(target, 'user-file.txt'), 'user file');
   const result = installSkills({ staging, target, now: NOW });
   assert.deepEqual(result, { installed: ['alpha'], skipped: [], backedUp: [] });
-  assert.ok(!fs.existsSync(orphan), 'a crashed run\'s temp directory must be cleaned inside the lock');
-  assert.ok(!fs.existsSync(path.join(target, '.gstack861-tmp-2222')));
+  assert.equal(fs.readFileSync(path.join(orphan, 'SKILL.md'), 'utf8'), 'half-written orphan', 'a name alone cannot authorize recovery-file deletion');
+  assert.equal(fs.readFileSync(path.join(target, '.gstack861-tmp-2222'), 'utf8'), 'a plain leftover file with our prefix');
   assert.equal(fs.readFileSync(path.join(target, 'user-dir', 'keep.txt'), 'utf8'), 'user data');
   assert.equal(fs.readFileSync(path.join(target, 'user-file.txt'), 'utf8'), 'user file');
-  assert.deepEqual(fs.readdirSync(target).sort(), [REGISTRY, 'alpha', 'user-dir', 'user-file.txt']);
+  assert.deepEqual(fs.readdirSync(target).sort(), [REGISTRY, '.gstack861-tmp-2222', '.gstack861-tmp-deadbeef-1111', 'alpha', 'user-dir', 'user-file.txt']);
 });
 
 test('uninstallSkills removes only registry skills and keeps foreign directories', t => {
