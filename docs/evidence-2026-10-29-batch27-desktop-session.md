@@ -35,3 +35,11 @@
 | .git/config（保护路径） | deny gstack861:OUTSIDE_SCOPE，文件原样 |
 
 **定级（按独立审核收窄）**：③ 拾取 + guard deny→allow 主链路 + 三探针（§3b 全部）**桌面 host 级实证**；Bash 通道为声明边界；STEPS §4 E/F/G/H（fail-closed/超时/updatedInput 共存审计/回滚）未执行，为遗留项；transcript rollout 已轮转，deny 载荷以当前二进制对同输入复现逐字一致为旁证。
+
+## 补充 2（同会话 turn 7，03:48 UTC）：STEPS §4 E fail-closed 探针
+
+协调者损坏 policy.json（无效 JSON；备份保全）→ 用户要求 `Write(src/ok.txt, content="broken")`（**正常放行范围**）→ 工具结果（rollout 逐字捕获）：
+```json
+{ "hookSpecificOutput": { "hookEventName": "PreToolUse", "permissionDecision": "deny", "permissionDecisionReason": "gstack861:HOOK_INPUT_OR_POLICY_ERROR" } }
+```
+isError=true；**文件未变（仍为 y）**；模型未绕过（其"内容策略"推测为模型误读，实际原因为策略损坏闭锁——证据即拒绝码本身）。机械复核：协调者以同一钩子命令+损坏策略直打 stdin → exit 2 + 同一 deny 载荷逐字一致；复原策略后同输入 → exit 0 + `{}`（放行）。**策略损坏 → 闭锁拒绝而非放行：E 验证完成。**（STEPS §4 F 超时/G updatedInput 共存/H 回滚仍为遗留。）

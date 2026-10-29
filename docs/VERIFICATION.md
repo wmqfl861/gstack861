@@ -642,3 +642,12 @@ Lane A（渲染）：初审 Needs fixes（2 Critical）→ 修复轮 → 复审�
 | 密钥用量 | 本批桌面会话模型调用由用户交互产生（约 8 次请求；非代理计费——如实分类） |
 
 证据：`docs/evidence-2026-10-29-batch27-desktop-session.md` + `-desktop-log.jsonl`。
+
+# 第三十六轮验证记录：批次 27 补充——STEPS §4 E fail-closed 探针（2026-10-29）
+
+| 项 | 结果 |
+|---|---|
+| E（fail-closed） | 损坏 policy.json → 桌面真实会话 `Write(src/ok.txt)`（正常放行范围）被**闭锁拒绝** `gstack861:HOOK_INPUT_OR_POLICY_ERROR`（规范 hookSpecificOutput 载荷，rollout 逐字捕获）；文件未变；模型未绕过。机械复现：同一钩子命令+损坏策略 stdin 直打 → exit 2 同载荷；复原后 → exit 0 `{}`。策略已复原、备份已清 |
+| 密钥用量 | 桌面用户交互驱动（非代理计费） |
+
+遗留更新：STEPS §4 剩 F（钩子超时）/G（updatedInput 共存审计）/H（UI 回滚）。证据：`docs/evidence-2026-10-29-batch27-desktop-session.md` 补充 2。
