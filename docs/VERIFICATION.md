@@ -710,9 +710,9 @@ Lane A（渲染）：初审 Needs fixes（2 Critical）→ 修复轮 → 复审�
 
 | 项 | 结果 |
 |---|---|
-| 运行 A（2 计费） | `--skills design-consultation,design-shotgun` **首跑全 PASS exit 0**：两技能均经 index→read 消费（标记逐字+零码）；记账 completed×2 + subjectHash 绑定 |
-| 运行 B（2 计费） | `--skills design-html,devex-review` **首跑全 PASS exit 0**：同上 |
-| 零代码改动 | 批次 30 参数化+白名单直接复用；无任何 src/test/bin 改动（计划审核确认） |
+| 运行 A（2 计费） | 标记 G861-C30-599c7c9a / G861-C30-85b212c7；`--skills design-consultation,design-shotgun` **首跑全 PASS exit 0**：两技能均经 index→read 消费（标记逐字+零码）；记账 completed×2 + subjectHash 绑定 |
+| 运行 B（2 计费） | 标记 G861-C30-54d6c195 / G861-C30-12d11ab6（审查建议 3 采纳：逐运行标记 hex 入档）；`--skills design-html,devex-review` **首跑全 PASS exit 0**：同上 |
+| 消费机制零改动 | 批次 30 参数化+白名单直接复用；无任何 src/test 改动；收官提交同步 doctor 状态串（bin 1 行，数据非逻辑）——初稿"零代码"表述不准确，按成果审查更正 |
 | MARKER_TAG 复用 | 转写携带 G861-C30 标记（零代码优先；计划审核建议 1 采纳，此处显式记录保溯源） |
 | 密钥用量 | 本批 4 计费（2+2，两运行均首跑 PASS，无复跑）；项目 DSH 18 → **22** |
 | §一5 收官 | **安全组 3（careful/freeze/cso）+ 设计组 5（design-review/consultation/shotgun/html/devex）= 8 技能全部能力切片消费完毕**；方法论消费仍属 15 例体系，不混淆 |

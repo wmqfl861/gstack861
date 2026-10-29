@@ -36,7 +36,7 @@ test/verification-scripts.test.mjs 钉死（本表 ↔ `scripts/` 目录 ↔ `bi
 ## CI 安全边界
 
 统一回归 runner（`npm run verify-offline`，见 `.github/workflows/ci.yml` 的
-offline-contracts 两腿）只纳入 CI 结构性安全的部分：六个键控脚本的 BLOCKED 冒烟
+offline-contracts 两腿）只纳入 CI 结构性安全的部分：七个键控脚本的 BLOCKED 冒烟
 （env 检查即返回 exit 2，不触 DSH）、`zcode-workflow-vertical` 整跑（纯离线 harness）、
 `verify-model-review`（node 内建 + 仓库 src + tmpdir 夹具，网络仅 127.0.0.1 回环）。
 runner 自身零网络（超出回环）零模型调用。以下两类脚本**不入**统一回归：
