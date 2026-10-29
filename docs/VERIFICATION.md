@@ -674,3 +674,5 @@ Lane A（渲染）：初审 Needs fixes（2 Critical）→ 修复轮 → 复审�
 | 状态升级 | FEATURE_MATRIX ⑨ 行：mechanism-ready → **runtime-verified (single real call)**；配置为协调者在用户持续授权下显式放置（本机 127.0.0.1 网关，黑名单尊重——防回退构造未被触碰） |
 
 证据：本表+网关日志行 `POST -> upstream 200 in 1641ms (posts=1)`（转写）。密钥用量：本批 1 计费（401 未计费）；项目 zcode 13、DSH 12、网关路径 1。
+
+批次 28 成果审查补记：3 项 Important 已修——(1) 封顶计数器改为门通过时同步递增（原 await 后递增存在 TOCTOU 窗口）；(2) 封顶测试收紧为首次恰 200、二次恰 429（原断言接受 ERR 即通过）；(3) 测试上游改为本地 stub（DEV_GATEWAY_UPSTREAM 覆盖；原测试会向真实第三方端点发未认证 POST——与 README 离线声明不符，如实更正）。上游 fetch 加 30s 超时；开发密钥对公开性账本注记入脚本头。401 运行的键验证 curl 端点为 POST /chat/completions 同路径（该次为验证键有效性、未过网关、按用户既有授权记账为一次探活——严格说本次批计量应为 1 计费+1 探活，如实并列）。FEATURE_MATRIX ⑨ 行归属措辞：操作员放置（本行由 OFFLINE-COMPLETE §2 与本记录承载完整表述）。就绪检查独立步骤未单列（三段流程自身覆盖配置可读性）——如实声明。

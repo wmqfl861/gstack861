@@ -3,20 +3,24 @@
 // env performs a real fetch to https://127.0.0.1:<port>/healthz — in-process
 // env assignment is a no-op for an already-started Node, and a custom ca fetch
 // option would not prove the mechanism the real call relies on. The single-call
-// cap is exercised against a stubbed upstream (no network, no key).
+// cap runs against a LOCAL stub upstream (DEV_GATEWAY_UPSTREAM) — the suite
+// stays offline: no third-party endpoint is ever contacted from tests.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
+import http from 'node:http';
 import path from 'node:path';
 import { spawn, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { X509Certificate } from 'node:crypto';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const GATEWAY = path.join(repoRoot, 'scripts/dev-gateway.mjs');
+const certs = () => JSON.parse(fs.readFileSync(path.join(repoRoot, 'scripts/dev-gateway-certs.json'), 'utf8'));
 
 function startGateway(env = {}) {
-  const child = spawn(process.execPath, [GATEWAY], { env: { ...process.env, ...env }, stdio: ['pipe', 'pipe', 'pipe'] });
+  const child = spawn(process.execPath, [GATEWAY], { env: { ...process.env, DEEPSEEK_API_KEY: '', ...env }, stdio: ['pipe', 'pipe', 'pipe'] });
   return new Promise((resolve, reject) => {
     let buf = '';
     const timer = setTimeout(() => reject(new Error(`gateway did not announce PORT: ${buf}`)), 15000);
@@ -29,45 +33,34 @@ function startGateway(env = {}) {
   });
 }
 
-test('embedded cert: 10-year validity and the required IP SANs', async () => {
-  const { execFileSync } = await import('node:child_process');
-  const { cert } = JSON.parse(fs.readFileSync(path.join(repoRoot, 'scripts/dev-gateway-certs.json'), 'utf8'));
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'g861-cert-'));
-  const certFile = path.join(tmp, 'cert.pem');
-  fs.writeFileSync(certFile, cert);
-  // X509Certificate gives us notAfter; SAN text comes from the PEM via toString scan.
-  const { X509Certificate } = await import('node:crypto');
+test('embedded cert: self-signed, loopback-only SANs, >=3650-day validity', () => {
+  const { cert } = certs();
   const x509 = new X509Certificate(cert);
-  const years = (Date.parse(x509.validTo) - Date.parse(x509.validFrom)) / (365.25 * 24 * 3600 * 1000);
-  assert.ok(years >= 9, `cert validity ${years.toFixed(1)}y < 9y — CI would break within months`);
-  const pemText = cert; // SANs are printed in openssl text output only; decode via subjectsAltName absence in Node → use the openssl-generated string embedded at creation
-  // The SAN proof that matters is behavioral: the child-process fetch below succeeds only if the IP SAN matches.
-  fs.rmSync(tmp, { recursive: true, force: true });
+  assert.equal(x509.subject, x509.issuer, 'self-signed (subject == issuer)');
+  assert.equal(x509.subject.split('\n').find(l => l.startsWith('CN=')), 'CN=gstack861-dev-gateway');
+  const days = (Date.parse(x509.validTo) - Date.parse(x509.validFrom)) / (24 * 3600 * 1000);
+  assert.ok(days >= 3650, `cert validity ${days.toFixed(0)}d < 3650d — plan-review floor; CI would break`);
+  // SAN proof is behavioral (test below): IP-literal fetch succeeds only with an IP SAN.
 });
 
 test('TLS mechanism: fresh child with NODE_EXTRA_CA_CERTS fetches https://127.0.0.1/healthz (200, posts=0)', async () => {
-  const { cert } = JSON.parse(fs.readFileSync(path.join(repoRoot, 'scripts/dev-gateway-certs.json'), 'utf8'));
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'g861-ca-'));
-  const caFile = path.join(tmp, 'ca.pem');
-  fs.writeFileSync(caFile, cert);
-  const { child, port } = await startGateway({ DEEPSEEK_API_KEY: '' });
+  fs.writeFileSync(path.join(tmp, 'ca.pem'), certs().cert);
+  const { child, port } = await startGateway();
   try {
     const probe = spawnSync(process.execPath, ['-e', `
       fetch('https://127.0.0.1:${port}/healthz')
         .then(r => r.json())
         .then(j => { if (!j.ok) throw new Error('not ok'); console.log('HEALTHZ_OK posts=' + j.posts); })
         .catch(e => { console.error('FAIL', e?.cause?.code ?? e.message); process.exit(1); });
-    `], { env: { ...process.env, NODE_EXTRA_CA_CERTS: caFile }, encoding: 'utf8', timeout: 20000 });
+    `], { env: { ...process.env, NODE_EXTRA_CA_CERTS: path.join(tmp, 'ca.pem') }, encoding: 'utf8', timeout: 20000 });
     assert.equal(probe.status, 0, `child fetch failed: ${probe.stderr}${probe.stdout}`);
     assert.match(probe.stdout, /HEALTHZ_OK posts=0/);
-  } finally {
-    child.kill();
-  }
-  fs.rmSync(tmp, { recursive: true, force: true });
+  } finally { child.kill(); fs.rmSync(tmp, { recursive: true, force: true }); }
 });
 
-test('TLS without the CA in a fresh child must FAIL (proves the trust actually comes from NODE_EXTRA_CA_CERTS)', async () => {
-  const { child, port } = await startGateway({ DEEPSEEK_API_KEY: '' });
+test('TLS without the CA in a fresh child must FAIL (proves trust comes from NODE_EXTRA_CA_CERTS)', async () => {
+  const { child, port } = await startGateway();
   try {
     const probe = spawnSync(process.execPath, ['-e', `
       fetch('https://127.0.0.1:${port}/healthz').then(() => { console.log('UNEXPECTED_OK'); }, e => { console.log('REJECTED', e?.cause?.code ?? e?.name); });
@@ -77,24 +70,38 @@ test('TLS without the CA in a fresh child must FAIL (proves the trust actually c
   } finally { child.kill(); }
 });
 
-test('single-call cap: first POST forwards, second gets 429 (stubbed upstream, no network)', async () => {
-  // Drive two POSTs through a gateway whose upstream is unreachable-but-counted is NOT offline;
-  // instead verify the cap logic in isolation: spawn gateway, POST twice with a broken key env so
-  // the first POST fails upstream (counted) and the second must hit the 429 cap.
-  const { cert } = JSON.parse(fs.readFileSync(path.join(repoRoot, 'scripts/dev-gateway-certs.json'), 'utf8'));
+test('single-call cap: first POST forwards (non-429 status), second gets exactly 429 — local stub upstream, zero network', async () => {
+  // Local stub upstream: deterministic 200 JSON; DEV_GATEWAY_UPSTREAM overrides the
+  // hardcoded DeepSeek URL so no third-party endpoint is ever contacted.
+  const stub = http.createServer((req, res) => {
+    let body = '';
+    req.on('data', c => { body += c; });
+    req.on('end', () => {
+      if (!req.headers.authorization || req.headers.authorization === 'Bearer local' || req.headers.authorization === 'Bearer undefined') {
+        res.writeHead(401, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({ error: 'stub: bad key' }));
+        return;
+      }
+      res.writeHead(200, { 'content-type': 'application/json' });
+      res.end(JSON.stringify({ choices: [{ message: { content: '{"verdict":"approve","findings":[]}' } }] }));
+    });
+  });
+  await new Promise(r => stub.listen(0, '127.0.0.1', r));
+  const stubPort = stub.address().port;
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'g861-cap-'));
-  fs.writeFileSync(path.join(tmp, 'ca.pem'), cert);
-  const { child, port } = await startGateway({ DEEPSEEK_API_KEY: '' }); // empty key -> upstream 401, still counted
+  fs.writeFileSync(path.join(tmp, 'ca.pem'), certs().cert);
+  const { child, port } = await startGateway({ DEV_GATEWAY_UPSTREAM: `http://127.0.0.1:${stubPort}/chat/completions`, DEEPSEEK_API_KEY: 'stub-key' });
   try {
     const post = () => spawnSync(process.execPath, ['-e', `
       fetch('https://127.0.0.1:${port}/chat/completions', { method: 'POST', headers: {'content-type':'application/json'}, body: JSON.stringify({model:'x'}) })
-        .then(async r => { console.log('STATUS', r.status); }, e => { console.log('ERR', e?.cause?.code ?? e?.name); });
+        .then(async r => { console.log('STATUS', r.status); }, e => { console.log('ERR', e?.cause?.code ?? e?.name); process.exit(2); });
     `], { env: { ...process.env, NODE_EXTRA_CA_CERTS: path.join(tmp, 'ca.pem') }, encoding: 'utf8', timeout: 40000 });
     const first = post();
-    assert.match(first.stdout, /STATUS (200|401|429|502)/, `first POST shape: ${first.stdout}`);
-    // The upstream 401/502 both count; the SECOND POST must be refused locally with 429.
+    assert.equal(first.status, 0, `first POST child crashed: ${first.stderr}`);
+    assert.match(first.stdout, /STATUS 200/, `first POST must forward to the stub (200): ${first.stdout}`);
+    assert.doesNotMatch(first.stdout, /STATUS 429/, 'first POST must NOT hit the cap');
     const second = post();
-    assert.match(second.stdout, /STATUS 429|ERR/, `second POST must be capped: ${second.stdout}`);
-  } finally { child.kill(); }
-  fs.rmSync(tmp, { recursive: true, force: true });
+    assert.equal(second.status, 0, `second POST child crashed: ${second.stderr}`);
+    assert.match(second.stdout, /STATUS 429/, `second POST must be capped with exactly 429: ${second.stdout}`);
+  } finally { child.kill(); stub.close(); fs.rmSync(tmp, { recursive: true, force: true }); }
 }, { timeout: 120000 });

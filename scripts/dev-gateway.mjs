@@ -12,6 +12,10 @@
 // top of runModelReview's single-fetch guarantee. Prints a machine-readable
 // `PORT <n>` line, then per-request status/duration lines (never bodies/keys).
 //
+// LEDGER: scripts/dev-gateway-certs.json commits an intentionally-PUBLIC dev-only key pair
+// (self-signed, loopback SANs only, trusted solely via explicit NODE_EXTRA_CA_CERTS). This pattern
+// must never extend to any key with value — the redaction engine rightly flags the PRIVATE KEY
+// marker; this file is the sole, documented exception.
 // The DEEPSEEK_API_KEY comes exclusively from this process's environment (the
 // coordinator passes it at spawn); it is never printed, never written.
 import https from 'node:https';
@@ -19,7 +23,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 const { key, cert } = JSON.parse(readFileSync(new URL('./dev-gateway-certs.json', import.meta.url), 'utf8'));
-const UPSTREAM = 'https://api.deepseek.com/chat/completions';
+const UPSTREAM = process.env.DEV_GATEWAY_UPSTREAM ?? 'https://api.deepseek.com/chat/completions'; // tests override to a local stub
 let posts = 0;
 
 const server = https.createServer({ key, cert }, (req, res) => {
@@ -42,20 +46,19 @@ const server = https.createServer({ key, cert }, (req, res) => {
   const chunks = [];
   req.on('data', c => chunks.push(c));
   req.on('end', async () => {
+    posts += 1; // increment SYNCHRONOUSLY at gate passage — the await below must not open a TOCTOU window
     const started = Date.now();
     try {
       const upstream = await fetch(UPSTREAM, {
         method: 'POST',
         headers: { Authorization: `Bearer ${process.env.DEEPSEEK_API_KEY}`, 'content-type': 'application/json' },
-        body: Buffer.concat(chunks),
+        body: Buffer.concat(chunks), signal: AbortSignal.timeout(30000),
       });
-      posts += 1;
       const body = await upstream.text();
       res.writeHead(upstream.status, { 'content-type': upstream.headers.get('content-type') ?? 'application/json' });
       res.end(body);
       console.log(`POST -> upstream ${upstream.status} in ${Date.now() - started}ms (posts=${posts})`);
     } catch (error) {
-      posts += 1;
       res.writeHead(502, { 'content-type': 'application/json' });
       res.end(JSON.stringify({ error: 'upstream fetch failed' }));
       console.log(`POST -> upstream FAILED in ${Date.now() - started}ms: ${error?.cause?.code ?? error?.name}`);
