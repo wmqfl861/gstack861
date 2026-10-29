@@ -95,7 +95,7 @@ if (args[0] === 'hook') {
           'dsh-recovery-vertical': { keyed: true, status: 'reap->resume recovery vertical-verified (2026-10-28)', evidence: 'docs/verification-2026-10-28-batch16.json' },
           'zcode-workflow-vertical': { keyed: false, status: 'offline-workflow-journal-harness PASS (2026-10-28)', evidence: 'docs/verification-2026-10-28-batch16.json' },
           'zcode-acceptance-vertical': { keyed: true, status: 'batch 25: ③ controlled-session acceptance via real headless spawns (see VERIFICATION round 33)', evidence: 'docs/VERIFICATION.md' },
-          'dsh-keyed-consumption': { keyed: true, status: 'batches 29-30: careful/design-review/freeze/cso consumed via index->read (capability slices, not methodology); --skills parameterized', evidence: 'docs/VERIFICATION.md' },
+          'dsh-keyed-consumption': { keyed: true, status: 'batches 29-31: all 8 §一5 skills consumed via index->read (capability slices, not methodology); --skills parameterized', evidence: 'docs/VERIFICATION.md' },
           'verify-8dot3': { keyed: false, status: 'manual windows alias probe (round 5; $?-chain artifact honestly noted)', evidence: 'docs/VERIFICATION.md' }
         },
         networkCalls: 0, modelCalls: 0,

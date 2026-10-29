@@ -24,7 +24,7 @@
 | 开发/调查/review | planned | vertical-slice-verified | DSH 侧为**生命周期能力切片**键控实证（批次 13/14/16：逐字标记读、精确单写、回读校验、ship 负控+审批门、崩溃→收割→恢复复跑）——**非** /investigate、/review 技能方法论消费（两宿主均未跑）；ZCode 列仍 planned 待③ |
 | 子 Agent 与工作流恢复 | store-recovery-verified | store-recovery-verified | 批次 15 共享核 store+CLI 离线实证：租约/心跳/收割/重排（陈旧租约清除、收割↔心跳锁内竞争）、审批取消矩阵+cancelWorkflow 故障安全顺序（先拒审批后取消）；批次 16 DSH 恢复纵向键控单次运行通过（崩溃模拟→reap→resume→密钥任务 completed attempts=2）；宿主内执行器接线仍 planned（待③/后续）；双进程锁竞争已实证（既有 start 竞争测试 + 批次 18 reap/heartbeat 竞争序集断言；真实 SIGKILL 竞争仍环境受限）（批次 18 实测：15 次真双进程 reap/heartbeat 竞争全部恰一 exit 0，胜者分布 reap 6 / heartbeat 4，四种合法"胜者×败者码"组合均出现；成果审查独立复测 10/10 恒一胜者） |
 | 独立模型复核 | mechanism-ready | mechanism-ready | 配置加载/黑名单/单次封顶/开关红线全部实测（批次 11，五段就绪验证）；runtime-verified（批次 28 单次真调用：本机显式网关，操作员在用户持续授权下放置配置；单次封顶独立证实；详 OFFLINE-COMPLETE §一2）|
-| 浏览器/QA/设计 | planned | keyed-slice-consumed | design-review 经 DSH index→read 消费实证（批次 29 能力切片：装载→注入→真实读，非方法论消费）；设计组余 4 技能属键控预算类（密钥即可推进）；浏览器/QA 组受阻于浏览器栈 |
+| 浏览器/QA/设计 | planned | keyed-slice-consumed | **设计组 5 技能全部能力切片消费完毕**（批次 29-31：design-review/consultation/shotgun/html/devex 经 index→read，非方法论消费）；浏览器/QA 组受阻于浏览器栈 |
 | ship/部署/监控 | planned | vertical-slice-verified | 纵向切片实证（批次 14 DSH：审批门+特权发布+单次消费）；真实部署/监控交付仍 planned（审批、测试证据与幂等边界） |
 | 文档/记忆/GBrain | planned | planned | 对应原生工具与会话路径；learn/retro/document-generate 已实证消费（15 例计数内，批次 6 safety-suite），document-release 未消费，GBrain 前置③ |
 | CSO/iOS/远程等专项 | planned | planned | Docker/设备/账号等依赖验收；cso 已能力切片消费（批次 30，非方法论）；iOS/远程受阻于设备/远端 |

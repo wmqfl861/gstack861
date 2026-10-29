@@ -705,3 +705,16 @@ Lane A（渲染）：初审 Needs fixes（2 Critical）→ 修复轮 → 复审�
 证据：本表+脚本转写要点。§一5 剩余：设计组 4 技能（design-consultation/shotgun/html/devex）——同命令一键可续。
 
 批次 30 成果审查补记：1 Important 已修——`--skills` 有旗无值/下一参为旗时不再静默缺省（先于密钥门 exit 1 + 新测试）；Minor 同步：头注释批次 30 化（RC5 完全落实）、测试 tmp 前缀 c30、verify-offline 横幅计数更正。审者裁定 Ready to push（Important 属潜在 argv 边角，不影响已完成运行与 CI，修于下一键控批之前——本补记即该修复）。
+
+# 第四十一轮验证记录：批次 31——DSH 键控消费设计组 4 技能，§一5 收官（2026-10-29）
+
+| 项 | 结果 |
+|---|---|
+| 运行 A（2 计费） | `--skills design-consultation,design-shotgun` **首跑全 PASS exit 0**：两技能均经 index→read 消费（标记逐字+零码）；记账 completed×2 + subjectHash 绑定 |
+| 运行 B（2 计费） | `--skills design-html,devex-review` **首跑全 PASS exit 0**：同上 |
+| 零代码改动 | 批次 30 参数化+白名单直接复用；无任何 src/test/bin 改动（计划审核确认） |
+| MARKER_TAG 复用 | 转写携带 G861-C30 标记（零代码优先；计划审核建议 1 采纳，此处显式记录保溯源） |
+| 密钥用量 | 本批 4 计费（2+2，两运行均首跑 PASS，无复跑）；项目 DSH 18 → **22** |
+| §一5 收官 | **安全组 3（careful/freeze/cso）+ 设计组 5（design-review/consultation/shotgun/html/devex）= 8 技能全部能力切片消费完毕**；方法论消费仍属 15 例体系，不混淆 |
+
+证据：本表+两运行转写要点。遗留：F/G/H 桌面探针（用户交互）、§三环境项。
