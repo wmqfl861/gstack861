@@ -1,0 +1,30 @@
+name: recheck-source-export
+on:
+  push:
+    branches: ['audit/recheck-export-20261029']
+    paths: ['.github/workflows/recheck-export.yml']
+permissions:
+  contents: read
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: bc929e6a1aa87b3422e5d22d58754cd89d6e4a84
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Export only tracked source and Git objects
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/recheck-source"
+          git rev-parse HEAD > "$RUNNER_TEMP/recheck-source/HEAD.txt"
+          git bundle create "$RUNNER_TEMP/recheck-source/gstack861.bundle" HEAD
+          cd "$RUNNER_TEMP/recheck-source"
+          sha256sum gstack861.bundle > SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: recheck-source
+          path: ${{ runner.temp }}/recheck-source/
+          retention-days: 3
