@@ -5,7 +5,7 @@
 // and expected/actual verdict are printed in its ✗ line).
 //
 // CI-safe BY CONSTRUCTION — zero network beyond loopback, zero model calls:
-//   [1/3] BLOCKED smoke for the six keyed scripts (verify-dsh-guard, verify-dsh-vertical,
+//   [1/3] BLOCKED smoke for the seven keyed scripts (verify-dsh-guard, verify-dsh-vertical,
 //         verify-dsh-robustness, dsh-mini-vertical, dsh-ship-vertical, dsh-recovery-vertical):
 //         each child is spawned with an EXPLICIT DEEPSEEK_API_KEY='' (suggestion adopted —
 //         never inherit an operator-exported key) and must exit 2 printing a BLOCKED line.
@@ -33,6 +33,7 @@ const KEYED = [
   'dsh-mini-vertical.mjs',
   'dsh-ship-vertical.mjs',
   'dsh-recovery-vertical.mjs',
+  'dsh-keyed-consumption.mjs',
 ];
 // Every child of this runner sees an explicitly EMPTY key: the BLOCKED smoke depends on it,
 // and the two full-run scripts are keyless by design anyway — an operator-exported

@@ -682,10 +682,12 @@ Lane A（渲染）：初审 Needs fixes（2 Critical）→ 修复轮 → 复审�
 | 项 | 结果 |
 |---|---|
 | `npm test` | 1008→1016/996+20skip（+8：钉定上游 frontmatter 字节断言、3 条目 fixture 链、提示词钉 read 工具回归、判定码全形含 RC5 检测基础、CLI 向量、action 文件、无密钥 exit 2） |
-| 审计划 | 5 必改全部落实（三向登记/上游路径与描述修正[tmpl 块标量不可用→取渲染 frontmatter 字节实测]/记账机器显式化/判据收窄为批次 12 任务 A 同款·不计入 15 例/SKILL_NOT_IN_INDEX 定义化） |
+| 审计划 | 5 必改落实（成果审查后补齐 2 项遗漏：verify-offline 注册与设计行注记——初稿误记"全部落实"，本行如实更正（三向登记/上游路径与描述修正[tmpl 块标量不可用→取渲染 frontmatter 字节实测]/记账机器显式化/判据收窄为批次 12 任务 A 同款·不计入 15 例/SKILL_NOT_IN_INDEX 定义化） |
 | 运行 1（2 计费） | careful **PASS**（标记逐字）；design-review **GUARD_CODES_PRESENT: gstack861:UNMAPPED_TOOL**——模型工具漂移（批次 13 同型真实缺陷，可证伪判定如实捕获并记 fail） |
 | 修复 | 提示词钉死 "Use the read tool"（+回归断言）；复跑（2 计费）**全 PASS**：两技能均经 index→read 消费（标记逐字+零码）；记账 completed×2 绑各自 action 文件；终检恰 2 条终态正确+subjectHash 绑定 |
 | 密钥用量 | 本批 4 计费（运行 1 的 2 + 修复复跑 2——cap 3→4 如实扩展，b13 先例）；项目 DSH 12→16 |
 | 定级 | §一5 部分完成：careful+design-review **能力切片消费实证**（装载→index→真实读），非 15 例方法论消费（合成 fixture，计划明示）；freeze/cso 与设计组其余 4 技能为后续预算类 |
 
 证据：本表+脚本转写要点。fixup：模板非导出函数（dshInstall/dsh/childEnv/composeCheck）本地复刻；残留 require_node_crypto 引用两次键控运行前各修一次（第一次导致 scaffold 失败未计费）。
+
+批次 29 成果审查补记：4 项 Important 全部修复——(1) verify-offline 注册补齐（七键控冒烟，9/9 绿）；(2) FEATURE_MATRIX「浏览器/QA/设计」行 design-review 落地注记；(3) composeCheck 恢复 agent 栈断言（agent-default-model+headless）；(4) 键控发射补 DSH_PERMISSION_MODE=danger-full-access（家族惯例，头注释说明）。Minor 清理：未用 import 删除、actionFile 占位改省略+崩溃注释、blocked() 上限历史注记。

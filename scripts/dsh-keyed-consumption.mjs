@@ -148,7 +148,7 @@ export function subjectFor({ sessionId, runId, policyHash, actionFile }) {
 import { stageRender } from '../src/stage.mjs';
 import { installSkills } from '../src/install.mjs';
 import { textDigest } from '../src/json.mjs';
-import { policyJson, patchLayerYml, composeProfileLayer } from './verify-dsh-vertical.mjs';
+import { policyJson, composeProfileLayer } from './verify-dsh-vertical.mjs';
 
 /** Offline composition check (same shape as the template's, for THIS profile name). */
 function composeCheckConsumption(prepared) {
@@ -156,7 +156,8 @@ function composeCheckConsumption(prepared) {
   const out = `${dump.stdout ?? ''}\n${dump.stderr ?? ''}`;
   const warnings = out.split(/\r?\n/).filter(line => /warn/i.test(line) && /gstack861|patch|cordis/i.test(line));
   return {
-    ok: dump.status === 0 && dump.stdout.includes(GUARD) && dump.stdout.includes(SKILLS) && warnings.length === 0,
+    ok: dump.status === 0 && dump.stdout.includes(GUARD) && dump.stdout.includes(SKILLS)
+      && dump.stdout.includes('agent-default-model') && dump.stdout.includes('headless') && warnings.length === 0,
     detail: { status: dump.status, warnings, stderr: (dump.stderr ?? '').slice(0, 500), stdout: (dump.stdout ?? '').slice(0, 2000) },
   };
 }
@@ -203,7 +204,7 @@ export function buildConsumptionFixture(root) {
 function blocked() {
   console.log('RESULT: BLOCKED — DSH 键控消费执行器（careful + design-review）未执行：DEEPSEEK_API_KEY 未设置。');
   console.log('(a) 用法：DEEPSEEK_API_KEY=<key> node scripts/dsh-keyed-consumption.mjs');
-  console.log('(b) 密钥成本上限：恰 2 个计费任务（每技能一个，≤200 字符 throw-before-launch）；应急上限 3。');
+  console.log('(b) 密钥成本上限：恰 2 个计费任务（每技能一个，≤200 字符 throw-before-launch）；应急上限 3（本批历史：UNMAPPED_TOOL 诚实失败复跑后实花 4，第三十九轮如实记录）。');
   console.log('(c) 判据=批次 12 任务 A 同款（marker verbatim + 零码）；合成 fixture 链路切片，非 15 例方法论消费（计划 RC4）。');
   console.log('exit 2（blocked；0=两技能均消费 / 1=失败 / 2=受阻）');
   process.exitCode = 2;
@@ -246,7 +247,12 @@ async function main() {
       const subject = { ...prepared.subject, actionFile: writeActionFile(prepared.root, { phase: `consume-${entry.name}`, task: entry.name }) };
       const create = journalRun(consumptionTasksArgs({ ...subject, sub: 'create' }), `create ${entry.name}`, v => typeof v === 'string' && v.length > 0);
       journalRun(consumptionTasksArgs({ ...subject, sub: 'start', id: create }), `start ${entry.name}`, r => r?.state === 'running');
-      const task = dsh(prepared.install, prepared.root, ['--profile', PROFILE, '--json', prompt], true, prepared.workspace, TASK_TIMEOUT_MS);
+      // DSH_PERMISSION_MODE=danger-full-access: family convention — approval becomes
+      // 'never' and the pre-execute layer allows, so the gstack861 guard is the only
+      // layer whose abstain/deny the verdict observes (verify-dsh-vertical runTask rationale).
+      const task = spawnSync(prepared.install.exe, ['--expose-internals', prepared.install.cliArg, '--profile', PROFILE, '--json', prompt],
+        { encoding: 'utf8', timeout: TASK_TIMEOUT_MS, cwd: prepared.workspace, maxBuffer: 32 * 1024 * 1024,
+          env: { ...childEnv(prepared.root, true), DSH_PERMISSION_MODE: 'danger-full-access' } });
       const events = parseEvents(`${task.stdout}\n${task.stderr}`);
       const verdict = verdictConsumption({ output: `${task.stdout}\n${task.stderr}`, events, markerLine: entry.markerLine, skillFile: entry.skillFile });
       console.log(`      ${verdict.ok ? 'PASS' : 'FAIL'}  ${verdict.code}: ${verdict.reason}`);
@@ -304,7 +310,8 @@ function prepareConsumption(repoRoot) {
         sessionId: `c29-${randomBytes(4).toString('hex')}`,
         runId: `c2${randomBytes(3).toString('hex')}`,
         policyHash: loadPolicy(policyPath).policyHash,
-        actionFile: null, // set per-task in main; placeholder for shape clarity
+        // actionFile is supplied per-task in main() — a missing override would
+        // crash the CLI with INVALID_ARGUMENTS rather than silently journaling.
       },
       ...fixture,
     };
