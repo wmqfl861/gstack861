@@ -718,3 +718,14 @@ Lane A（渲染）：初审 Needs fixes（2 Critical）→ 修复轮 → 复审�
 | §一5 收官 | **安全组 3（careful/freeze/cso）+ 设计组 5（design-review/consultation/shotgun/html/devex）= 8 技能全部能力切片消费完毕**；方法论消费仍属 15 例体系，不混淆 |
 
 证据：本表+两运行转写要点。遗留：F/G/H 桌面探针（用户交互）、§三环境项。
+
+# 第四十二轮验证记录：批次 32——STEPS §4 G updatedInput 共存审计（2026-10-29）
+
+| 项 | 结果 |
+|---|---|
+| G 判定 | **共存约束满足（本机当前环境）**——三层证据：脚本层（共存钩子恰一条 SessionStart，updatedInput 零命中，输出 additionalContext-only，配置快照 7673f66549327fb2/2396879aeb6ea7b7）；schema 层（updatedInput 仅 PreToolUse+PermissionRequest 变体；SessionStart 结构上不可能；mergeHookRunResult 最后写入者胜+消费面引证）；运行时层（批次 27 全插件栈下守卫三 deny 正确生效、共存钩子实际失败未输出） |
+| 审计划 | 3 必改落实（PermissionRequest 变体措辞更正/合并路径引证/运行时工件钉死全量日志）+4 建议采纳（hookCount 自报/快照哈希/脚本描述/内建钩子注记） |
+| 密钥用量 | 0（纯静态+既有证据复用；钩子试运行只读零模型调用） |
+| 遗留更新 | STEPS §4 余 **F（超时探针）/H（UI 回滚）**——均桌面交互 |
+
+证据：`docs/evidence-2026-10-29-batch27-desktop-session.md` 补充 4。零代码改动。
