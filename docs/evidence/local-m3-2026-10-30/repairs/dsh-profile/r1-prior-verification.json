@@ -1,0 +1,104 @@
+{
+  "recordedAt": "2026-10-30T15:39:08.138Z",
+  "node": "v24.21.0",
+  "platform": "win32",
+  "arch": "x64",
+  "head": "680b2f19b2dbef8831e3be1fd996203589b5c41d",
+  "branch": "work/m3-command-aliases-20261029",
+  "ownedFiles": [
+    "src/dsh-profile.mjs",
+    "test/dsh-profile.test.mjs"
+  ],
+  "testedFileSha256": {
+    "src/dsh-profile.mjs": "de89be04d20d76c11d8087c7889b7159483f03826011c4e5f4e2e1455165f173",
+    "test/dsh-profile.test.mjs": "8332fe2725443f70a74b7173166d3f8475416fdba5f37c5c33c622ec2736a1e0",
+    "src/fs-utils.mjs": "0009a296f19807230ec2cf91b3a8e1a391e47bd2d6f36539f5f5152428725c0f",
+    "test/fs-utils.test.mjs": "93de49281c445da227173716308159304dc801cdaa6f75bf2c0b286c159c8e22",
+    "src/policy.mjs": "f40b601b0560d6c8183637dd430d813f74684e284ba9525f1621e734a9830f5d",
+    "test/policy.test.mjs": "dac7cf4897e53a5b53b1cb457764bbd55fc5362c57159dc56d9bc6502d3978ed",
+    "src/adapters/dsh.mjs": "986f9556340e07b84f501606d547fa39ecf517df65b64d9867f93add849cb787",
+    "src/adapters/dsh-skills.mjs": "74535903c8a186f263ce6c7687bcddf91385fe9396c3d953b50dc81efdbb7f92",
+    "bin/gstack861.mjs": "74ef060c9c4c72288e669558db3e21a5645f0225ca913f96c0c510750860f7c3",
+    "test/host-setup-cli.test.mjs": "6bc59f5f64aed38a384b1176b2f892c2965fafa07a65dc539801c64aacb0b34c"
+  },
+  "logs": {
+    "baseline.log": {
+      "sha256": "c9336459f11c21b8a1d2549a1df0528368134f4e2fbc83aeb4866d5390c370df"
+    },
+    "red-initial.log": {
+      "sha256": "426e0f0c35399ce0afdb9a07b2c0d84233ffa50a5f131c2b7677a37ce07fe1fc"
+    },
+    "red.log": {
+      "sha256": "ffa6a498d5986b24c0132b368221bf0d94f611dab59f1d589bbcf6a7136b362c"
+    },
+    "green.log": {
+      "sha256": "4cd1552c6be8ee6cc6ea5d977e77596e81cbcb30b39b4221c1c7c75a11959b3c"
+    },
+    "integration.log": {
+      "sha256": "ad9fcdb1f81e06a6a19b8930324cf7aa4bc5f8474b6d4ab70d4cee8c4853e4f0"
+    },
+    "check.log": {
+      "sha256": "4f14bcb2752a714d4248a9334b673e2139be1d536af9dc40e6746f0303b3c528"
+    },
+    "diff-check.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "green-initial.log": {
+      "sha256": "aeb3c87db8be23eaffce94afd76e46fe88e03d35c1a4f4c5e61e751d7a330b05"
+    },
+    "integration-initial.log": {
+      "sha256": "2cd8cb8393d33b08b9ff75aa40388fd2c04d4c02958fcfd7091e3ace0bef4970"
+    },
+    "review-red.log": {
+      "sha256": "2e23e804561e4af19169db64b6c68dbb26ff5f57a2185548f04359ee7bf74206"
+    },
+    "suite-isolation-scan.log": {
+      "sha256": "592021b7df5a040136d1e38829f991fb33c0df36d7e7b1994e0e622ec61403c8"
+    }
+  },
+  "scaffoldStatus": "scaffolded-not-host-verified",
+  "hostLaunches": 0,
+  "modelRequests": 0,
+  "networkCalls": 0,
+  "notes": [
+    "Other remediation lanes modify disjoint files concurrently.",
+    "No whole-suite result is claimed; the suite includes home watch and loopback-network fixtures.",
+    "Self-review only; independent acceptance review remains coordinator-owned."
+  ],
+  "testResults": {
+    "baseline.log": {
+      "tests": 4,
+      "pass": 3,
+      "fail": 1,
+      "skipped": 0
+    },
+    "red.log": {
+      "tests": 46,
+      "pass": 8,
+      "fail": 38,
+      "skipped": 0
+    },
+    "review-red.log": {
+      "tests": 47,
+      "pass": 46,
+      "fail": 1,
+      "skipped": 0
+    },
+    "green.log": {
+      "tests": 47,
+      "pass": 47,
+      "fail": 0,
+      "skipped": 0
+    },
+    "integration.log": {
+      "tests": 102,
+      "pass": 102,
+      "fail": 0,
+      "skipped": 0
+    }
+  },
+  "focusedCommand": "node --test --test-reporter=tap test/dsh-profile.test.mjs",
+  "integrationCommand": "node --test --test-reporter=tap test/dsh-profile.test.mjs test/fs-utils.test.mjs test/policy.test.mjs test/host-setup-cli.test.mjs",
+  "syntaxCommand": "node scripts/check.mjs",
+  "syntaxResult": "Syntax: 116 modules; baseline: 3 full commit pins; HEAD evidence: stale (warning; CI green is the merge gate); no dependencies or model calls."
+}

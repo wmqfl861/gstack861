@@ -2,6 +2,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { object, textDigest } from './json.mjs';
+import { inspectPlainPath, assertPlainPathUnchanged, readPlainFile } from './fs-utils.mjs';
+import { inside } from './policy.mjs';
 
 const GENERATOR = 'gstack861';
 const NAME = /^[a-z0-9][a-z0-9-]*$/;
@@ -38,48 +40,120 @@ const filesEqual = (a, b) => {
   return ka.length === kb.length && ka.every(k => a[k] === b[k]);
 };
 
-function readJson(filename) {
-  try { return JSON.parse(fs.readFileSync(filename, 'utf8')); } catch { return null; }
+const noop = () => {};
+
+function inspect(filename, kind, code, allowMissing = false, guard = noop) {
+  guard();
+  let snapshot;
+  try { snapshot = inspectPlainPath(filename, { kind, allowMissing }); }
+  catch { guard(); fail(code); }
+  guard();
+  return snapshot;
+}
+
+function unchanged(snapshot, code, guard = noop) {
+  guard();
+  try { assertPlainPathUnchanged(snapshot); }
+  catch { guard(); fail(code); }
+  guard();
+}
+
+function readFile(snapshot, code, guard = noop) {
+  guard();
+  let bytes;
+  try { bytes = readPlainFile(snapshot); }
+  catch { guard(); fail(code); }
+  guard();
+  return bytes;
+}
+
+function readJson(filename, guard = noop) {
+  const bytes = readFile(inspect(filename, 'file', 'USER_FILE_REFUSED', false, guard), 'USER_FILE_REFUSED', guard);
+  try { return JSON.parse(bytes.toString('utf8')); } catch { return null; }
 }
 
 const registryFile = target => path.join(target, REGISTRY);
 
-/** Only a plain regular file counts; anything else at these reserved names is refused. */
-function regularFile(filename) {
-  const stat = fs.lstatSync(filename, { throwIfNoEntry: false });
-  return stat?.isFile() ? stat : null;
+/** Refresh an expected created suffix only after proving its original ancestors. */
+function createdPath(before, kind, code, guard) {
+  unchanged({ ...before, missing: [] }, code, guard);
+  return inspect(before.path, kind, code, false, guard);
 }
 
-/** A staging leaf is trusted only when ALL ancestors beneath the skill directory
- * are plain directories. lstat on the leaf alone follows parent symlinks/junctions. */
-function stagingFile(dir, key) {
-  const parts = key.split('/');
-  let current = dir;
-  for (let i = 0; i < parts.length; i++) {
-    current = path.join(current, parts[i]);
-    const stat = fs.lstatSync(current, { throwIfNoEntry: false });
-    if (!stat || stat.isSymbolicLink()) return null;
-    if (i < parts.length - 1 ? !stat.isDirectory() : !stat.isFile() || stat.nlink !== 1) return null;
+function makeDirectory(before, code, guard, recursive = false) {
+  unchanged(before, code, guard);
+  fs.mkdirSync(before.path, { recursive, mode: 0o755 });
+  return createdPath(before, 'directory', code, guard);
+}
+
+/** A created file remains ours only while its verified bytes match our write. */
+function assertCreatedContents(snapshot, guard) {
+  if (!Buffer.isBuffer(snapshot.expectedBytes)
+    || !readFile(snapshot, 'USER_FILE_REFUSED', guard).equals(snapshot.expectedBytes)) fail('USER_FILE_REFUSED');
+}
+
+/** Only successfully created resources with unchanged identity/content are cleanup candidates. */
+function cleanCreated(resources, guard) {
+  for (const snapshot of [...resources].reverse()) {
+    try {
+      unchanged(snapshot, 'USER_FILE_REFUSED', guard);
+      if (snapshot.entries.at(-1).kind === 'file') assertCreatedContents(snapshot, guard);
+    } catch { continue; } // Changed or unreadable resources remain for operator recovery.
+    try {
+      if (snapshot.entries.at(-1).kind === 'file') fs.unlinkSync(snapshot.path);
+      else fs.rmdirSync(snapshot.path);
+    } catch (error) {
+      if (!['ENOENT', 'ENOTEMPTY', 'EEXIST'].includes(error.code)) throw error;
+    }
   }
-  return current;
+}
+
+function writeCreated(filename, bytes, guard, resources) {
+  const before = inspect(filename, 'file', 'USER_FILE_REFUSED', true, guard);
+  if (before.exists) fail('USER_FILE_REFUSED');
+  unchanged(before, 'USER_FILE_REFUSED', guard);
+  const expectedBytes = Buffer.from(bytes);
+  fs.writeFileSync(filename, bytes, { flag: 'wx', mode: 0o644 });
+  resources.push({ ...createdPath(before, 'file', 'USER_FILE_REFUSED', guard), expectedBytes });
+}
+
+/** A rename keeps the original leaf identity, never a newly adopted replacement. */
+function movedPath(before, filename, guard) {
+  const after = inspect(filename, before.entries.at(-1).kind, 'USER_FILE_REFUSED', false, guard);
+  const expected = { ...before.entries.at(-1), path: after.path };
+  unchanged({ ...after, entries: [...after.entries.slice(0, -1), expected] }, 'USER_FILE_REFUSED', guard);
+  return before.expectedBytes === undefined ? after : { ...after, expectedBytes: before.expectedBytes };
 }
 
 /** Registry writes go through tmp + rename so readers never observe a torn file. */
-function writeRegistry(target, skills, now) {
-  const filename = path.join(target, REGISTRY);
+function writeRegistry(target, skills, now, guard, registry) {
+  const filename = registryFile(target);
   const temp = path.join(target, `${REGISTRY}.${randomUUID()}.tmp`);
+  const resources = [];
   try {
-    fs.writeFileSync(temp, `${JSON.stringify({ schemaVersion: 1, updatedAt: now(), skills }, null, 2)}\n`, { flag: 'wx', mode: 0o644 });
+    const bytes = `${JSON.stringify({ schemaVersion: 1, updatedAt: now(), skills }, null, 2)}\n`;
+    unchanged(registry.snapshot, 'USER_FILE_REFUSED', guard);
+    writeCreated(temp, bytes, guard, resources);
+    unchanged(registry.snapshot, 'USER_FILE_REFUSED', guard);
+    unchanged(resources[0], 'USER_FILE_REFUSED', guard);
     fs.renameSync(temp, filename);
-  } finally {
-    if (fs.existsSync(temp)) fs.unlinkSync(temp);
-  }
+    registry.snapshot = movedPath(resources[0], filename, guard);
+    resources.length = 0;
+  } finally { cleanCreated(resources, guard); }
 }
 
 /** Parse and shape-check an existing registry; a corrupt or shadowed one is refused, never overwritten. */
 export function loadRegistry(target) {
-  if (!regularFile(registryFile(target))) return [];
-  const registry = readJson(registryFile(target));
+  const snapshot = validateTarget(target);
+  const guard = () => unchanged(snapshot, 'INVALID_TARGET');
+  return registryEntries(assertRegistryPathSafe(target, guard), guard);
+}
+
+function registryEntries(snapshot, guard) {
+  if (!snapshot.exists) return [];
+  const bytes = readFile(snapshot, 'USER_FILE_REFUSED', guard);
+  let registry;
+  try { registry = JSON.parse(bytes.toString('utf8')); } catch { fail('REGISTRY_INVALID'); }
   if (!object(registry) || registry.schemaVersion !== 1 || !Array.isArray(registry.skills)) fail('REGISTRY_INVALID');
   return registry.skills.map(entry => {
     if (!object(entry) || typeof entry.name !== 'string' || !NAME.test(entry.name)
@@ -102,14 +176,16 @@ export function loadRegistry(target) {
  * The lock directory is never auto-cleared — a leftover one means an operator must
  * look before removing it, mirroring the ApprovalStore.transition lock semantics.
  */
-function withInstallLock(target, body) {
+function withInstallLock(target, guard, body) {
   const lock = path.join(target, LOCK);
-  try { fs.mkdirSync(lock, { mode: 0o700 }); } catch { fail('INSTALL_BUSY'); }
-  try {
-    return body();
-  } finally {
-    fs.rmdirSync(lock);
-  }
+  guard();
+  try { fs.mkdirSync(lock, { mode: 0o700 }); } catch { guard(); fail('INSTALL_BUSY'); }
+  // A failed post-create identity check leaves the original lock for recovery;
+  // it must never remove a lock reached through a replaced target ancestor.
+  const snapshot = inspect(lock, 'directory', 'USER_FILE_REFUSED', false, guard);
+  const lockedGuard = () => unchanged(snapshot, 'USER_FILE_REFUSED', guard);
+  try { return body(lockedGuard); }
+  finally { cleanCreated([snapshot], guard); }
 }
 
 /**
@@ -117,33 +193,21 @@ function withInstallLock(target, body) {
  * path (a directory, a symlink/reparse point) refuses the whole install before a
  * single skill byte is written — no partial installs, no silent link replacement.
  */
-function assertRegistryPathSafe(target) {
-  const stat = fs.lstatSync(registryFile(target), { throwIfNoEntry: false });
-  if (stat && !stat.isFile()) fail('USER_FILE_REFUSED');
+function assertRegistryPathSafe(target, guard) {
+  return inspect(registryFile(target), 'file', 'USER_FILE_REFUSED', true, guard);
 }
 
-/**
- * Backups-root refusal check, shared by install and its dry-run: an existing entry
- * must be a plain directory — never a symlink or junction. Creation is not its business.
- */
-function checkBackupsRoot(target) {
-  const stat = fs.lstatSync(path.join(target, BACKUPS), { throwIfNoEntry: false });
-  if (stat && (!stat.isDirectory() || stat.isSymbolicLink())) fail('USER_FILE_REFUSED');
-  return stat;
+/** Backups use the same full-chain checks in real runs and zero-write previews. */
+function checkBackupsRoot(target, guard) {
+  return inspect(path.join(target, BACKUPS), 'directory', 'USER_FILE_REFUSED', true, guard);
 }
 
-/**
- * Backups-root safety: the refusal check above, creation when absent (0755), and a
- * final containment proof — once created/verified its real path must still resolve
- * inside the target so no rename can be redirected outside it.
- */
-function prepareBackups(target) {
-  const backupsRoot = path.join(target, BACKUPS);
-  if (!checkBackupsRoot(target)) fs.mkdirSync(backupsRoot, { mode: 0o755 });
-  const realTarget = fs.realpathSync(target);
-  const realBackups = fs.realpathSync(backupsRoot);
-  if (realBackups !== realTarget && !realBackups.startsWith(`${realTarget}${path.sep}`)) fail('USER_FILE_REFUSED');
-  return backupsRoot;
+function prepareBackups(target, guard) {
+  const before = checkBackupsRoot(target, guard);
+  const snapshot = before.exists ? before : makeDirectory(before, 'USER_FILE_REFUSED', guard);
+  const targetSnapshot = inspect(target, 'directory', 'INVALID_TARGET', false, guard);
+  if (!inside(targetSnapshot.realPath, snapshot.realPath)) fail('USER_FILE_REFUSED');
+  return snapshot;
 }
 
 /**
@@ -153,21 +217,26 @@ function prepareBackups(target) {
  * else the whole install is refused with STAGING_INCONSISTENT (still zero writes —
  * this runs first). Sorted for deterministic result order.
  */
-function stagingPlan(staging) {
-  if (typeof staging !== 'string' || !path.isAbsolute(staging)) fail('INVALID_STAGING');
-  const stat = fs.lstatSync(staging, { throwIfNoEntry: false });
-  if (!stat || !stat.isDirectory() || stat.isSymbolicLink()) fail('INVALID_STAGING');
+function stagingPlan(staging, targetGuard) {
+  const root = inspect(staging, 'directory', 'INVALID_STAGING', false, targetGuard);
+  staging = root.path;
+  const rootGuard = () => unchanged(root, 'INVALID_STAGING', targetGuard);
+  rootGuard();
   const entries = fs.readdirSync(staging, { withFileTypes: true }).sort((a, b) => byName({ name: a.name }, { name: b.name }));
+  rootGuard();
   if (entries.length === 0) fail('NO_SKILLS');
   const plan = [];
   let batchHost, batchCommit;
   for (const entry of entries) {
     if (!entry.isDirectory() || entry.isSymbolicLink()) fail('STAGING_INVALID');
     const dir = path.join(staging, entry.name);
-    // Read the manifest once: these exact bytes are both validated and later installed.
-    if (!stagingFile(dir, 'manifest.json')) fail('STAGING_INVALID');
-    let manifestBytes = null, manifest = null;
-    try { manifestBytes = fs.readFileSync(path.join(dir, 'manifest.json')); manifest = JSON.parse(manifestBytes.toString('utf8')); } catch { manifest = null; }
+    const directory = inspect(dir, 'directory', 'STAGING_INVALID', false, rootGuard);
+    const sourceGuard = () => unchanged(directory, 'STAGING_INVALID', targetGuard);
+    // Read verified descriptors once: these exact bytes are later installed.
+    const manifestFile = inspect(path.join(dir, 'manifest.json'), 'file', 'STAGING_INVALID', false, sourceGuard);
+    const manifestBytes = readFile(manifestFile, 'STAGING_INVALID', sourceGuard);
+    let manifest;
+    try { manifest = JSON.parse(manifestBytes.toString('utf8')); } catch { manifest = null; }
     if (!object(manifest) || manifest.schemaVersion !== 1 || manifest.generator !== GENERATOR
       || typeof manifest.sha256 !== 'string' || !SHA256.test(manifest.sha256)
       || typeof manifest.commit !== 'string' || !COMMIT.test(manifest.commit)
@@ -197,20 +266,17 @@ function stagingPlan(staging) {
       }
     }
     const files = manifest.files !== undefined && Object.keys(manifest.files).length > 0 ? { ...manifest.files } : undefined;
-    const skillFile = path.join(dir, 'SKILL.md');
-    const statSkill = stagingFile(dir, 'SKILL.md');
-    if (!statSkill) fail('STAGING_INVALID');
+    const skill = inspect(path.join(dir, 'SKILL.md'), 'file', 'STAGING_INVALID', false, sourceGuard);
     // Digest the raw Buffer: the staged copy is byte-exact, so verification must be too.
-    const skillBytes = fs.readFileSync(skillFile);
+    const skillBytes = readFile(skill, 'STAGING_INVALID', sourceGuard);
     if (textDigest(skillBytes) !== manifest.sha256) fail('TAMPERED_STAGING');
     // Every listed file gets the same tamper proof: a plain regular file whose bytes
     // hash to the manifest's recorded digest; missing or mismatched is TAMPERED_STAGING.
     const filesBytes = new Map();
     if (files) {
       for (const key of Object.keys(files)) {
-        const listed = path.join(dir, ...key.split('/'));
-        if (!stagingFile(dir, key)) fail('TAMPERED_STAGING');
-        const bytes = fs.readFileSync(listed);
+        const listed = inspect(path.join(dir, ...key.split('/')), 'file', 'TAMPERED_STAGING', false, sourceGuard);
+        const bytes = readFile(listed, 'TAMPERED_STAGING', sourceGuard);
         if (textDigest(bytes) !== files[key]) fail('TAMPERED_STAGING');
         filesBytes.set(key, bytes);
       }
@@ -221,17 +287,16 @@ function stagingPlan(staging) {
   return plan;
 }
 
-/** Target-path validation shared by install and its dry-run: an existing target must be a plain directory (never a symlink or junction). Returns null when absent. */
+/** Full lexical ancestor validation shared by install, uninstall and dry-runs. */
 function validateTarget(target) {
-  if (typeof target !== 'string' || !path.isAbsolute(target)) fail('INVALID_TARGET');
-  const stat = fs.lstatSync(target, { throwIfNoEntry: false });
-  if (stat && (!stat.isDirectory() || stat.isSymbolicLink())) fail('INVALID_TARGET');
-  return stat ?? null;
+  return inspect(target, 'directory', 'INVALID_TARGET', true);
 }
 
-/** Create the target when absent (0755); an existing target must be a plain directory. */
-function prepareTarget(target) {
-  if (!validateTarget(target)) fs.mkdirSync(target, { recursive: true, mode: 0o755 });
+/** Node rechecks reject observed swaps, not a swap inside the final OS syscall. */
+function prepareTarget(snapshot) {
+  unchanged(snapshot, 'INVALID_TARGET');
+  if (snapshot.exists) return snapshot;
+  return makeDirectory(snapshot, 'INVALID_TARGET', noop, true);
 }
 
 /**
@@ -239,17 +304,17 @@ function prepareTarget(target) {
  * not verifiably ours (no manifest / foreign generator / not a plain directory)
  * aborts the whole install with USER_FILE_REFUSED and zero files written.
  */
-function classify(plan, target, previous) {
+function classify(plan, target, previous, guard) {
   const recorded = new Map(previous.map(entry => [entry.name, entry]));
   for (const item of plan) {
     const dest = path.join(target, item.name);
-    const stat = fs.lstatSync(dest, { throwIfNoEntry: false });
-    if (!stat) {
+    const snapshot = inspect(dest, 'directory', 'USER_FILE_REFUSED', true, guard);
+    if (!snapshot.exists) {
+      item.destination = snapshot;
       item.action = 'install';
       continue;
     }
-    if (!stat.isDirectory() || stat.isSymbolicLink()) fail('USER_FILE_REFUSED');
-    const manifest = readJson(path.join(dest, 'manifest.json'));
+    const manifest = readJson(path.join(dest, 'manifest.json'), guard);
     if (!object(manifest) || manifest.generator !== GENERATOR) fail('USER_FILE_REFUSED');
     // Same proof as uninstall: a user-edited or extended skill is never moved into purgeable backups.
     // Registry lost (codex audit #2): the generator tag alone must NOT authorize takeover —
@@ -259,8 +324,8 @@ function classify(plan, target, previous) {
     // beyond SKILL.md/manifest.json", and an extra file violates it just the same).
     // A pristine directory still takeovers (recovery path).
     const record = recorded.get(item.name);
-    if (record) verifyOwned(dest, record);
-    else verifyOwned(dest, object(manifest.files) ? { sha256: manifest.sha256, files: manifest.files } : { sha256: manifest.sha256 });
+    item.record = record ?? (object(manifest.files) ? { sha256: manifest.sha256, files: manifest.files } : { sha256: manifest.sha256 });
+    item.destination = verifyOwned(dest, item.record, guard);
     // Files-aware skip: an identical SKILL.md digest alone is not enough — the staged
     // files map (key set + digests) must also agree with the registry record (or,
     // without one, with the on-disk manifest's own map). Any disagreement routes to
@@ -279,12 +344,13 @@ function classify(plan, target, previous) {
  * takes no install lock, so it never fails with INSTALL_BUSY and may read a registry
  * that a concurrent install is about to change (the report can be stale by design).
  */
-function dryRunReport(plan, target) {
-  validateTarget(target);
-  assertRegistryPathSafe(target);
-  const previous = loadRegistry(target);
-  classify(plan, target, previous);
-  if (plan.some(item => item.action === 'backup')) checkBackupsRoot(target);
+function dryRunReport(plan, target, guard) {
+  guard();
+  const registry = assertRegistryPathSafe(target, guard);
+  const previous = registryEntries(registry, guard);
+  classify(plan, target, previous, guard);
+  if (plan.some(item => item.action === 'backup')) checkBackupsRoot(target, guard);
+  guard();
   const wouldInstall = [], wouldSkip = [], wouldBackUp = [];
   for (const item of plan) {
     if (item.action === 'skip') wouldSkip.push(item.name);
@@ -297,89 +363,100 @@ function dryRunReport(plan, target) {
 }
 
 export function installSkills({ staging, target, now = () => new Date().toISOString(), dryRun = false }) {
-  const plan = stagingPlan(staging);
-  if (dryRun) return dryRunReport(plan, target);
-  prepareTarget(target);
-  return withInstallLock(target, () => {
-    // A temporary-looking name is not proof of ownership. In particular, a
-    // failed preflight must not delete an operator's recovery files. Only clean
-    // the unique directory THIS invocation created (the per-item finally below).
-    // Preserve old orphans for explicit operator recovery rather than guessing.
-    assertRegistryPathSafe(target);
-    // Read-modify-write inside the lock: a concurrent installer can never lose updates.
-    const previous = loadRegistry(target);
-    classify(plan, target, previous);
-    const backupsRoot = plan.some(item => item.action === 'backup') ? prepareBackups(target) : null;
+  let targetSnapshot = validateTarget(target);
+  target = targetSnapshot.path;
+  const targetGuard = () => unchanged(targetSnapshot, 'INVALID_TARGET');
+  const plan = stagingPlan(staging, targetGuard);
+  if (dryRun) return dryRunReport(plan, target, targetGuard);
+  targetSnapshot = prepareTarget(targetSnapshot);
+  return withInstallLock(target, targetGuard, guard => {
+    const registry = { snapshot: assertRegistryPathSafe(target, guard) };
+    // Read-modify-write inside the lock: concurrent installers cannot lose updates.
+    const previous = registryEntries(registry.snapshot, guard);
+    classify(plan, target, previous, guard);
+    const backups = plan.some(item => item.action === 'backup') ? prepareBackups(target, guard) : null;
+    const backupGuard = () => unchanged(backups, 'USER_FILE_REFUSED', guard);
     const installed = [], skipped = [], backedUp = [];
     const merged = new Map(previous.map(entry => [entry.name, entry]));
     for (const item of plan) {
+      const dest = path.join(target, item.name);
       if (item.action !== 'skip') {
-        // Build the new directory completely beside the old one, then swap with renames:
-        // a failure leaves either the old skill or the new one in place, never a half-written dir.
+        // Build beside the old directory; every cleanup entry is recorded only
+        // after successful exclusive creation and a checked identity capture.
         const temp = path.join(target, `${TMP_PREFIX}${randomUUID()}`);
-        // Rollback state (codex audit #3): once the old directory has been moved into the
-        // backups root, ANY later failure in this block (new-dir rename, registry commit)
-        // restores it, so the documented backup-rollback claim holds under fault injection.
-        let backupPath = null;
+        const resources = [];
+        let backup = null;
         try {
-          fs.mkdirSync(temp, { mode: 0o755 });
-          fs.writeFileSync(path.join(temp, 'SKILL.md'), item.skillBytes, { flag: 'wx', mode: 0o644 });
-          fs.writeFileSync(path.join(temp, 'manifest.json'), item.manifestBytes, { flag: 'wx', mode: 0o644 });
-          // Listed files land in freshly created subdirectories (0755) as plain wx files (0644).
+          const tempSnapshot = makeDirectory(inspect(temp, 'directory', 'USER_FILE_REFUSED', true, guard), 'USER_FILE_REFUSED', guard);
+          resources.push(tempSnapshot);
+          const tempGuard = () => unchanged(tempSnapshot, 'USER_FILE_REFUSED', guard);
+          writeCreated(path.join(temp, 'SKILL.md'), item.skillBytes, tempGuard, resources);
+          writeCreated(path.join(temp, 'manifest.json'), item.manifestBytes, tempGuard, resources);
           for (const [key, bytes] of item.filesBytes) {
             const listed = path.join(temp, ...key.split('/'));
-            fs.mkdirSync(path.dirname(listed), { recursive: true, mode: 0o755 });
-            fs.writeFileSync(listed, bytes, { flag: 'wx', mode: 0o644 });
+            const before = inspect(path.dirname(listed), 'directory', 'USER_FILE_REFUSED', true, tempGuard);
+            if (!before.exists) {
+              makeDirectory(before, 'USER_FILE_REFUSED', tempGuard, true);
+              for (const created of before.missing) resources.push(inspect(created, 'directory', 'USER_FILE_REFUSED', false, tempGuard));
+            }
+            writeCreated(listed, bytes, tempGuard, resources);
           }
           if (item.action === 'backup') {
-            let stamp = Date.now();
-            while (fs.existsSync(path.join(backupsRoot, `${item.name}-${stamp}`))) stamp += 1;
-            backupPath = path.join(backupsRoot, `${item.name}-${stamp}`);
-            fs.renameSync(path.join(target, item.name), backupPath);
+            let stamp = Date.now(), slot;
+            do { slot = inspect(path.join(backups.path, `${item.name}-${stamp++}`), 'directory', 'USER_FILE_REFUSED', true, backupGuard); }
+            while (slot.exists);
+            unchangedOwned(item.destination, guard);
+            unchanged(slot, 'USER_FILE_REFUSED', backupGuard);
+            fs.renameSync(dest, slot.path);
+            backup = movedPath(item.destination, slot.path, backupGuard);
             backedUp.push(item.name);
-          }
-          fs.renameSync(temp, path.join(target, item.name));
+          } else unchanged(item.destination, 'USER_FILE_REFUSED', guard);
+          for (const snapshot of resources) unchanged(snapshot, 'USER_FILE_REFUSED', tempGuard);
+          const absent = inspect(dest, 'directory', 'USER_FILE_REFUSED', true, guard);
+          if (absent.exists) fail('USER_FILE_REFUSED');
+          unchanged(absent, 'USER_FILE_REFUSED', tempGuard);
+          fs.renameSync(temp, dest);
+          const moved = resources.map(snapshot => movedPath(snapshot, path.join(dest, path.relative(temp, snapshot.path)), guard));
+          const record = { name: item.name, sha256: item.sha256, ...(item.files ? { files: item.files } : {}) };
+          const active = { ...moved[0], tree: moved, record };
           installed.push(item.name);
-          // The registry entry carries the files map exactly when the manifest listed files.
-          const entry = { name: item.name, sha256: item.sha256 };
-          if (item.files) entry.files = item.files;
-          merged.set(item.name, entry);
-          // Commit each skill to the registry as soon as it is in place — a failure here
-          // rolls the directory back too (registry and disk never disagree at rest).
+          merged.set(item.name, record);
           try {
-            writeRegistry(target, [...merged.values()].sort(byName), now);
+            unchangedOwned(active, guard);
+            writeRegistry(target, [...merged.values()].sort(byName), now, guard, registry);
           } catch (error) {
-            fs.rmSync(path.join(target, item.name), { recursive: true, force: true });
+            // Delete only the still-identical installed tree. If rollback cannot
+            // remove it, the backup remains the surviving original version.
+            unchangedOwned(active, guard);
+            fs.rmSync(dest, { recursive: true, force: true });
             merged.delete(item.name);
             installed.pop();
             throw error;
           }
         } catch (error) {
-          // Restore the pre-install state: old dir back in place, no backup entry left.
-          // Round 3 (audit #15): when the active directory could NOT be removed (e.g.
-          // the new dir survived a failed registry-commit rollback), "target exists" is
-          // NOT evidence the old version is in place — the backup may be the ONLY
-          // surviving old copy, so it is kept, never deleted, in that state.
-          if (backupPath !== null && fs.existsSync(backupPath) && !fs.existsSync(path.join(target, item.name))) {
-            fs.renameSync(backupPath, path.join(target, item.name));
-            backedUp.pop();
+          if (backup !== null) {
+            unchanged(backup, 'USER_FILE_REFUSED', backupGuard);
+            const vacant = inspect(dest, 'directory', 'USER_FILE_REFUSED', true, guard);
+            if (!vacant.exists) {
+              unchanged(vacant, 'USER_FILE_REFUSED', backupGuard);
+              fs.renameSync(backup.path, dest);
+              movedPath(backup, dest, guard);
+              backedUp.pop();
+            }
           }
           throw error;
-        } finally {
-          fs.rmSync(temp, { recursive: true, force: true });
-        }
+        } finally { cleanCreated(resources, guard); }
       } else {
+        unchangedOwned(item.destination, guard);
         skipped.push(item.name);
-        // A skipped skill keeps its recorded entry byte-for-byte; only an unrecorded
-        // one (e.g. after the registry was lost) is newly committed to the registry.
+        // Preserve existing records; registry-loss recovery can add a verified one.
         if (!merged.has(item.name)) {
-          const entry = { name: item.name, sha256: item.sha256 };
-          if (item.files) entry.files = item.files;
-          merged.set(item.name, entry);
+          merged.set(item.name, { name: item.name, sha256: item.sha256, ...(item.files ? { files: item.files } : {}) });
         }
-        writeRegistry(target, [...merged.values()].sort(byName), now);
+        writeRegistry(target, [...merged.values()].sort(byName), now, guard, registry);
       }
     }
+    guard();
     return { installed, skipped, backedUp };
   });
 }
@@ -396,20 +473,29 @@ export function installSkills({ staging, target, now = () => new Date().toISOStr
  * drift — a user edit, an extra or missing file, a forged registry — refuses the
  * whole operation with zero deletions; only an already-absent directory returns false.
  */
-function verifyOwned(dir, record) {
-  const dirStat = fs.lstatSync(dir, { throwIfNoEntry: false });
-  if (!dirStat) return false; // already removed: nothing of ours is left to delete
-  if (!dirStat.isDirectory() || dirStat.isSymbolicLink()) fail('USER_FILE_REFUSED');
+function verifyOwned(dir, record, guard = noop) {
+  const directory = inspect(dir, 'directory', 'USER_FILE_REFUSED', true, guard);
+  if (!directory.exists) return false; // already removed: nothing of ours is left to delete
+  const directoryGuard = () => unchanged(directory, 'USER_FILE_REFUSED', guard);
   const listed = record.files ? Object.keys(record.files) : [];
-  const found = [], dirs = [];
+  const found = [], dirs = [], snapshots = [directory];
   const walk = (rel, abs) => {
-    for (const entry of fs.readdirSync(abs, { withFileTypes: true })) {
+    const current = abs === dir ? directory : inspect(abs, 'directory', 'USER_FILE_REFUSED', false, directoryGuard);
+    if (abs !== dir) snapshots.push(current);
+    const currentGuard = () => unchanged(current, 'USER_FILE_REFUSED', directoryGuard);
+    currentGuard();
+    const entries = fs.readdirSync(abs, { withFileTypes: true });
+    currentGuard();
+    for (const entry of entries) {
       const child = rel === '' ? entry.name : `${rel}/${entry.name}`;
       if (entry.isSymbolicLink() || (!entry.isFile() && !entry.isDirectory())) fail('USER_FILE_REFUSED');
       if (entry.isDirectory()) {
         dirs.push(child);
         walk(child, path.join(abs, entry.name));
-      } else found.push(child);
+      } else {
+        found.push(child);
+        snapshots.push(inspect(path.join(abs, entry.name), 'file', 'USER_FILE_REFUSED', false, currentGuard));
+      }
     }
   };
   walk('', dir);
@@ -424,13 +510,29 @@ function verifyOwned(dir, record) {
     for (let i = 1; i < parts.length; i += 1) onPath.add(parts.slice(0, i).join('/'));
   }
   if (dirs.some(dir => !onPath.has(dir))) fail('USER_FILE_REFUSED'); // no empty or stray subdirectories
-  const manifest = readJson(path.join(dir, 'manifest.json'));
+  const bytes = key => {
+    const snapshot = snapshots.find(item => item.path === path.join(dir, ...key.split('/')));
+    return readFile(snapshot, 'USER_FILE_REFUSED', directoryGuard);
+  };
+  let manifest;
+  try { manifest = JSON.parse(bytes('manifest.json').toString('utf8')); }
+  catch (error) { directoryGuard(); if (error.message === 'USER_FILE_REFUSED') throw error; fail('USER_FILE_REFUSED'); }
   if (!object(manifest) || manifest.generator !== GENERATOR || manifest.sha256 !== record.sha256) fail('USER_FILE_REFUSED');
-  if (textDigest(fs.readFileSync(path.join(dir, 'SKILL.md'))) !== record.sha256) fail('USER_FILE_REFUSED');
+  if (textDigest(bytes('SKILL.md')) !== record.sha256) fail('USER_FILE_REFUSED');
   for (const key of listed) {
-    if (textDigest(fs.readFileSync(path.join(dir, ...key.split('/')))) !== record.files[key]) fail('USER_FILE_REFUSED');
+    if (textDigest(bytes(key)) !== record.files[key]) fail('USER_FILE_REFUSED');
   }
-  return true;
+  for (const snapshot of snapshots) unchanged(snapshot, 'USER_FILE_REFUSED', guard);
+  return { ...directory, tree: snapshots, record };
+}
+
+function unchangedOwned(owned, guard) {
+  for (const snapshot of owned.tree) {
+    unchanged(snapshot, 'USER_FILE_REFUSED', guard);
+    if (snapshot.expectedBytes !== undefined) assertCreatedContents(snapshot, guard);
+  }
+  // Identity alone does not detect new siblings or in-place content edits.
+  if (!verifyOwned(owned.path, owned.record, guard)) fail('USER_FILE_REFUSED');
 }
 
 /**
@@ -439,22 +541,23 @@ function verifyOwned(dir, record) {
  * still proves our generator AND exact file contents. User archives and edited entries stay,
  * uncounted — ownership for deletion is proven by content, not by name alone.
  */
-function purgeableEntries(backupsRoot) {
+function purgeableEntries(backups, guard) {
   const purgeable = [];
-  for (const entry of fs.readdirSync(backupsRoot)) {
+  const backupGuard = () => unchanged(backups, 'USER_FILE_REFUSED', guard);
+  backupGuard();
+  const entries = fs.readdirSync(backups.path);
+  backupGuard();
+  for (const entry of entries) {
     if (!OUR_BACKUP.test(entry)) continue;
-    const dir = path.join(backupsRoot, entry);
+    const dir = path.join(backups.path, entry);
     try {
-      if (!stagingFile(dir, 'manifest.json')) continue;
-      const stat = fs.lstatSync(dir);
-      if (!stat.isDirectory() || stat.isSymbolicLink()) continue;
-      const manifest = readJson(path.join(dir, 'manifest.json'));
+      const manifest = readJson(path.join(dir, 'manifest.json'), backupGuard);
       if (!object(manifest) || manifest.generator !== GENERATOR || !SHA256.test(manifest.sha256 ?? '')) continue;
       if (manifest.files !== undefined && (!object(manifest.files) || Object.entries(manifest.files).some(([key, hash]) => !listedKey(key) || typeof hash !== 'string' || !SHA256.test(hash)))) continue;
-      // Backups can be edited after creation. A generator tag authorizes neither
-      // deleting added notes nor removing modified skills or auxiliary files.
-      if (verifyOwned(dir, { sha256: manifest.sha256, files: manifest.files })) purgeable.push(entry);
-    } catch { /* unreadable or changed backup: preserve it, never count it as purgeable */ }
+      // Preserve edited/unreadable archives. A tag or timestamp is never ownership.
+      const owned = verifyOwned(dir, { sha256: manifest.sha256, files: manifest.files }, backupGuard);
+      if (owned) purgeable.push({ name: entry, owned });
+    } catch { backupGuard(); /* changed backup: preserve it, never count it */ }
   }
   return purgeable;
 }
@@ -471,55 +574,74 @@ function purgeableEntries(backupsRoot) {
  * and the report may describe a registry a concurrent writer is about to change
  * (stale by design, like install's dry-run).
  */
-function uninstallDryRunReport(target, purge) {
-  if (!regularFile(registryFile(target))) return { dryRun: true, wouldUninstall: [], wouldPurge: [] };
+function uninstallDryRunReport(target, purge, guard) {
+  const registry = assertRegistryPathSafe(target, guard);
+  if (!registry.exists) return { dryRun: true, wouldUninstall: [], wouldPurge: [] };
   const recorded = new Map();
-  for (const entry of loadRegistry(target)) {
+  for (const entry of registryEntries(registry, guard)) {
     if (!recorded.has(entry.name)) recorded.set(entry.name, entry);
   }
-  for (const [name, entry] of recorded) verifyOwned(path.join(target, name), entry);
+  for (const [name, entry] of recorded) verifyOwned(path.join(target, name), entry, guard);
   const report = { dryRun: true, wouldUninstall: [...recorded.keys()], wouldPurge: [] };
   if (purge) {
-    const backupsRoot = path.join(target, BACKUPS);
-    const backupsStat = fs.lstatSync(backupsRoot, { throwIfNoEntry: false });
-    if (backupsStat?.isDirectory() && !backupsStat.isSymbolicLink()) {
-      report.wouldPurge = purgeableEntries(backupsRoot);
-      // The real purge rmdir's the root exactly when nothing would remain in it.
-      if (fs.readdirSync(backupsRoot).length === report.wouldPurge.length) report.wouldEmptyBackupsRoot = true;
+    const backups = checkBackupsRoot(target, guard);
+    if (backups.exists) {
+      report.wouldPurge = purgeableEntries(backups, guard).map(entry => entry.name);
+      unchanged(backups, 'USER_FILE_REFUSED', guard);
+      if (fs.readdirSync(backups.path).length === report.wouldPurge.length) report.wouldEmptyBackupsRoot = true;
+      unchanged(backups, 'USER_FILE_REFUSED', guard);
     }
   }
+  unchanged(registry, 'USER_FILE_REFUSED', guard);
+  guard();
   return report;
 }
 
 export function uninstallSkills({ target, purge = false, dryRun = false, now = () => new Date().toISOString() }) {
-  if (typeof target !== 'string' || !path.isAbsolute(target)) fail('INVALID_TARGET');
-  const stat = fs.lstatSync(target, { throwIfNoEntry: false });
-  if (!stat) return dryRun ? { dryRun: true, wouldUninstall: [], wouldPurge: [] } : { uninstalled: [], backupsRemoved: 0 };
-  if (!stat.isDirectory() || stat.isSymbolicLink()) fail('INVALID_TARGET');
-  if (dryRun) return uninstallDryRunReport(target, purge);
-  return withInstallLock(target, () => {
-    if (!regularFile(registryFile(target))) return { uninstalled: [], backupsRemoved: 0 };
+  const snapshot = validateTarget(target);
+  target = snapshot.path;
+  const targetGuard = () => unchanged(snapshot, 'INVALID_TARGET');
+  if (!snapshot.exists) {
+    targetGuard();
+    return dryRun ? { dryRun: true, wouldUninstall: [], wouldPurge: [] } : { uninstalled: [], backupsRemoved: 0 };
+  }
+  if (dryRun) return uninstallDryRunReport(target, purge, targetGuard);
+  return withInstallLock(target, targetGuard, guard => {
+    const registry = { snapshot: assertRegistryPathSafe(target, guard) };
+    if (!registry.snapshot.exists) return { uninstalled: [], backupsRemoved: 0 };
     const recorded = new Map();
-    for (const entry of loadRegistry(target)) {
+    for (const entry of registryEntries(registry.snapshot, guard)) {
       if (!recorded.has(entry.name)) recorded.set(entry.name, entry);
     }
-    // Phase 1 — every registered directory must still be entirely ours before anything is deleted.
-    const present = [...recorded].filter(([name, entry]) => verifyOwned(path.join(target, name), entry)).map(([name]) => name);
-    // Phase 2 — delete, then rewrite the registry atomically.
-    for (const name of present) fs.rmSync(path.join(target, name), { recursive: true });
+    // Validate the entire batch before deletions, then compare saved identities
+    // again at each mutation. A fresh scan never authorizes a replacement tree.
+    const present = [];
+    for (const [name, entry] of recorded) {
+      const owned = verifyOwned(path.join(target, name), entry, guard);
+      if (owned) present.push(owned);
+    }
+    const backups = purge ? checkBackupsRoot(target, guard) : null;
+    const archives = backups?.exists ? purgeableEntries(backups, guard) : [];
+    const backupGuard = () => unchanged(backups, 'USER_FILE_REFUSED', guard);
+    for (const owned of present) {
+      unchanged(registry.snapshot, 'USER_FILE_REFUSED', guard);
+      unchangedOwned(owned, guard);
+      fs.rmSync(owned.path, { recursive: true });
+    }
     let backupsRemoved = 0;
-    const backupsRoot = path.join(target, BACKUPS);
-    if (purge) {
-      const backupsStat = fs.lstatSync(backupsRoot, { throwIfNoEntry: false });
-      if (backupsStat?.isDirectory() && !backupsStat.isSymbolicLink()) {
-        for (const entry of purgeableEntries(backupsRoot)) {
-          fs.rmSync(path.join(backupsRoot, entry), { recursive: true });
-          backupsRemoved += 1;
-        }
-        if (fs.readdirSync(backupsRoot).length === 0) fs.rmdirSync(backupsRoot);
+    if (backups?.exists) {
+      for (const entry of archives) {
+        unchangedOwned(entry.owned, backupGuard);
+        fs.rmSync(entry.owned.path, { recursive: true });
+        backupsRemoved += 1;
+      }
+      backupGuard();
+      if (fs.readdirSync(backups.path).length === 0) {
+        backupGuard();
+        fs.rmdirSync(backups.path);
       }
     }
-    writeRegistry(target, [], now);
+    writeRegistry(target, [], now, guard, registry);
     return { uninstalled: [...recorded.keys()], backupsRemoved };
   });
 }

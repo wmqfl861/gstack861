@@ -1,0 +1,138 @@
+✖ zcode config CLI previews without writes then applies and uninstalls explicitly (322.2491ms)
+✔ zcode CLI refuses policy under workspace before config write (145.8943ms)
+✖ merges workspace hook config while preserving unrelated settings and existing hooks (6.909ms)
+✖ apply is idempotent and uninstall removes only the exact owned hook (5.0394ms)
+✖ optimistic concurrency refuses config changes between plan and apply (2.7157ms)
+✖ refuses malformed, symlinked, hardlinked and disabled configs (5.5607ms)
+✖ refuses symlinked .zcode directory and preserves foreign hooks on uninstall (6.1461ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 1
+ℹ fail 6
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 816.7141
+
+✖ failing tests:
+
+test at test\host-setup-cli.test.mjs:28:1
+✖ zcode config CLI previews without writes then applies and uninstalls explicitly (322.2491ms)
+  AssertionError [ERR_ASSERTION]: gstack861: ZCODE_CONFIG_BUSY
+  
+  
+  1 !== 0
+  
+      at TestContext.<anonymous> (file:///<REPO>/test/host-setup-cli.test.mjs:33:9)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test\zcode-profile.test.mjs:13:1
+✖ merges workspace hook config while preserving unrelated settings and existing hooks (6.909ms)
+  Error: ABSOLUTE_PATH_REQUIRED
+      at fail (file:///<REPO>/src/zcode-profile.mjs:6:30)
+      at planZcodeConfig (file:///<REPO>/src/zcode-profile.mjs:51:99)
+      at TestContext.<anonymous> (file:///<REPO>/test/zcode-profile.test.mjs:17:13)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+
+test at test\zcode-profile.test.mjs:23:1
+✖ apply is idempotent and uninstall removes only the exact owned hook (5.0394ms)
+  Error: ABSOLUTE_PATH_REQUIRED
+      at fail (file:///<REPO>/src/zcode-profile.mjs:6:30)
+      at planZcodeConfig (file:///<REPO>/src/zcode-profile.mjs:51:99)
+      at TestContext.<anonymous> (file:///<REPO>/test/zcode-profile.test.mjs:24:27)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)
+
+test at test\zcode-profile.test.mjs:30:1
+✖ optimistic concurrency refuses config changes between plan and apply (2.7157ms)
+  Error: ABSOLUTE_PATH_REQUIRED
+      at fail (file:///<REPO>/src/zcode-profile.mjs:6:30)
+      at planZcodeConfig (file:///<REPO>/src/zcode-profile.mjs:51:99)
+      at TestContext.<anonymous> (file:///<REPO>/test/zcode-profile.test.mjs:31:26)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at test\zcode-profile.test.mjs:35:1
+✖ refuses malformed, symlinked, hardlinked and disabled configs (5.5607ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /ZCODE_CONFIG_INVALID/. Input:
+  
+  'Error: ABSOLUTE_PATH_REQUIRED'
+  
+      at TestContext.<anonymous> (file:///<REPO>/test/zcode-profile.test.mjs:37:37)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: Error: ABSOLUTE_PATH_REQUIRED
+        at fail (file:///<REPO>/src/zcode-profile.mjs:6:30)
+        at planZcodeConfig (file:///<REPO>/src/zcode-profile.mjs:51:99)
+        at file:///<REPO>/test/zcode-profile.test.mjs:37:48
+        at getActual (node:assert:611:5)
+        at strict.throws (node:assert:759:24)
+        at TestContext.<anonymous> (file:///<REPO>/test/zcode-profile.test.mjs:37:37)
+        at Test.runInAsyncScope (node:async_hooks:227:14)
+        at Test.run (node:internal/test_runner/test:1402:25)
+        at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+        at Test.postRun (node:internal/test_runner/test:1542:19),
+    expected: /ZCODE_CONFIG_INVALID/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at test\zcode-profile.test.mjs:43:1
+✖ refuses symlinked .zcode directory and preserves foreign hooks on uninstall (6.1461ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /ZCODE_CONFIG_DIR_UNSAFE/. Input:
+  
+  'Error: ABSOLUTE_PATH_REQUIRED'
+  
+      at TestContext.<anonymous> (file:///<REPO>/test/zcode-profile.test.mjs:46:9)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: Error: ABSOLUTE_PATH_REQUIRED
+        at fail (file:///<REPO>/src/zcode-profile.mjs:6:30)
+        at planZcodeConfig (file:///<REPO>/src/zcode-profile.mjs:51:99)
+        at file:///<REPO>/test/zcode-profile.test.mjs:46:20
+        at getActual (node:assert:611:5)
+        at strict.throws (node:assert:759:24)
+        at TestContext.<anonymous> (file:///<REPO>/test/zcode-profile.test.mjs:46:9)
+        at Test.runInAsyncScope (node:async_hooks:227:14)
+        at Test.run (node:internal/test_runner/test:1402:25)
+        at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+        at Test.postRun (node:internal/test_runner/test:1542:19),
+    expected: /ZCODE_CONFIG_DIR_UNSAFE/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+STDERR

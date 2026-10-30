@@ -1,0 +1,27 @@
+✖ R2 moved file content proof rejects an in-place manifest edit at the existing install verification (322.8166ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 506.0023
+
+✖ failing tests:
+
+test at gstack861-m3-audit\test\install.test.mjs:1745:1
+✖ R2 moved file content proof rejects an in-place manifest edit at the existing install verification (322.8166ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/install.test.mjs:1766:16)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /^Error: USER_FILE_REFUSED$/,
+    operator: 'throws',
+    diff: 'simple'
+  }

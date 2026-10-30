@@ -1,0 +1,1 @@
+{"label":"startup-invalid-policy","status":"passed","toolBodyInvocations":{"write":0,"read":0},"controls":["startup-invalid-policy"],"warningCount":1}

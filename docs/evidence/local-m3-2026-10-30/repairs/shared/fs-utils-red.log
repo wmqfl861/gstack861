@@ -1,0 +1,132 @@
+✖ plain path inspection is read-only and reads an identity-verified regular file (7.5904ms)
+✖ plain paths refuse links in a leaf or any ancestor, plus hardlinked file leaves (5.1796ms)
+✖ plain paths reject traversal, controls, wrong ancestor types and absent required paths (3.5901ms)
+✖ snapshots reject plain ancestor replacement even with identical file bytes (3.2966ms)
+✖ snapshot expected absence is not rebased over unexpected creation (3.353ms)
+✖ verified file reads detect a file replacement at open and always close the descriptor (3.0961ms)
+✖ native Windows extended namespace resolves to the same plain physical path (3.0313ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 0
+ℹ fail 7
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 185.1351
+
+✖ failing tests:
+
+test at test\fs-utils.test.mjs:21:1
+✖ plain path inspection is read-only and reads an identity-verified regular file (7.5904ms)
+  TypeError: helpers.inspectPlainPath is not a function
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/fs-utils.test.mjs:23:28)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+
+test at test\fs-utils.test.mjs:39:1
+✖ plain paths refuse links in a leaf or any ancestor, plus hardlinked file leaves (5.1796ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /PATH_UNSAFE/. Input:
+  
+  'TypeError: helpers.inspectPlainPath is not a function'
+  
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/fs-utils.test.mjs:43:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: TypeError: helpers.inspectPlainPath is not a function
+        at file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/fs-utils.test.mjs:43:31
+        at getActual (node:assert:611:5)
+        at strict.throws (node:assert:759:24)
+        at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/fs-utils.test.mjs:43:10)
+        at Test.runInAsyncScope (node:async_hooks:227:14)
+        at Test.run (node:internal/test_runner/test:1402:25)
+        at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+        at Test.postRun (node:internal/test_runner/test:1542:19)
+        at Test.run (node:internal/test_runner/test:1467:12)
+        at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3),
+    expected: /PATH_UNSAFE/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at test\fs-utils.test.mjs:52:1
+✖ plain paths reject traversal, controls, wrong ancestor types and absent required paths (3.5901ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /ABSOLUTE_PATH_REQUIRED/. Input:
+  
+  'TypeError: helpers.inspectPlainPath is not a function'
+  
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/fs-utils.test.mjs:55:12)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: TypeError: helpers.inspectPlainPath is not a function
+        at file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/fs-utils.test.mjs:55:33
+        at getActual (node:assert:611:5)
+        at strict.throws (node:assert:759:24)
+        at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/fs-utils.test.mjs:55:12)
+        at Test.runInAsyncScope (node:async_hooks:227:14)
+        at Test.run (node:internal/test_runner/test:1402:25)
+        at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+        at Test.postRun (node:internal/test_runner/test:1542:19)
+        at Test.run (node:internal/test_runner/test:1467:12)
+        at async Test.processPendingSubtests (node:internal/test_runner/test:974:7),
+    expected: /ABSOLUTE_PATH_REQUIRED/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at test\fs-utils.test.mjs:63:1
+✖ snapshots reject plain ancestor replacement even with identical file bytes (3.2966ms)
+  TypeError: helpers.inspectPlainPath is not a function
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/fs-utils.test.mjs:65:28)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at test\fs-utils.test.mjs:73:1
+✖ snapshot expected absence is not rebased over unexpected creation (3.353ms)
+  TypeError: helpers.inspectPlainPath is not a function
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/fs-utils.test.mjs:75:28)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at test\fs-utils.test.mjs:84:1
+✖ verified file reads detect a file replacement at open and always close the descriptor (3.0961ms)
+  TypeError: helpers.inspectPlainPath is not a function
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/fs-utils.test.mjs:85:44)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at test\fs-utils.test.mjs:104:3
+✖ native Windows extended namespace resolves to the same plain physical path (3.0313ms)
+  TypeError: helpers.inspectPlainPath is not a function
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/fs-utils.test.mjs:106:30)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)

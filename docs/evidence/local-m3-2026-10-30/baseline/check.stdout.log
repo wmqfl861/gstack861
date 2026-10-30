@@ -1,0 +1,5 @@
+
+> @gstack861/native-core@0.4.33 check
+> node scripts/check.mjs
+
+Syntax: 115 modules; baseline: 3 full commit pins; HEAD evidence: stale (warning; CI green is the merge gate); no dependencies or model calls.

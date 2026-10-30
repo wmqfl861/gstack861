@@ -1,0 +1,116 @@
+
+> @gstack861/native-core@0.4.33 doctor
+> node bin/gstack861.mjs doctor
+
+{
+  "version": "0.4.33",
+  "node": "v24.21.0",
+  "platform": "win32",
+  "baseline": {
+    "schemaVersion": 1,
+    "reviewedAt": "2026-10-26",
+    "gstack": {
+      "repository": "https://github.com/garrytan/gstack.git",
+      "commit": "5755601dac5d35ebd7dde181fdefe52a023c73d9",
+      "path": "upstream/gstack"
+    },
+    "hosts": {
+      "zcode": {
+        "repository": "https://github.com/zai-org/ZCode.git",
+        "commit": "3c5b227649371507ddc4eb46ac5133afe6db1cab",
+        "evidence": "source-inspected",
+        "certification": "not-run"
+      },
+      "dsh": {
+        "repository": "https://github.com/deepseek-ai/deepseek-harness.git",
+        "commit": "22ddee3792402c3e70ec5f86a63c3e3e895a2f60",
+        "evidence": "source-inspected",
+        "certification": "not-run"
+      }
+    }
+  },
+  "hosts": {
+    "zcode": "workflow-harness-verified-offline",
+    "dsh": "ship-and-recovery-vertical-verified-single-keyed-runs"
+  },
+  "verticals": {
+    "verify-dsh-guard": {
+      "keyed": true,
+      "status": "deny-verified (2026-10-27)",
+      "evidence": "docs/verification-2026-10-27-dsh-pipeline.md"
+    },
+    "verify-dsh-skills": {
+      "keyed": false,
+      "status": "keyless-by-design; activation-verified 3 controls (batch 10b)",
+      "evidence": "docs/verification-2026-10-27-batch10b.json"
+    },
+    "verify-dsh-vertical": {
+      "keyed": true,
+      "status": "skills-runtime+allow-path verified (2026-10-27)",
+      "evidence": "docs/verification-2026-10-27-dsh-vertical.md"
+    },
+    "verify-dsh-robustness": {
+      "keyed": true,
+      "status": "deny->allow consistency verified (2026-10-28)",
+      "evidence": "docs/verification-2026-10-28-dsh-robustness-vertical.md"
+    },
+    "verify-model-review": {
+      "keyed": false,
+      "status": "five-segment readiness verified (batch 11)",
+      "evidence": "docs/verification-2026-10-27-batch11.json"
+    },
+    "dsh-mini-vertical": {
+      "keyed": true,
+      "status": "spec->implement->qa+journaling vertical-verified (2026-10-28; 1 honest fail+fix)",
+      "evidence": "docs/verification-2026-10-28-dsh-robustness-vertical.md"
+    },
+    "dsh-ship-vertical": {
+      "keyed": true,
+      "status": "ship+approvals vertical-verified (2026-10-28)",
+      "evidence": "docs/verification-2026-10-28-batch14-dsh-ship.md"
+    },
+    "dsh-recovery-vertical": {
+      "keyed": true,
+      "status": "reap->resume recovery vertical-verified (2026-10-28)",
+      "evidence": "docs/verification-2026-10-28-batch16.json"
+    },
+    "zcode-workflow-vertical": {
+      "keyed": false,
+      "status": "offline-workflow-journal-harness PASS (2026-10-28)",
+      "evidence": "docs/verification-2026-10-28-batch16.json"
+    },
+    "zcode-acceptance-vertical": {
+      "keyed": true,
+      "status": "batch 25: ③ controlled-session acceptance via real headless spawns (see VERIFICATION round 33)",
+      "evidence": "docs/VERIFICATION.md"
+    },
+    "dsh-keyed-consumption": {
+      "keyed": true,
+      "status": "batches 29-31: all 8 §一5 skills consumed via index->read (capability slices, not methodology); --skills parameterized",
+      "evidence": "docs/VERIFICATION.md"
+    },
+    "verify-8dot3": {
+      "keyed": false,
+      "status": "manual windows alias probe (round 5; $?-chain artifact honestly noted)",
+      "evidence": "docs/VERIFICATION.md"
+    }
+  },
+  "networkCalls": 0,
+  "modelCalls": 0,
+  "safety": "guard-protocol foundation; not an OS sandbox; no full-parity certification",
+  "consumption": {
+    "renderedSkillsConsumed": 15,
+    "evidence": [
+      "docs/verification-2026-10-27-render-consumption.md",
+      "docs/verification-2026-10-27-safety-suite.md",
+      "docs/verification-2026-10-27-workflow-suite.md",
+      "docs/verification-2026-10-27-product-suite.md",
+      "docs/verification-2026-10-27-final-suite.md"
+    ],
+    "note": "context-injection; auto-pickup unverified"
+  },
+  "unlocks": {
+    "dsh": "set DEEPSEEK_API_KEY then run node scripts/verify-dsh-guard.mjs",
+    "zcode": "follow docs/integration/zcode-acceptance.md + host-loading.md section 2.4 in a controlled new session"
+  }
+}

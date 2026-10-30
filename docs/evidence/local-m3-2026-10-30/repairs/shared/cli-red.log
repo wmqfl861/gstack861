@@ -1,0 +1,95 @@
+✖ dsh-profile-stage CLI creates scaffold and never runs package manager (199.8848ms)
+✖ zcode config CLI previews without writes then applies and uninstalls explicitly (671.0251ms)
+✖ zcode CLI binds an external policy to the selected workspace before any mutation (159.6876ms)
+✖ zcode CLI refuses an inside-target policy whose declared workspace points elsewhere (270.8003ms)
+✔ zcode CLI refuses linked workspace ancestors on both lifecycle commands (326.1052ms)
+✔ zcode CLI refuses policy under workspace before config write (179.98ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 2
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1953.0931
+
+✖ failing tests:
+
+test at test\host-setup-cli.test.mjs:21:1
+✖ dsh-profile-stage CLI creates scaffold and never runs package manager (199.8848ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(fs.existsSync(path.join(out,'plugins/gstack861-skills/index.mjs')))
+  
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/host-setup-cli.test.mjs:26:9)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at test\host-setup-cli.test.mjs:28:1
+✖ zcode config CLI previews without writes then applies and uninstalls explicitly (671.0251ms)
+  Error: ENOENT: no such file or directory, open 'C:\Users\ADMINI~1\AppData\Local\Temp\g861-host-cli-ZWxVWV\workspace\.zcode\config.json'
+      at Object.openSync (node:fs:621:18)
+      at Object.readFileSync (node:fs:487:35)
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/host-setup-cli.test.mjs:35:64)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    errno: -4058,
+    code: 'ENOENT',
+    syscall: 'open',
+    path: 'C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\g861-host-cli-ZWxVWV\\workspace\\.zcode\\config.json'
+  }
+
+test at test\host-setup-cli.test.mjs:37:1
+✖ zcode CLI binds an external policy to the selected workspace before any mutation (159.6876ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  0 !== 1
+  
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/host-setup-cli.test.mjs:44:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test\host-setup-cli.test.mjs:48:1
+✖ zcode CLI refuses an inside-target policy whose declared workspace points elsewhere (270.8003ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  0 !== 1
+  
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/host-setup-cli.test.mjs:54:9)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

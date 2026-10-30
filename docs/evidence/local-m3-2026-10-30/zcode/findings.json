@@ -1,0 +1,108 @@
+{
+  "schemaVersion": 1,
+  "head": "680b2f19b2dbef8831e3be1fd996203589b5c41d",
+  "scope": "Read-only source/test audit; fixture-only native Windows reproductions. Findings are grouped root causes, not a count of failed test scenarios.",
+  "evidence": "audit-results.json",
+  "focusedBaseline": {
+    "tests": 7,
+    "pass": 1,
+    "fail": 6,
+    "fixtureContractFailures": 5,
+    "runtimeCliFailures": 1,
+    "fixtureRepair": "Return workspace:root from test/zcode-profile.test.mjs fixture; retain root if callers use it for path construction. Do not relax source absolute-workspace validation. The uninstall assertion must remain hooks===undefined for a fixture that initially had no hooks."
+  },
+  "findings": [
+    {
+      "id": "ZC-01",
+      "severity": "high",
+      "title": "Ancestor and workspace identity validation missing across lifecycle",
+      "source": ["src/zcode-profile.mjs:50", "src/zcode-profile.mjs:70", "src/zcode-profile.mjs:92"],
+      "reproductions": ["ancestor-junction-install", "workspace-junction-uninstall", "missing-workspace-uninstall", "workspace-swapped-after-plan", "workspace-plain-replaced-after-plan", "zcode-junction-uninstall", "zcode-swapped-after-plan"],
+      "actual": "Install follows a junction above workspace; uninstall follows a junction workspace; apply accepts a changed workspace identity. A linked .zcode is checked only after making/removing a lock in the linked target. Missing workspace uninstall preview succeeds.",
+      "impact": "Preview approval and selected workspace do not bind the location later changed. Writes or lock mutations occur through links into other fixture locations.",
+      "proposedRepair": "Share a lexical component-by-component lstat safety snapshot across aliases/DSH/ZCode. Validate workspace, all existing ancestors, .zcode and config path before any read/lock/mkdir. Capture bigint dev/ino identities in the plan and compare on apply. Use identical checks for install/uninstall, reject missing/nonplain workspace, enforce configPath exactly workspace/.zcode/config.json. Revalidate around each mutation and only clean identities created by this invocation.",
+      "proposedTests": ["Native junction at workspace root and one ancestor, both install/uninstall preview/apply", "Swap workspace or .zcode after planning, both junction and plain directory with identical config", "Instrument mutators to prove no lock creation through known linked .zcode", "Missing workspace refuses; valid missing .zcode uninstall is a zero-write no-op"]
+    },
+    {
+      "id": "ZC-02",
+      "severity": "high",
+      "title": "Uninstall infers ownership from an incomplete hook identity and lacks provenance",
+      "source": ["src/zcode-profile.mjs:21", "src/zcode-profile.mjs:27", "src/zcode-profile.mjs:92", "src/zcode-profile.mjs:100"],
+      "reproductions": ["exact-entry-identity", "preexisting-identical-hook", "enabled-ownership-no-hooks", "enabled-ownership-empty-hooks", "enabled-ownership-foreign-hook-no-enabled", "preexisting-empty-event-containers", "fresh-precreated-zdir-lifecycle"],
+      "actual": "Entry-level user metadata is excluded from hookIdentity, so an annotated foreign near-match is removed. A hook that existed before a no-op install is also deleted. Installer-added enabled:true is left behind; preexisting empty event arrays/containers are pruned.",
+      "impact": "User hook data can be deleted and preexisting settings cannot be restored safely by shape inference alone.",
+      "proposedRepair": "Persist a versioned workspace-local ownership receipt outside host config, only when an exact full hook entry is actually inserted. Record the complete entry digest and prior presence of enabled/hooks/events/PreToolUse. Never adopt a preexisting exact entry. Uninstall removes at most the recorded full entry, preserves changed/annotated/foreign entries, removes enabled only if receipt proves it was inserted and current value remains true, and prunes only still-empty containers proven created by this installer. Preserve preexisting true and concurrent false or other user changes. Missing/invalid receipt must never authorize inferred deletion. Do not restore the whole original config over user edits.",
+      "transactionRequirement": "Receipt and config share the validated lock/snapshot. Write an atomic intent record before config commit and finalize afterward, with before/after raw fingerprints; injected failures must restore this invocation's original config/receipt or leave a recoverable pending state that subsequent mutation refuses. No success result may lose provenance. Repeated install retains the original ownership flags rather than replacing them with the already-installed state.",
+      "proposedTests": ["Absent enabled round-trips to absence with and without foreign hooks", "Preexisting enabled:true survives; user-set enabled:false survives uninstall", "Preexisting empty hooks/events/PreToolUse remain", "Install changed:false on preexisting exact hook never grants uninstall ownership", "Extra entry metadata, timeout changes, other policies and foreign hooks survive", "Concurrent settings/foreign hooks preserved; remove only one owned entry", "Missing/corrupt/symlink/hardlink receipt fails closed", "Receipt preparation/finalization and config write/rename failure rollback"]
+    },
+    {
+      "id": "ZC-03",
+      "severity": "medium",
+      "title": "Fresh install and fresh uninstall no-op fail with false contention",
+      "source": ["src/zcode-profile.mjs:70", "src/zcode-profile.mjs:73", "src/zcode-profile.mjs:78"],
+      "reproductions": ["fresh-cli", "missing-uninstall-noop", "io-mkdir-eacces"],
+      "actual": "Lock mkdir runs before .zcode creation, so ENOENT on a fresh workspace becomes ZCODE_CONFIG_BUSY. Valid no-op uninstall also attempts the missing lock parent. EACCES is masked as BUSY.",
+      "proposedRepair": "Validate and snapshot first. Return a verified no-op without creating a directory/lock when nothing is owned or changed. For real install create .zcode one validated component at a time, record its identity, then acquire the lock. Only EEXIST maps to contention; other I/O errors keep a sanitized accurate code. Remove only this invocation's newly created empty directory after failure.",
+      "proposedTests": ["CLI fresh Git fixture without .zcode: preview tree-identical, apply succeeds, repeat config/receipt bytes unchanged", "Uninstall preview/apply on missing .zcode does zero writes", "Preexisting active lock is preserved", "Permission failure is distinct from EEXIST and does not change config"]
+    },
+    {
+      "id": "ZC-04",
+      "severity": "medium",
+      "title": "Plans do not bind raw config state or approved output",
+      "source": ["src/zcode-profile.mjs:65", "src/zcode-profile.mjs:70", "src/zcode-profile.mjs:80", "src/zcode-profile.mjs:84"],
+      "reproductions": ["stale-format-only", "stale-delete-empty", "stale-create-empty", "stale-replace-identical", "mutable-plan-content", "plan-path-outside-workspace"],
+      "actual": "Canonical JSON comparison ignores bytes, existence and inode changes. plan.existed is unused. Object.freeze is shallow and plan.config can be modified after preview without updating plan.after. Exported apply accepts an arbitrary absolute configPath outside workspace.",
+      "proposedRepair": "Capture config exists/raw SHA256/dev/ino/nlink plus directory identities; compare before mutation and immediately before commit. Deep-freeze preview/config and bind plan to module-produced immutable internal state (WeakMap is sufficient because no caller deserializes plans) or rigorously validate complete plan shape/canonical after/changed. Enforce exact configPath under validated workspace. Keep semantic canonical data only for merge, not sole stale proof. Treat existingConfig-only plans as preview-only or bind them to a matching on-disk snapshot.",
+      "proposedTests": ["Formatting-only change, absent-to-empty, empty-to-absent, identical replacement refuse", "Mutation after preview fails or cannot affect committed bytes", "Forged external configPath refuses", "Semantic install and uninstall stale edits preserve exact concurrent bytes and clean lock/temp"]
+    },
+    {
+      "id": "ZC-05",
+      "severity": "medium",
+      "title": "Hook structure validation is inconsistent and normalizes malformed values",
+      "source": ["src/zcode-profile.mjs:27", "src/zcode-profile.mjs:99"],
+      "reproductions": ["bad-config-hooks-array", "bad-config-enabled-string", "bad-config-enabled-null", "bad-config-hooks-null", "bad-config-events-null", "bad-config-events-array", "bad-config-pretooluse-object", "bad-config-foreign-event-nonarray", "bad-config-invalid-entry-types"],
+      "actual": "Install treats null hooks/events as absent and converts nonboolean enabled values to true. Foreign event strings and malformed entry field types pass. Uninstall returns no-op plans for several structures that install rejects.",
+      "proposedRepair": "One shared nonmutating validator for both planners: distinguish absent from present-null, require objects for hooks/events, boolean enabled when present, arrays for all event lists, and minimally valid entry/hook field shapes. Preserve supported foreign hook types and unknown extension fields; avoid narrowing runtime schema without real host evidence. Enabled:false is a valid state that blocks install but still permits precise owned uninstall.",
+      "proposedTests": ["Table-driven install/uninstall malformed shapes reject before any mutation", "Disabled install refuses, owned uninstall with false preserves false", "Valid foreign hook variants/extensions round-trip unchanged"]
+    },
+    {
+      "id": "ZC-06",
+      "severity": "high",
+      "title": "CLI installs a policy for a different workspace into the selected target",
+      "source": ["bin/gstack861.mjs:138", "bin/gstack861.mjs:139"],
+      "reproductions": ["cli-mismatched-policy-workspace"],
+      "actual": "loadPolicy validates policy.workspace, but CLI discards it. A policy file inside --workspace succeeds if its declared workspace points to a different directory, then that policy is wired into the target hook.",
+      "impact": "The policy can be editable inside the selected workspace and can authorize paths in a different workspace. The intended policy-outside-workspace boundary is bypassed.",
+      "proposedRepair": "Retain the compiled policy and require its canonical workspace identity to equal the safely validated --workspace identity before planning or writing; independently prove policy path outside the selected workspace. Uninstall should use the recorded exact policy identity/path for ownership and must remain able to remove an owned hook when the policy was deleted or corrupted; blindly adding loadPolicy to uninstall would block recovery.",
+      "proposedTests": ["Policy with mismatched workspace refuses preview/apply without writes", "Policy inside target with foreign declared workspace refuses", "Matching external policy succeeds", "Owned uninstall remains possible after policy deletion/corruption"]
+    },
+    {
+      "id": "ZC-07",
+      "severity": "high-if-adversarial-inflight-swap-is-in-scope",
+      "title": "Late path swap redirects writes and cleanup errors can mask committed mutation",
+      "source": ["src/zcode-profile.mjs:84", "src/zcode-profile.mjs:85", "src/zcode-profile.mjs:88"],
+      "reproductions": ["zcode-swapped-at-temp-write", "config-replaced-at-rename"],
+      "actual": "A deterministic .zcode junction swap at the temp-write syscall seam causes an external fixture config to be rewritten, then lock cleanup throws ENOENT while the original lock remains in the moved directory. A config edit injected at rename is overwritten.",
+      "evidenceBoundary": "These are controlled fs seam injections after the last production check, distinct from the independently reproduced ordinary plan/apply swaps. Portable Node pathname rechecks cannot eliminate a hostile same-user change at the final syscall seam.",
+      "proposedRepair": "Revalidate identities/bytes immediately before staging and commit and bind cleanup to recorded owned resources. Surface original operation and cleanup outcomes accurately. If acceptance demands protection against a swap at the final syscall seam, a vetted native directory-handle-relative/no-reparse/compare-and-swap strategy is required; do not declare that closed using an extra lstat or relax the failing security assertion. Coordinator/reviewer must explicitly classify that boundary.",
+      "proposedTests": ["Deterministic swaps at lock creation, temp write and commit preserve external sentinel", "Config edit at final commit seam is not silently lost", "Cleanup failure never reports an unchanged state after successful commit and never deletes a foreign replacement lock"]
+    }
+  ],
+  "passingControls": [
+    "Ordinary existing-settings/foreign-hook lifecycle is semantically preserved; initial CRLF/tab formatting changes to pretty JSON/LF on real apply and remains changed after uninstall.",
+    "Install and uninstall preview preserve full fixture tree bytes/metadata.",
+    "Repeated apply preserves config bytes and mtime; an ephemeral lock still mutates the .zcode directory while held.",
+    "Semantic install/uninstall stale edits refuse and preserve user bytes.",
+    "Config file symlink and hardlink reject at planning and when introduced before apply.",
+    "Malformed JSON, root array, explicitly disabled install and matching in-workspace policy reject.",
+    "Injected read error, partial ENOSPC temp write and rename EACCES preserve original config and remove this invocation's temp and lock.",
+    "Preexisting active lock remains intact; concurrent unrelated user edits before fresh uninstall planning are preserved."
+  ],
+  "sharedSafetyApiProposal": {
+    "location": "src/fs-utils.mjs or a single coordinator-owned shared safety module; one owner before lane imports",
+    "inspectPlainPath": "inspectPlainPath(absolutePath, {leaf:'directory'|'file', allowMissing:boolean}) -> deeply frozen {path, existing:[{path,dev,ino,kind}], missing:[suffix]}",
+    "assertSamePlainPath": "assertSamePlainPath(snapshot) -> void, rejecting new links, missing/replaced identities and nonplain components",
+    "requirements": ["Walk lexical components with lstat before following/normalizing with realpath", "Existing ancestors plain directories; file leaf regular and nlink===1", "Bigint identities serialized to strings", "No implicit mkdir/read/write inside inspection", "Each lane maps errors to its own public sanitized code", "Do not claim the helper by itself closes final-syscall TOCTOU"]
+  },
+  "constraintsVerified": {"modelRequests":0,"networkRequests":0,"srcTestsModified":false,"userConfigTrustModified":false,"newDependencies":false,"commitsOrPushes":false,"hostRuntimeResearch":false}
+}

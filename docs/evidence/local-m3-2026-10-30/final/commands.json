@@ -1,0 +1,147 @@
+{
+  "phase": "final",
+  "modelRequests": 0,
+  "credentialEnvironmentStripped": true,
+  "results": [
+    {
+      "name": "check",
+      "command": "C:\\Program Files\\nodejs\\node.exe",
+      "args": [
+        "C:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npm-cli.js",
+        "run",
+        "check"
+      ],
+      "exitCode": 0,
+      "signal": null,
+      "durationMs": 12275,
+      "error": null
+    },
+    {
+      "name": "test",
+      "command": "C:\\Program Files\\nodejs\\node.exe",
+      "args": [
+        "C:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npm-cli.js",
+        "test"
+      ],
+      "exitCode": 0,
+      "signal": null,
+      "durationMs": 102690,
+      "error": null
+    },
+    {
+      "name": "verify-offline",
+      "command": "C:\\Program Files\\nodejs\\node.exe",
+      "args": [
+        "C:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npm-cli.js",
+        "run",
+        "verify-offline"
+      ],
+      "exitCode": 0,
+      "signal": null,
+      "durationMs": 7141,
+      "error": null
+    },
+    {
+      "name": "doctor",
+      "command": "C:\\Program Files\\nodejs\\node.exe",
+      "args": [
+        "C:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npm-cli.js",
+        "run",
+        "doctor"
+      ],
+      "exitCode": 0,
+      "signal": null,
+      "durationMs": 515,
+      "error": null
+    },
+    {
+      "name": "inventory",
+      "command": "C:\\Program Files\\nodejs\\node.exe",
+      "args": [
+        "bin/gstack861.mjs",
+        "inventory",
+        "--upstream",
+        "C:\\Users\\Administrator\\.zcode\\workspace\\9c06bcdc-025c-4764-9ec1-da6db48d1f77\\gstack861-m3-audit\\upstream\\gstack"
+      ],
+      "exitCode": 0,
+      "signal": null,
+      "durationMs": 2412,
+      "error": null
+    },
+    {
+      "name": "targeted",
+      "command": "C:\\Program Files\\nodejs\\node.exe",
+      "args": [
+        "--test",
+        "test/aliases.test.mjs",
+        "test/dsh-profile.test.mjs",
+        "test/dsh-skills.test.mjs",
+        "test/zcode-profile.test.mjs",
+        "test/host-setup-cli.test.mjs"
+      ],
+      "exitCode": 0,
+      "signal": null,
+      "durationMs": 8536,
+      "error": null
+    },
+    {
+      "name": "node-version",
+      "command": "C:\\Program Files\\nodejs\\node.exe",
+      "args": [
+        "--version"
+      ],
+      "exitCode": 0,
+      "signal": null,
+      "durationMs": 34,
+      "error": null
+    },
+    {
+      "name": "git-version",
+      "command": "git",
+      "args": [
+        "--version"
+      ],
+      "exitCode": 0,
+      "signal": null,
+      "durationMs": 22,
+      "error": null
+    },
+    {
+      "name": "git-head",
+      "command": "git",
+      "args": [
+        "rev-parse",
+        "HEAD"
+      ],
+      "exitCode": 0,
+      "signal": null,
+      "durationMs": 27,
+      "error": null
+    },
+    {
+      "name": "git-status",
+      "command": "git",
+      "args": [
+        "status",
+        "--porcelain=v1",
+        "-b"
+      ],
+      "exitCode": 0,
+      "signal": null,
+      "durationMs": 106,
+      "error": null
+    },
+    {
+      "name": "submodule",
+      "command": "git",
+      "args": [
+        "submodule",
+        "status"
+      ],
+      "exitCode": 0,
+      "signal": null,
+      "durationMs": 883,
+      "error": null
+    }
+  ]
+}

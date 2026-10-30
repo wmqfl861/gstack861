@@ -1,0 +1,157 @@
+{
+  "schemaVersion": 1,
+  "runId": "run-2026-10-30T16-17-25.163Z-beb5e55c",
+  "baseline": "680b2f19b2dbef8831e3be1fd996203589b5c41d",
+  "testedSourceFingerprint": "fe2e566f64a1d8638b4a3a28c4228e69521464de377e17ce05a0929b7b0fea51",
+  "reviewedPlanSha256": "ce91543b5e28972cbd5c626ae7add11641131fde78f63394be165f8e1605d338",
+  "status": "failed",
+  "evidenceClass": "failed-or-partial-installed-acceptance",
+  "requestEvidence": {
+    "modelRequestsObserved": null,
+    "networkEntryAttempts": 0,
+    "controlledZeroModelConclusion": "run-incomplete-see-per-child-evidence",
+    "basis": "taskless exact plugin roster; no model/Agent/credential services; clean environment; process network/child tripwires"
+  },
+  "hostChildrenLaunched": 1,
+  "controls": [
+    {
+      "label": "clean-pipeline",
+      "status": "failed",
+      "durationMs": 212,
+      "processStatus": 1,
+      "signal": null,
+      "processError": null,
+      "activationWarningObserved": false,
+      "expectedActivationWarning": false,
+      "environmentKeys": [
+        "ComSpec",
+        "DSH_AGENTS_HOME",
+        "DSH_HOME",
+        "DSH_TELEMETRY_DISABLED",
+        "ELECTRON_RUN_AS_NODE",
+        "GSTACK861_MODEL_CALL",
+        "PATH",
+        "SystemRoot",
+        "TEMP",
+        "TMP",
+        "WINDIR"
+      ],
+      "setup": {
+        "generated": {
+          "schemaVersion": 1,
+          "host": "dsh",
+          "profileName": "g861accept",
+          "output": "<fixtures>\\clean-pipeline-NscH3O\\home\\profiles\\g861accept",
+          "files": [
+            "package.json",
+            "cordis.yml",
+            "cordis.patch.yml",
+            "plugins/gstack861-guard/package.json",
+            "plugins/gstack861-guard/index.mjs",
+            "plugins/gstack861-skills/package.json",
+            "plugins/gstack861-skills/index.mjs",
+            "README.md"
+          ],
+          "status": "scaffolded-not-host-verified",
+          "requiresOperatorSteps": [
+            "review-profile",
+            "install-profile-dependencies",
+            "launch-disposable-profile",
+            "verify-plugin-activation",
+            "run-live-guard-acceptance"
+          ]
+        },
+        "dependencies": [
+          {
+            "name": "gstack861-guard",
+            "source": "<fixtures>\\clean-pipeline-NscH3O\\home\\profiles\\g861accept\\plugins\\gstack861-guard",
+            "manifestSha256": "a76f5d0d449a65fd3d4ebd446ff53507095340094b054fa795c7dc671ca9504b",
+            "shimSha256": "6aae261d62e336a39fee14f4cdc1f27095fdabb877f153aeec273b002e99b267"
+          },
+          {
+            "name": "gstack861-skills",
+            "source": "<fixtures>\\clean-pipeline-NscH3O\\home\\profiles\\g861accept\\plugins\\gstack861-skills",
+            "manifestSha256": "d63dadeeee14428a6d86ef350798fe740fabe750f5a5957372aca8b4d54c2828",
+            "shimSha256": "6ba8186fb7ce9f46d11d1f5ed78cbe54d8ee408e732b817985fe36079f08f30b"
+          }
+        ],
+        "staged": {
+          "schemaVersion": 1,
+          "host": "dsh",
+          "staging": "<fixtures>\\clean-pipeline-NscH3O\\staging",
+          "staged": 1,
+          "files": 1,
+          "root": {
+            "name": "gstack",
+            "sha256": "6f2b1c6217d4c96a9558f1ac7e129218341c5b8a191bf3bff37c95162f339f00",
+            "files": 0
+          }
+        },
+        "aliased": {
+          "schemaVersion": 1,
+          "host": "dsh",
+          "output": "<fixtures>\\clean-pipeline-NscH3O\\aliases",
+          "aliases": [
+            {
+              "name": "connect-chrome",
+              "aliasOf": "open-gstack-browser",
+              "sha256": "d331e89662e0fbfd828eb88a0db4bc5c7dcaa64e1d8967cf04d7b3c42b45ecaa"
+            }
+          ],
+          "note": "Rewritten copy, not symlink; install separately. Not host-verified."
+        },
+        "installed": [
+          {
+            "installed": [
+              "gstack",
+              "open-gstack-browser"
+            ],
+            "skipped": [],
+            "backedUp": []
+          },
+          {
+            "installed": [
+              "connect-chrome"
+            ],
+            "skipped": [],
+            "backedUp": []
+          }
+        ],
+        "registry": [
+          {
+            "name": "connect-chrome",
+            "sha256": "d331e89662e0fbfd828eb88a0db4bc5c7dcaa64e1d8967cf04d7b3c42b45ecaa",
+            "files": {
+              "sections/fixture.txt": "9045390925ae7a2c3c8cab40b78f0538a332f27ebb1f62e1d6decc3ddd9355b1"
+            }
+          },
+          {
+            "name": "gstack",
+            "sha256": "6f2b1c6217d4c96a9558f1ac7e129218341c5b8a191bf3bff37c95162f339f00"
+          },
+          {
+            "name": "open-gstack-browser",
+            "sha256": "fc6fa5582adcb5bc50ff43fc70a17aa1a5a452738396a8df8109cbdeba94663a",
+            "files": {
+              "sections/fixture.txt": "9045390925ae7a2c3c8cab40b78f0538a332f27ebb1f62e1d6decc3ddd9355b1"
+            }
+          }
+        ],
+        "gitFixture": {
+          "executable": "C:\\Program Files\\Git\\ucrt64\\bin\\git.exe",
+          "initialized": true,
+          "verifiedInsideWorkTree": true,
+          "sentinelSha256": "05becdb83bb897f6103c8d91439e2e9092144edf5b3955a746fce4975c12bfdc",
+          "globalAndSystemConfig": "isolated empty file",
+          "templates": "disabled",
+          "hooks": "disabled",
+          "initStdout": "Initialized empty Git repository in <fixtures>/clean-pipeline-NscH3O/workspace with spaces Ω/.git/\n",
+          "initStderr": ""
+        }
+      },
+      "host": null
+    }
+  ],
+  "fixtureRoot": "<fixtures>",
+  "finalSourceFingerprint": "fe2e566f64a1d8638b4a3a28c4228e69521464de377e17ce05a0929b7b0fea51"
+}

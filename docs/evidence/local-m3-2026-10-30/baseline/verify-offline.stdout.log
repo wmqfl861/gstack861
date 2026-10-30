@@ -1,0 +1,19 @@
+
+> @gstack861/native-core@0.4.33 verify-offline
+> node scripts/verify-offline.mjs
+
+verify-offline: unified offline regression — seven keyed BLOCKED smokes + zcode-workflow-vertical full run + verify-model-review;
+                 zero network beyond loopback, zero model calls (keyed children see an explicitly empty DEEPSEEK_API_KEY).
+[1/3] keyed scripts BLOCKED smoke (expect exit 2 + BLOCKED line for each)...
+      ✓ [1.1/6] scripts/verify-dsh-guard.mjs exit=2 BLOCKED
+      ✓ [1.2/6] scripts/verify-dsh-vertical.mjs exit=2 BLOCKED
+      ✓ [1.3/6] scripts/verify-dsh-robustness.mjs exit=2 BLOCKED
+      ✓ [1.4/6] scripts/dsh-mini-vertical.mjs exit=2 BLOCKED
+      ✓ [1.5/6] scripts/dsh-ship-vertical.mjs exit=2 BLOCKED
+      ✓ [1.6/6] scripts/dsh-recovery-vertical.mjs exit=2 BLOCKED
+      ✓ [1.7/6] scripts/dsh-keyed-consumption.mjs exit=2 BLOCKED
+[2/3] zcode-workflow-vertical full offline harness (expect exit 0 + RESULT: PASS)...
+      ✓ scripts/zcode-workflow-vertical.mjs exit=0 RESULT: PASS (4.6s)
+[3/3] verify-model-review five-section readiness (expect exit 0)...
+      ✓ scripts/verify-model-review.mjs exit=0 (0.4s)
+RESULT: PASS — 9/9 steps green in 6.0s（零付费调用；exit 0）

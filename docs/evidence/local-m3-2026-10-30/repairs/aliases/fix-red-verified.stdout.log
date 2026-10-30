@@ -1,0 +1,747 @@
+✔ rewrites only frontmatter name and copies verified auxiliary files (18.2364ms)
+✔ supports DSH staging contract without claiming host installation (16.0049ms)
+✔ refuses tampering, symlinks, malformed frontmatter and wrong host before output (26.5714ms)
+✔ refuses output overlap and preserves non-empty operator output (11.0286ms)
+✖ preflights auxiliary null map before creating output (13.1225ms)
+✔ preflights auxiliary array map before creating output (12.0519ms)
+✔ preflights auxiliary string map before creating output (8.1505ms)
+✖ preflights auxiliary reserved skill before creating output (10.9614ms)
+✖ preflights auxiliary reserved lowercase skill before creating output (11.0838ms)
+✖ preflights auxiliary reserved manifest before creating output (8.2773ms)
+✖ preflights auxiliary reserved mixed-case manifest before creating output (10.3771ms)
+✖ preflights auxiliary case collision before creating output (26.2147ms)
+✖ preflights auxiliary file directory collision before creating output (10.9459ms)
+✖ preflights auxiliary case file directory collision before creating output (8.9991ms)
+✖ preflights auxiliary reserved file directory collision before creating output (8.2056ms)
+✖ preflights auxiliary numeric digest before creating output (8.1894ms)
+✖ preflights auxiliary null digest before creating output (9.1456ms)
+✖ preflights auxiliary malformed digest before creating output (8.9055ms)
+✖ refuses dir ancestor of alias source (15.9758ms)
+✖ refuses dir ancestor of alias output (13.619ms)
+✖ refuses junction ancestor of alias source (15.5943ms)
+✖ refuses junction ancestor of alias output (15.8115ms)
+✖ refuses physical source/output overlap through an ancestor link (15.1007ms)
+✖ refuses physical overlap with a mixed Windows namespace path (12.5489ms)
+✖ refuses physical overlap with a Windows short path (47.143ms)
+✖ rejects a replaced plain source ancestor even when bytes match (19.0661ms)
+✖ rejects an output parent replaced after source validation (10.9428ms)
+✖ preserves CRLF bytes outside the exact frontmatter name token (12.7623ms)
+✔ cleans only created alias files after EIO (new output) (12.2336ms)
+✖ cleans only created alias files after EIO (existing output) (14.5867ms)
+✖ preserves a concurrent sibling in caller output after EIO (13.3824ms)
+✖ preserves a concurrent child inside the created alias after EIO (11.9861ms)
+✖ preserves a concurrent child in a newly created output after EIO (11.057ms)
+✖ preserves a destination that another writer created before mkdir (8.5065ms)
+✖ preserves a user file that replaces a generated file before cleanup (12.5726ms)
+✔ installs canonical and alias independently with shared registry (zcode) (50.8085ms)
+✔ installs canonical and alias independently with shared registry (dsh) (54.9296ms)
+ℹ tests 37
+ℹ suites 0
+ℹ pass 9
+ℹ fail 28
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 846.7771
+
+✖ failing tests:
+
+test at test\aliases.test.mjs:106:2
+✖ preflights auxiliary null map before creating output (13.1225ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at unchangedRefusal (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:73:9)
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:114:3)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /^Error: ALIAS_SOURCE_INVALID$/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at test\aliases.test.mjs:106:2
+✖ preflights auxiliary reserved skill before creating output (10.9614ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /^Error: ALIAS_SOURCE_INVALID$/. Input:
+  
+  "Error: EEXIST: file already exists, open 'C:\\Users\\Administrator\\.zcode\\workspace\\9c06bcdc-025c-4764-9ec1-da6db48d1f77\\gstack861-m3-audit\\.superpowers\\m3-local-acceptance\\aliases\\fix-temp\\g861-alias-nRsSbI\\output\\connect-chrome\\SKILL.md'"
+  
+      at unchangedRefusal (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:73:9)
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:114:3)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: Error: EEXIST: file already exists, open 'C:\Users\Administrator\.zcode\workspace\9c06bcdc-025c-4764-9ec1-da6db48d1f77\gstack861-m3-audit\.superpowers\m3-local-acceptance\aliases\fix-temp\g861-alias-nRsSbI\output\connect-chrome\SKILL.md'
+        at Object.openSync (node:fs:621:18)
+        at Object.writeFileSync (node:fs:2496:35)
+        at stageCommandAliases (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/src/aliases.mjs:77:10)
+        at stage (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:70:32)
+        at file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:73:22
+        at getActual (node:assert:611:5)
+        at strict.throws (node:assert:759:24)
+        at unchangedRefusal (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:73:9)
+        at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:114:3)
+        at Test.runInAsyncScope (node:async_hooks:227:14),
+    expected: /^Error: ALIAS_SOURCE_INVALID$/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at test\aliases.test.mjs:106:2
+✖ preflights auxiliary reserved lowercase skill before creating output (11.0838ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /^Error: ALIAS_SOURCE_INVALID$/. Input:
+  
+  "Error: EEXIST: file already exists, open 'C:\\Users\\Administrator\\.zcode\\workspace\\9c06bcdc-025c-4764-9ec1-da6db48d1f77\\gstack861-m3-audit\\.superpowers\\m3-local-acceptance\\aliases\\fix-temp\\g861-alias-MJio3P\\output\\connect-chrome\\skill.md'"
+  
+      at unchangedRefusal (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:73:9)
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:114:3)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: Error: EEXIST: file already exists, open 'C:\Users\Administrator\.zcode\workspace\9c06bcdc-025c-4764-9ec1-da6db48d1f77\gstack861-m3-audit\.superpowers\m3-local-acceptance\aliases\fix-temp\g861-alias-MJio3P\output\connect-chrome\skill.md'
+        at Object.openSync (node:fs:621:18)
+        at Object.writeFileSync (node:fs:2496:35)
+        at stageCommandAliases (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/src/aliases.mjs:77:10)
+        at stage (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:70:32)
+        at file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:73:22
+        at getActual (node:assert:611:5)
+        at strict.throws (node:assert:759:24)
+        at unchangedRefusal (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:73:9)
+        at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:114:3)
+        at Test.runInAsyncScope (node:async_hooks:227:14),
+    expected: /^Error: ALIAS_SOURCE_INVALID$/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at test\aliases.test.mjs:106:2
+✖ preflights auxiliary reserved manifest before creating output (8.2773ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /^Error: ALIAS_SOURCE_INVALID$/. Input:
+  
+  'Error: ALIAS_SOURCE_TAMPERED'
+  
+      at unchangedRefusal (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:73:9)
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:114:3)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: Error: ALIAS_SOURCE_TAMPERED
+        at fail (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/src/aliases.mjs:8:30)
+        at stageCommandAliases (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/src/aliases.mjs:63:41)
+        at stage (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:70:32)
+        at file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:73:22
+        at getActual (node:assert:611:5)
+        at strict.throws (node:assert:759:24)
+        at unchangedRefusal (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:73:9)
+        at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:114:3)
+        at Test.runInAsyncScope (node:async_hooks:227:14)
+        at Test.run (node:internal/test_runner/test:1402:25),
+    expected: /^Error: ALIAS_SOURCE_INVALID$/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at test\aliases.test.mjs:106:2
+✖ preflights auxiliary reserved mixed-case manifest before creating output (10.3771ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /^Error: ALIAS_SOURCE_INVALID$/. Input:
+  
+  'Error: ALIAS_SOURCE_TAMPERED'
+  
+      at unchangedRefusal (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:73:9)
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:114:3)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: Error: ALIAS_SOURCE_TAMPERED
+        at fail (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/src/aliases.mjs:8:30)
+        at stageCommandAliases (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/src/aliases.mjs:63:41)
+        at stage (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:70:32)
+        at file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:73:22
+        at getActual (node:assert:611:5)
+        at strict.throws (node:assert:759:24)
+        at unchangedRefusal (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:73:9)
+        at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:114:3)
+        at Test.runInAsyncScope (node:async_hooks:227:14)
+        at Test.run (node:internal/test_runner/test:1402:25),
+    expected: /^Error: ALIAS_SOURCE_INVALID$/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at test\aliases.test.mjs:106:2
+✖ preflights auxiliary case collision before creating output (26.2147ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /^Error: ALIAS_SOURCE_INVALID$/. Input:
+  
+  'Error: ALIAS_SOURCE_TAMPERED'
+  
+      at unchangedRefusal (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:73:9)
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:114:3)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: Error: ALIAS_SOURCE_TAMPERED
+        at fail (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/src/aliases.mjs:8:30)
+        at stageCommandAliases (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/src/aliases.mjs:63:41)
+        at stage (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:70:32)
+        at file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:73:22
+        at getActual (node:assert:611:5)
+        at strict.throws (node:assert:759:24)
+        at unchangedRefusal (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:73:9)
+        at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:114:3)
+        at Test.runInAsyncScope (node:async_hooks:227:14)
+        at Test.run (node:internal/test_runner/test:1402:25),
+    expected: /^Error: ALIAS_SOURCE_INVALID$/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at test\aliases.test.mjs:106:2
+✖ preflights auxiliary file directory collision before creating output (10.9459ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /^Error: ALIAS_SOURCE_INVALID$/. Input:
+  
+  'Error: ALIAS_SOURCE_UNSAFE'
+  
+      at unchangedRefusal (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:73:9)
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:114:3)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: Error: ALIAS_SOURCE_UNSAFE
+        at fail (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/src/aliases.mjs:8:30)
+        at stageCommandAliases (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/src/aliases.mjs:60:113)
+        at stage (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:70:32)
+        at file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:73:22
+        at getActual (node:assert:611:5)
+        at strict.throws (node:assert:759:24)
+        at unchangedRefusal (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:73:9)
+        at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:114:3)
+        at Test.runInAsyncScope (node:async_hooks:227:14)
+        at Test.run (node:internal/test_runner/test:1402:25),
+    expected: /^Error: ALIAS_SOURCE_INVALID$/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at test\aliases.test.mjs:106:2
+✖ preflights auxiliary case file directory collision before creating output (8.9991ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /^Error: ALIAS_SOURCE_INVALID$/. Input:
+  
+  'Error: ALIAS_SOURCE_UNSAFE'
+  
+      at unchangedRefusal (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:73:9)
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:114:3)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: Error: ALIAS_SOURCE_UNSAFE
+        at fail (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/src/aliases.mjs:8:30)
+        at stageCommandAliases (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/src/aliases.mjs:60:113)
+        at stage (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:70:32)
+        at file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:73:22
+        at getActual (node:assert:611:5)
+        at strict.throws (node:assert:759:24)
+        at unchangedRefusal (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:73:9)
+        at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:114:3)
+        at Test.runInAsyncScope (node:async_hooks:227:14)
+        at Test.run (node:internal/test_runner/test:1402:25),
+    expected: /^Error: ALIAS_SOURCE_INVALID$/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at test\aliases.test.mjs:106:2
+✖ preflights auxiliary reserved file directory collision before creating output (8.2056ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /^Error: ALIAS_SOURCE_INVALID$/. Input:
+  
+  'Error: ALIAS_SOURCE_UNSAFE'
+  
+      at unchangedRefusal (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:73:9)
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:114:3)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: Error: ALIAS_SOURCE_UNSAFE
+        at fail (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/src/aliases.mjs:8:30)
+        at stageCommandAliases (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/src/aliases.mjs:60:113)
+        at stage (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:70:32)
+        at file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:73:22
+        at getActual (node:assert:611:5)
+        at strict.throws (node:assert:759:24)
+        at unchangedRefusal (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:73:9)
+        at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:114:3)
+        at Test.runInAsyncScope (node:async_hooks:227:14)
+        at Test.run (node:internal/test_runner/test:1402:25),
+    expected: /^Error: ALIAS_SOURCE_INVALID$/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at test\aliases.test.mjs:106:2
+✖ preflights auxiliary numeric digest before creating output (8.1894ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /^Error: ALIAS_SOURCE_INVALID$/. Input:
+  
+  'Error: ALIAS_SOURCE_TAMPERED'
+  
+      at unchangedRefusal (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:73:9)
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:114:3)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: Error: ALIAS_SOURCE_TAMPERED
+        at fail (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/src/aliases.mjs:8:30)
+        at stageCommandAliases (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/src/aliases.mjs:63:41)
+        at stage (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:70:32)
+        at file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:73:22
+        at getActual (node:assert:611:5)
+        at strict.throws (node:assert:759:24)
+        at unchangedRefusal (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:73:9)
+        at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:114:3)
+        at Test.runInAsyncScope (node:async_hooks:227:14)
+        at Test.run (node:internal/test_runner/test:1402:25),
+    expected: /^Error: ALIAS_SOURCE_INVALID$/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at test\aliases.test.mjs:106:2
+✖ preflights auxiliary null digest before creating output (9.1456ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /^Error: ALIAS_SOURCE_INVALID$/. Input:
+  
+  'Error: ALIAS_SOURCE_TAMPERED'
+  
+      at unchangedRefusal (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:73:9)
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:114:3)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: Error: ALIAS_SOURCE_TAMPERED
+        at fail (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/src/aliases.mjs:8:30)
+        at stageCommandAliases (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/src/aliases.mjs:63:41)
+        at stage (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:70:32)
+        at file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:73:22
+        at getActual (node:assert:611:5)
+        at strict.throws (node:assert:759:24)
+        at unchangedRefusal (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:73:9)
+        at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:114:3)
+        at Test.runInAsyncScope (node:async_hooks:227:14)
+        at Test.run (node:internal/test_runner/test:1402:25),
+    expected: /^Error: ALIAS_SOURCE_INVALID$/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at test\aliases.test.mjs:106:2
+✖ preflights auxiliary malformed digest before creating output (8.9055ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /^Error: ALIAS_SOURCE_INVALID$/. Input:
+  
+  'Error: ALIAS_SOURCE_TAMPERED'
+  
+      at unchangedRefusal (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:73:9)
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:114:3)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: Error: ALIAS_SOURCE_TAMPERED
+        at fail (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/src/aliases.mjs:8:30)
+        at stageCommandAliases (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/src/aliases.mjs:63:41)
+        at stage (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:70:32)
+        at file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:73:22
+        at getActual (node:assert:611:5)
+        at strict.throws (node:assert:759:24)
+        at unchangedRefusal (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:73:9)
+        at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:114:3)
+        at Test.runInAsyncScope (node:async_hooks:227:14)
+        at Test.run (node:internal/test_runner/test:1402:25),
+    expected: /^Error: ALIAS_SOURCE_INVALID$/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at test\aliases.test.mjs:119:3
+✖ refuses dir ancestor of alias source (15.9758ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at unchangedRefusal (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:73:9)
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:125:4)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /INVALID_STAGING|ALIAS_SOURCE_UNSAFE/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at test\aliases.test.mjs:119:3
+✖ refuses dir ancestor of alias output (13.619ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at unchangedRefusal (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:73:9)
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:125:4)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /STAGING_NOT_EMPTY/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at test\aliases.test.mjs:119:3
+✖ refuses junction ancestor of alias source (15.5943ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at unchangedRefusal (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:73:9)
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:125:4)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /INVALID_STAGING|ALIAS_SOURCE_UNSAFE/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at test\aliases.test.mjs:119:3
+✖ refuses junction ancestor of alias output (15.8115ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at unchangedRefusal (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:73:9)
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:125:4)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /STAGING_NOT_EMPTY/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at test\aliases.test.mjs:129:1
+✖ refuses physical source/output overlap through an ancestor link (15.1007ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at unchangedRefusal (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:73:9)
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:132:2)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /OVERLAPPING_PATHS|STAGING_NOT_EMPTY/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at test\aliases.test.mjs:135:2
+✖ refuses physical overlap with a mixed Windows namespace path (12.5489ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at unchangedRefusal (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:73:9)
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:137:3)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /OVERLAPPING_PATHS/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at test\aliases.test.mjs:139:2
+✖ refuses physical overlap with a Windows short path (47.143ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at unchangedRefusal (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:73:9)
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:144:3)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /OVERLAPPING_PATHS/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at test\aliases.test.mjs:147:1
+✖ rejects a replaced plain source ancestor even when bytes match (19.0661ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:159:9)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /ALIAS_SOURCE_UNSAFE/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at test\aliases.test.mjs:163:1
+✖ rejects an output parent replaced after source validation (10.9428ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:175:9)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /STAGING_NOT_EMPTY/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at test\aliases.test.mjs:179:1
+✖ preserves CRLF bytes outside the exact frontmatter name token (12.7623ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  ... Skipped lines
+  
+  + Buffer(76) [Uint8Array] [
+  - Buffer(80) [Uint8Array] [
+      45,
+      45,
+      45,
+  -   13,
+      10,
+      110,
+      97,
+      109,
+      101,
+  ...
+      101,
+  -   13,
+      10,
+      100,
+      101,
+      115,
+      99,
+  ...
+      114,
+  -   13,
+      10,
+      45,
+      45,
+      45,
+  -   13,
+      10,
+      13,
+      10,
+      35,
+      32,
+  
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:186:9)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: <Buffer 2d 2d 2d 0a 6e 61 6d 65 3a 20 63 6f 6e 6e 65 63 74 2d 63 68 72 6f 6d 65 0a 64 65 73 63 72 69 70 74 69 6f 6e 3a 20 62 72 6f 77 73 65 72 0a 2d 2d 2d 0a ... 26 more bytes>,
+    expected: <Buffer 2d 2d 2d 0d 0a 6e 61 6d 65 3a 20 63 6f 6e 6e 65 63 74 2d 63 68 72 6f 6d 65 0d 0a 64 65 73 63 72 69 70 74 69 6f 6e 3a 20 62 72 6f 77 73 65 72 0d 0a 2d ... 30 more bytes>,
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at test\aliases.test.mjs:190:2
+✖ cleans only created alias files after EIO (existing output) (14.5867ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:195:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test\aliases.test.mjs:200:1
+✖ preserves a concurrent sibling in caller output after EIO (13.3824ms)
+  Error: ENOENT: no such file or directory, open 'C:\Users\Administrator\.zcode\workspace\9c06bcdc-025c-4764-9ec1-da6db48d1f77\gstack861-m3-audit\.superpowers\m3-local-acceptance\aliases\fix-temp\g861-alias-1cmjq2\output\operator.txt'
+      at Object.readFileSync (node:fs:483:20)
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:204:18)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    errno: -4058,
+    code: 'ENOENT',
+    syscall: 'open',
+    path: 'C:\\Users\\Administrator\\.zcode\\workspace\\9c06bcdc-025c-4764-9ec1-da6db48d1f77\\gstack861-m3-audit\\.superpowers\\m3-local-acceptance\\aliases\\fix-temp\\g861-alias-1cmjq2\\output\\operator.txt'
+  }
+
+test at test\aliases.test.mjs:207:1
+✖ preserves a concurrent child inside the created alias after EIO (11.9861ms)
+  Error: ENOENT: no such file or directory, open 'C:\Users\Administrator\.zcode\workspace\9c06bcdc-025c-4764-9ec1-da6db48d1f77\gstack861-m3-audit\.superpowers\m3-local-acceptance\aliases\fix-temp\g861-alias-Few1FU\output\connect-chrome\operator.txt'
+      at Object.readFileSync (node:fs:483:20)
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:211:18)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    errno: -4058,
+    code: 'ENOENT',
+    syscall: 'open',
+    path: 'C:\\Users\\Administrator\\.zcode\\workspace\\9c06bcdc-025c-4764-9ec1-da6db48d1f77\\gstack861-m3-audit\\.superpowers\\m3-local-acceptance\\aliases\\fix-temp\\g861-alias-Few1FU\\output\\connect-chrome\\operator.txt'
+  }
+
+test at test\aliases.test.mjs:214:1
+✖ preserves a concurrent child in a newly created output after EIO (11.057ms)
+  Error: ENOENT: no such file or directory, open 'C:\Users\Administrator\.zcode\workspace\9c06bcdc-025c-4764-9ec1-da6db48d1f77\gstack861-m3-audit\.superpowers\m3-local-acceptance\aliases\fix-temp\g861-alias-DL21aV\output\operator.txt'
+      at Object.readFileSync (node:fs:483:20)
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:218:18)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    errno: -4058,
+    code: 'ENOENT',
+    syscall: 'open',
+    path: 'C:\\Users\\Administrator\\.zcode\\workspace\\9c06bcdc-025c-4764-9ec1-da6db48d1f77\\gstack861-m3-audit\\.superpowers\\m3-local-acceptance\\aliases\\fix-temp\\g861-alias-DL21aV\\output\\operator.txt'
+  }
+
+test at test\aliases.test.mjs:221:1
+✖ preserves a destination that another writer created before mkdir (8.5065ms)
+  Error: ENOENT: no such file or directory, open 'C:\Users\Administrator\.zcode\workspace\9c06bcdc-025c-4764-9ec1-da6db48d1f77\gstack861-m3-audit\.superpowers\m3-local-acceptance\aliases\fix-temp\g861-alias-8t8iwo\output\connect-chrome\operator.txt'
+      at Object.readFileSync (node:fs:483:20)
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:233:18)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    errno: -4058,
+    code: 'ENOENT',
+    syscall: 'open',
+    path: 'C:\\Users\\Administrator\\.zcode\\workspace\\9c06bcdc-025c-4764-9ec1-da6db48d1f77\\gstack861-m3-audit\\.superpowers\\m3-local-acceptance\\aliases\\fix-temp\\g861-alias-8t8iwo\\output\\connect-chrome\\operator.txt'
+  }
+
+test at test\aliases.test.mjs:235:1
+✖ preserves a user file that replaces a generated file before cleanup (12.5726ms)
+  Error: ENOENT: no such file or directory, open 'C:\Users\Administrator\.zcode\workspace\9c06bcdc-025c-4764-9ec1-da6db48d1f77\gstack861-m3-audit\.superpowers\m3-local-acceptance\aliases\fix-temp\g861-alias-TrLdBB\output\connect-chrome\SKILL.md'
+      at Object.readFileSync (node:fs:483:20)
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/aliases.test.mjs:243:18)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    errno: -4058,
+    code: 'ENOENT',
+    syscall: 'open',
+    path: 'C:\\Users\\Administrator\\.zcode\\workspace\\9c06bcdc-025c-4764-9ec1-da6db48d1f77\\gstack861-m3-audit\\.superpowers\\m3-local-acceptance\\aliases\\fix-temp\\g861-alias-TrLdBB\\output\\connect-chrome\\SKILL.md'
+  }

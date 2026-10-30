@@ -13,6 +13,9 @@
 //      the `?.code` optional chain is kept verbatim. Nothing else changes.
 
 import { mkdirSync, statSync } from 'node:fs';
+import fs from 'node:fs';
+import path from 'node:path';
+import { freeze } from './json.mjs';
 
 /**
  * mkdir -p that tolerates the target directory already existing.
@@ -41,4 +44,75 @@ export function mkdirpSync(dir) {
     }
     throw e;
   }
+}
+
+const fail = code => { throw new Error(code); };
+const identity = (name, stat, kind) => ({ path: name, dev: String(stat.dev), ino: String(stat.ino), kind, nlink: String(stat.nlink) });
+const sameEntry = (a, b) => a.path === b.path && a.dev === b.dev && a.ino === b.ino && a.kind === b.kind
+  && (a.kind !== 'file' || (a.nlink === '1' && b.nlink === '1'));
+
+// Strict setup paths differ from policy targets: links are refused before native
+// normalization. Rechecks detect observed replacements, not hostile final-syscall races.
+export function inspectPlainPath(value, { kind, allowMissing = false } = {}) {
+  if (typeof value !== 'string' || !path.isAbsolute(value) || /[\x00-\x1f]/.test(value)) fail('ABSOLUTE_PATH_REQUIRED');
+  if (!['file', 'directory'].includes(kind) || typeof allowMissing !== 'boolean') fail('PATH_UNSAFE');
+  if (value.split(/[\\/]/).includes('..')) fail('PATH_UNSAFE');
+  // Node lstat on an extended drive root can fail as EISDIR ('C:'). Inspect
+  // its ordinary local spelling before resolving the same native identity.
+  if (process.platform === 'win32' && /^\\\\\?\\[A-Za-z]:\\/.test(value)) value = value.slice(4);
+  const filename = path.resolve(value), root = path.parse(filename).root;
+  const parts = filename.slice(root.length).split(path.sep).filter(Boolean);
+  const names = [root];
+  for (const part of parts) names.push(path.join(names.at(-1), part));
+  const entries = [], missing = [];
+  for (let i = 0; i < names.length; i++) {
+    const name = names[i], expected = i === names.length - 1 ? kind : 'directory';
+    if (missing.length) { missing.push(name); continue; }
+    const stat = fs.lstatSync(name, { bigint: true, throwIfNoEntry: false });
+    if (!stat) {
+      if (!allowMissing || i === 0) fail('PATH_UNSAFE');
+      missing.push(name);
+      continue;
+    }
+    if (stat.isSymbolicLink() || (expected === 'directory' ? !stat.isDirectory() : !stat.isFile() || stat.nlink !== 1n)) fail('PATH_UNSAFE');
+    entries.push(identity(name, stat, expected));
+  }
+  const existing = entries.at(-1).path;
+  const real = fs.realpathSync.native(existing);
+  const realPath = missing.length ? path.join(real, path.relative(existing, filename)) : real;
+  return freeze({ path: filename, realPath, exists: missing.length === 0, entries, missing });
+}
+
+// Missing suffixes remain absent unless the caller explicitly refreshes only that
+// suffix after an expected mkdir. Directory nlink/mtime are not identity evidence.
+export function assertPlainPathUnchanged(snapshot) {
+  if (!snapshot || !Array.isArray(snapshot.entries) || !Array.isArray(snapshot.missing)) fail('PATH_CHANGED');
+  try {
+    for (const entry of snapshot.entries) {
+      const stat = fs.lstatSync(entry.path, { bigint: true });
+      const kind = stat.isDirectory() ? 'directory' : stat.isFile() ? 'file' : 'other';
+      if (stat.isSymbolicLink() || !sameEntry(entry, identity(entry.path, stat, kind))) fail('PATH_CHANGED');
+    }
+    for (const name of snapshot.missing) {
+      if (fs.lstatSync(name, { throwIfNoEntry: false })) fail('PATH_CHANGED');
+    }
+  } catch { fail('PATH_CHANGED'); }
+}
+
+export function readPlainFile(snapshot) {
+  if (!snapshot?.exists || snapshot.entries?.at(-1)?.kind !== 'file') fail('PATH_UNSAFE');
+  assertPlainPathUnchanged(snapshot);
+  const fd = fs.openSync(snapshot.path, 'r');
+  try {
+    const expected = snapshot.entries.at(-1);
+    const verify = () => {
+      const stat = fs.fstatSync(fd, { bigint: true });
+      if (!stat.isFile() || !sameEntry(expected, identity(snapshot.path, stat, 'file'))) fail('PATH_CHANGED');
+    };
+    verify();
+    const bytes = fs.readFileSync(fd);
+    verify();
+    assertPlainPathUnchanged(snapshot);
+    return bytes;
+  } finally { fs.closeSync(fd); }
 }

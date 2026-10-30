@@ -3,7 +3,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { loadPolicy } from '../src/policy.mjs';
+import { loadPolicy, inside } from '../src/policy.mjs';
+import { inspectPlainPath } from '../src/fs-utils.mjs';
 import { handleZcode, denyZcode, zcodeHookConfig } from '../src/adapters/zcode.mjs';
 import { inventory } from '../src/inventory.mjs';
 import { generateSkills } from '../src/generate.mjs';
@@ -135,8 +136,13 @@ if (args[0] === 'hook') {
     } else if (args[0] === 'zcode-config-install') {
       const options = flags(args.slice(1), ['--workspace', '--policy'], ['--apply']);
       if (!options['--workspace'] || !options['--policy']) throw new Error('INVALID_ARGUMENTS');
-      const policyPath=absolute(options['--policy']); loadPolicy(policyPath);
-      const plan=planZcodeConfig({workspace:absolute(options['--workspace']),nodePath:process.execPath,
+      const policyPath=absolute(options['--policy']), policy=loadPolicy(policyPath);
+      let workspace;
+      try { workspace=inspectPlainPath(absolute(options['--workspace']),{kind:'directory'}).realPath; }
+      catch { throw new Error('WORKSPACE_INVALID'); }
+      if (!inside(workspace,policy.workspace) || !inside(policy.workspace,workspace)) throw new Error('POLICY_WORKSPACE_MISMATCH');
+      if (inside(workspace,fs.realpathSync.native(policyPath))) throw new Error('POLICY_MUST_BE_OUTSIDE_WORKSPACE');
+      const plan=planZcodeConfig({workspace,nodePath:process.execPath,
         cliPath:fileURLToPath(import.meta.url),policyPath});
       print(options['--apply'] ? applyZcodeConfigPlan(plan) : {changed:plan.changed,path:plan.configPath,preview:plan.config});
     } else if (args[0] === 'zcode-config-uninstall') {

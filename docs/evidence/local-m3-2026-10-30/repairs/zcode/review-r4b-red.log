@@ -1,0 +1,68 @@
+✔ R4 failure to re-arm finalized receipt reports committed state rather than false pending recovery (229.3735ms)
+✖ R4 failure to re-arm finalized receipt reports committed state rather than false pending recovery with cleanup failure (161.2714ms)
+✔ R4b receipt operator drift retains uncertain status (163.2362ms)
+✖ R4b receipt operator drift retains uncertain status with cleanup failure (147.1336ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 2
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 886.198
+
+✖ failing tests:
+
+test at gstack861-m3-audit\test\zcode-profile.test.mjs:386:45
+✖ R4 failure to re-arm finalized receipt reports committed state rather than false pending recovery with cleanup failure (161.2714ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'ZCODE_CONFIG_RECOVERY_REQUIRED'
+  - 'ZCODE_CONFIG_COMMITTED_RECOVERY_FAILED'
+                  ^
+  
+      at Object.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:397:12)
+      at expectedException (node:assert:578:17)
+      at expectsError (node:assert:703:21)
+      at strict.throws (node:assert:759:3)
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:396:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'ZCODE_CONFIG_RECOVERY_REQUIRED',
+    expected: 'ZCODE_CONFIG_COMMITTED_RECOVERY_FAILED',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at gstack861-m3-audit\test\zcode-profile.test.mjs:413:45
+✖ R4b receipt operator drift retains uncertain status with cleanup failure (147.1336ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'ZCODE_CONFIG_RECOVERY_REQUIRED'
+  - 'ZCODE_CONFIG_RECOVERY_UNCERTAIN'
+                           ^
+  
+      at Object.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:423:12)
+      at expectedException (node:assert:578:17)
+      at expectsError (node:assert:703:21)
+      at strict.throws (node:assert:759:3)
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:422:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'ZCODE_CONFIG_RECOVERY_REQUIRED',
+    expected: 'ZCODE_CONFIG_RECOVERY_UNCERTAIN',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

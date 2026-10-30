@@ -1,0 +1,9 @@
+dsh: warning: 1 entry did not activate
+gstack861-guard (gstack861-guard): SyntaxError: Expected property name or '}' in JSON at position 2 (line 1 column 3)
+    at JSON.parse (<anonymous>)
+    at loadPolicy (<repo>/src/policy.mjs:132:37)
+    at new apply (<repo>/src/adapters/dsh.mjs:11:3)
+    at Fiber.execute (file:///C:/Users/Administrator/AppData/Local/Programs/DeepSeek%20Harness/resources/app.asar/dsh/node_modules/@deepseek-ai/cordis/lib/index.js:1068:24)
+    at file:///C:/Users/Administrator/AppData/Local/Programs/DeepSeek%20Harness/resources/app.asar/dsh/node_modules/@deepseek-ai/cordis/lib/index.js:1142:34
+    at <case>/home/profiles/g861accept/#gstack861-guard
+    at <case>/home/profiles/g861accept/#include

@@ -1,0 +1,2145 @@
+{
+  "generatedAt": "2026-10-30T14:33:21.484Z",
+  "head": "680b2f19b2dbef8831e3be1fd996203589b5c41d",
+  "platform": "win32",
+  "architecture": "x64",
+  "osRelease": "10.0.22624",
+  "nodeVersion": "v24.21.0",
+  "scope": "Independent fixture-only ZCode lifecycle audit; no implementation/test edits; no host runtime discovery.",
+  "reproduction": {
+    "command": "node reproduce.mjs <ABS_REPO> <ABS_SCRATCH> <ABS_EVIDENCE>",
+    "fixtureRoot": "<RUN>",
+    "fixturesRetained": true,
+    "gitConfigIsolation": true,
+    "childEnvironmentAllowlisted": true,
+    "modelRequests": 0,
+    "networkRequests": 0,
+    "userConfigReadsOrWrites": 0
+  },
+  "sourceHashesBefore": {
+    "src/zcode-profile.mjs": "9fdca513767675707cd338f5b18828c32e518ebca58661e34287a679a3fa6c96",
+    "bin/gstack861.mjs": "f90bb99b24d0e48a69b99e1d8c3ad36e0d4a25cf48c70ec12a1aa3cdb3aa2e32",
+    "test/zcode-profile.test.mjs": "465b5f80de3f779ee1d527931ef244af7fde07f8237b811022d9b1afa269e6da",
+    "test/host-setup-cli.test.mjs": "a968f86c0b98903d36b93b33bcd90a55d1a71ce976ecd9e4e8c14981372d5ad9"
+  },
+  "sourceHashesAfter": {
+    "src/zcode-profile.mjs": "9fdca513767675707cd338f5b18828c32e518ebca58661e34287a679a3fa6c96",
+    "bin/gstack861.mjs": "f90bb99b24d0e48a69b99e1d8c3ad36e0d4a25cf48c70ec12a1aa3cdb3aa2e32",
+    "test/zcode-profile.test.mjs": "465b5f80de3f779ee1d527931ef244af7fde07f8237b811022d9b1afa269e6da",
+    "test/host-setup-cli.test.mjs": "a968f86c0b98903d36b93b33bcd90a55d1a71ce976ecd9e4e8c14981372d5ad9"
+  },
+  "scopedSourceAndTestsUnchanged": true,
+  "totals": {
+    "fixture-and-runtime-failure": 1,
+    "defect": 33,
+    "pass-with-format-change": 1,
+    "pass": 16,
+    "diagnostic-defect": 1,
+    "race-exposure": 1
+  },
+  "results": [
+    {
+      "id": "original-focused-tests",
+      "expected": "Tests exercise lifecycle rather than fail at fixture argument validation.",
+      "verdict": "fixture-and-runtime-failure",
+      "status": 1,
+      "stdout": "✖ zcode config CLI previews without writes then applies and uninstalls explicitly (322.2491ms)\n✔ zcode CLI refuses policy under workspace before config write (145.8943ms)\n✖ merges workspace hook config while preserving unrelated settings and existing hooks (6.909ms)\n✖ apply is idempotent and uninstall removes only the exact owned hook (5.0394ms)\n✖ optimistic concurrency refuses config changes between plan and apply (2.7157ms)\n✖ refuses malformed, symlinked, hardlinked and disabled configs (5.5607ms)\n✖ refuses symlinked .zcode directory and preserves foreign hooks on uninstall (6.1461ms)\nℹ tests 7\nℹ suites 0\nℹ pass 1\nℹ fail 6\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 816.7141\n\n✖ failing tests:\n\ntest at test\\host-setup-cli.test.mjs:28:1\n✖ zcode config CLI previews without writes then applies and uninstalls explicitly (322.2491ms)\n  AssertionError [ERR_ASSERTION]: gstack861: ZCODE_CONFIG_BUSY\n  \n  \n  1 !== 0\n  \n      at TestContext.<anonymous> (file:///<REPO>/test/host-setup-cli.test.mjs:33:9)\n      at Test.runInAsyncScope (node:async_hooks:227:14)\n      at Test.run (node:internal/test_runner/test:1402:25)\n      at Test.start (node:internal/test_runner/test:1262:17)\n      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {\n    generatedMessage: false,\n    code: 'ERR_ASSERTION',\n    actual: 1,\n    expected: 0,\n    operator: 'strictEqual',\n    diff: 'simple'\n  }\n\ntest at test\\zcode-profile.test.mjs:13:1\n✖ merges workspace hook config while preserving unrelated settings and existing hooks (6.909ms)\n  Error: ABSOLUTE_PATH_REQUIRED\n      at fail (file:///<REPO>/src/zcode-profile.mjs:6:30)\n      at planZcodeConfig (file:///<REPO>/src/zcode-profile.mjs:51:99)\n      at TestContext.<anonymous> (file:///<REPO>/test/zcode-profile.test.mjs:17:13)\n      at Test.runInAsyncScope (node:async_hooks:227:14)\n      at Test.run (node:internal/test_runner/test:1402:25)\n      at Test.start (node:internal/test_runner/test:1262:17)\n      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)\n\ntest at test\\zcode-profile.test.mjs:23:1\n✖ apply is idempotent and uninstall removes only the exact owned hook (5.0394ms)\n  Error: ABSOLUTE_PATH_REQUIRED\n      at fail (file:///<REPO>/src/zcode-profile.mjs:6:30)\n      at planZcodeConfig (file:///<REPO>/src/zcode-profile.mjs:51:99)\n      at TestContext.<anonymous> (file:///<REPO>/test/zcode-profile.test.mjs:24:27)\n      at Test.runInAsyncScope (node:async_hooks:227:14)\n      at Test.run (node:internal/test_runner/test:1402:25)\n      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)\n      at Test.postRun (node:internal/test_runner/test:1542:19)\n      at Test.run (node:internal/test_runner/test:1467:12)\n      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)\n\ntest at test\\zcode-profile.test.mjs:30:1\n✖ optimistic concurrency refuses config changes between plan and apply (2.7157ms)\n  Error: ABSOLUTE_PATH_REQUIRED\n      at fail (file:///<REPO>/src/zcode-profile.mjs:6:30)\n      at planZcodeConfig (file:///<REPO>/src/zcode-profile.mjs:51:99)\n      at TestContext.<anonymous> (file:///<REPO>/test/zcode-profile.test.mjs:31:26)\n      at Test.runInAsyncScope (node:async_hooks:227:14)\n      at Test.run (node:internal/test_runner/test:1402:25)\n      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)\n      at Test.postRun (node:internal/test_runner/test:1542:19)\n      at Test.run (node:internal/test_runner/test:1467:12)\n      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)\n\ntest at test\\zcode-profile.test.mjs:35:1\n✖ refuses malformed, symlinked, hardlinked and disabled configs (5.5607ms)\n  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /ZCODE_CONFIG_INVALID/. Input:\n  \n  'Error: ABSOLUTE_PATH_REQUIRED'\n  \n      at TestContext.<anonymous> (file:///<REPO>/test/zcode-profile.test.mjs:37:37)\n      at Test.runInAsyncScope (node:async_hooks:227:14)\n      at Test.run (node:internal/test_runner/test:1402:25)\n      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)\n      at Test.postRun (node:internal/test_runner/test:1542:19)\n      at Test.run (node:internal/test_runner/test:1467:12)\n      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: Error: ABSOLUTE_PATH_REQUIRED\n        at fail (file:///<REPO>/src/zcode-profile.mjs:6:30)\n        at planZcodeConfig (file:///<REPO>/src/zcode-profile.mjs:51:99)\n        at file:///<REPO>/test/zcode-profile.test.mjs:37:48\n        at getActual (node:assert:611:5)\n        at strict.throws (node:assert:759:24)\n        at TestContext.<anonymous> (file:///<REPO>/test/zcode-profile.test.mjs:37:37)\n        at Test.runInAsyncScope (node:async_hooks:227:14)\n        at Test.run (node:internal/test_runner/test:1402:25)\n        at Test.processPendingSubtests (node:internal/test_runner/test:974:18)\n        at Test.postRun (node:internal/test_runner/test:1542:19),\n    expected: /ZCODE_CONFIG_INVALID/,\n    operator: 'throws',\n    diff: 'simple'\n  }\n\ntest at test\\zcode-profile.test.mjs:43:1\n✖ refuses symlinked .zcode directory and preserves foreign hooks on uninstall (6.1461ms)\n  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /ZCODE_CONFIG_DIR_UNSAFE/. Input:\n  \n  'Error: ABSOLUTE_PATH_REQUIRED'\n  \n      at TestContext.<anonymous> (file:///<REPO>/test/zcode-profile.test.mjs:46:9)\n      at Test.runInAsyncScope (node:async_hooks:227:14)\n      at Test.run (node:internal/test_runner/test:1402:25)\n      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)\n      at Test.postRun (node:internal/test_runner/test:1542:19)\n      at Test.run (node:internal/test_runner/test:1467:12)\n      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: Error: ABSOLUTE_PATH_REQUIRED\n        at fail (file:///<REPO>/src/zcode-profile.mjs:6:30)\n        at planZcodeConfig (file:///<REPO>/src/zcode-profile.mjs:51:99)\n        at file:///<REPO>/test/zcode-profile.test.mjs:46:20\n        at getActual (node:assert:611:5)\n        at strict.throws (node:assert:759:24)\n        at TestContext.<anonymous> (file:///<REPO>/test/zcode-profile.test.mjs:46:9)\n        at Test.runInAsyncScope (node:async_hooks:227:14)\n        at Test.run (node:internal/test_runner/test:1402:25)\n        at Test.processPendingSubtests (node:internal/test_runner/test:974:18)\n        at Test.postRun (node:internal/test_runner/test:1542:19),\n    expected: /ZCODE_CONFIG_DIR_UNSAFE/,\n    operator: 'throws',\n    diff: 'simple'\n  }\n",
+      "stderr": ""
+    },
+    {
+      "id": "fresh-cli",
+      "expected": "Preview changes zero tree entries; first explicit apply creates the workspace config.",
+      "verdict": "defect",
+      "preview": {
+        "name": "fresh-cli-install-preview",
+        "executable": "<NODE>",
+        "args": [
+          "<REPO>\\bin\\gstack861.mjs",
+          "zcode-config-install",
+          "--workspace",
+          "<RUN>\\fresh-cli\\workspace",
+          "--policy",
+          "<RUN>\\fresh-cli\\policy.json"
+        ],
+        "cwd": "<REPO>",
+        "durationMs": 197,
+        "status": 0,
+        "signal": null,
+        "error": null,
+        "stdout": "{\n  \"changed\": true,\n  \"path\": \"<RUN>\\\\fresh-cli\\\\workspace\\\\.zcode\\\\config.json\",\n  \"preview\": {\n    \"hooks\": {\n      \"enabled\": true,\n      \"events\": {\n        \"PreToolUse\": [\n          {\n            \"matcher\": \".*\",\n            \"hooks\": [\n              {\n                \"type\": \"process\",\n                \"command\": \"<NODE>\",\n                \"args\": [\n                  \"<REPO>\\\\bin\\\\gstack861.mjs\",\n                  \"hook\",\n                  \"zcode\",\n                  \"--policy\",\n                  \"<RUN>\\\\fresh-cli\\\\policy.json\"\n                ],\n                \"timeoutMs\": 10000\n              }\n            ]\n          }\n        ]\n      }\n    }\n  }\n}\n",
+        "stderr": ""
+      },
+      "previewTreeIdentical": true,
+      "applied": {
+        "name": "fresh-cli-install-apply",
+        "executable": "<NODE>",
+        "args": [
+          "<REPO>\\bin\\gstack861.mjs",
+          "zcode-config-install",
+          "--workspace",
+          "<RUN>\\fresh-cli\\workspace",
+          "--policy",
+          "<RUN>\\fresh-cli\\policy.json",
+          "--apply"
+        ],
+        "cwd": "<REPO>",
+        "durationMs": 199,
+        "status": 1,
+        "signal": null,
+        "error": null,
+        "stdout": "",
+        "stderr": "gstack861: ZCODE_CONFIG_BUSY\n"
+      },
+      "applyDelta": []
+    },
+    {
+      "id": "existing-lifecycle",
+      "expected": "Preserve foreign settings/hooks semantically, preview byte-for-byte, repeated apply byte-for-byte; uninstall restores original semantics.",
+      "verdict": "pass-with-format-change",
+      "previewTreeIdentical": true,
+      "uninstallPreviewTreeIdentical": true,
+      "foreignHooksRetained": true,
+      "installedHookCount": 2,
+      "repeatedBytesEqual": true,
+      "repeatedMtimeEqual": true,
+      "initialAndFinalSemanticsEqual": true,
+      "initialAndFinalBytesEqual": false,
+      "commands": [
+        {
+          "name": "existing-lifecycle-install-preview",
+          "executable": "<NODE>",
+          "args": [
+            "<REPO>\\bin\\gstack861.mjs",
+            "zcode-config-install",
+            "--workspace",
+            "<RUN>\\existing-lifecycle\\workspace",
+            "--policy",
+            "<RUN>\\existing-lifecycle\\policy.json"
+          ],
+          "cwd": "<REPO>",
+          "durationMs": 156,
+          "status": 0,
+          "signal": null,
+          "error": null,
+          "stdout": "{\n  \"changed\": true,\n  \"path\": \"<RUN>\\\\existing-lifecycle\\\\workspace\\\\.zcode\\\\config.json\",\n  \"preview\": {\n    \"theme\": \"dark\",\n    \"nested\": {\n      \"retain\": [\n        \"x\",\n        2\n      ]\n    },\n    \"hooks\": {\n      \"enabled\": true,\n      \"events\": {\n        \"PreToolUse\": [\n          {\n            \"matcher\": \"Write\",\n            \"hooks\": [\n              {\n                \"type\": \"command\",\n                \"command\": \"foreign-hook-fixture\"\n              }\n            ]\n          },\n          {\n            \"matcher\": \".*\",\n            \"hooks\": [\n              {\n                \"type\": \"process\",\n                \"command\": \"<NODE>\",\n                \"args\": [\n                  \"<REPO>\\\\bin\\\\gstack861.mjs\",\n                  \"hook\",\n                  \"zcode\",\n                  \"--policy\",\n                  \"<RUN>\\\\existing-lifecycle\\\\policy.json\"\n                ],\n                \"timeoutMs\": 10000\n              }\n            ]\n          }\n        ],\n        \"Stop\": [\n          {\n            \"matcher\": \".*\",\n            \"hooks\": [\n              {\n                \"type\": \"command\",\n                \"command\": \"foreign-stop-fixture\"\n              }\n            ]\n          }\n        ]\n      }\n    }\n  }\n}\n",
+          "stderr": ""
+        },
+        {
+          "name": "existing-lifecycle-install-apply",
+          "executable": "<NODE>",
+          "args": [
+            "<REPO>\\bin\\gstack861.mjs",
+            "zcode-config-install",
+            "--workspace",
+            "<RUN>\\existing-lifecycle\\workspace",
+            "--policy",
+            "<RUN>\\existing-lifecycle\\policy.json",
+            "--apply"
+          ],
+          "cwd": "<REPO>",
+          "durationMs": 185,
+          "status": 0,
+          "signal": null,
+          "error": null,
+          "stdout": "{\n  \"changed\": true,\n  \"path\": \"<RUN>\\\\existing-lifecycle\\\\workspace\\\\.zcode\\\\config.json\"\n}\n",
+          "stderr": ""
+        },
+        {
+          "name": "existing-lifecycle-install-apply",
+          "executable": "<NODE>",
+          "args": [
+            "<REPO>\\bin\\gstack861.mjs",
+            "zcode-config-install",
+            "--workspace",
+            "<RUN>\\existing-lifecycle\\workspace",
+            "--policy",
+            "<RUN>\\existing-lifecycle\\policy.json",
+            "--apply"
+          ],
+          "cwd": "<REPO>",
+          "durationMs": 180,
+          "status": 0,
+          "signal": null,
+          "error": null,
+          "stdout": "{\n  \"changed\": false,\n  \"path\": \"<RUN>\\\\existing-lifecycle\\\\workspace\\\\.zcode\\\\config.json\"\n}\n",
+          "stderr": ""
+        },
+        {
+          "name": "existing-lifecycle-uninstall-preview",
+          "executable": "<NODE>",
+          "args": [
+            "<REPO>\\bin\\gstack861.mjs",
+            "zcode-config-uninstall",
+            "--workspace",
+            "<RUN>\\existing-lifecycle\\workspace",
+            "--policy",
+            "<RUN>\\existing-lifecycle\\policy.json"
+          ],
+          "cwd": "<REPO>",
+          "durationMs": 155,
+          "status": 0,
+          "signal": null,
+          "error": null,
+          "stdout": "{\n  \"changed\": true,\n  \"path\": \"<RUN>\\\\existing-lifecycle\\\\workspace\\\\.zcode\\\\config.json\",\n  \"preview\": {\n    \"theme\": \"dark\",\n    \"nested\": {\n      \"retain\": [\n        \"x\",\n        2\n      ]\n    },\n    \"hooks\": {\n      \"enabled\": true,\n      \"events\": {\n        \"PreToolUse\": [\n          {\n            \"matcher\": \"Write\",\n            \"hooks\": [\n              {\n                \"type\": \"command\",\n                \"command\": \"foreign-hook-fixture\"\n              }\n            ]\n          }\n        ],\n        \"Stop\": [\n          {\n            \"matcher\": \".*\",\n            \"hooks\": [\n              {\n                \"type\": \"command\",\n                \"command\": \"foreign-stop-fixture\"\n              }\n            ]\n          }\n        ]\n      }\n    }\n  }\n}\n",
+          "stderr": ""
+        },
+        {
+          "name": "existing-lifecycle-uninstall-apply",
+          "executable": "<NODE>",
+          "args": [
+            "<REPO>\\bin\\gstack861.mjs",
+            "zcode-config-uninstall",
+            "--workspace",
+            "<RUN>\\existing-lifecycle\\workspace",
+            "--policy",
+            "<RUN>\\existing-lifecycle\\policy.json",
+            "--apply"
+          ],
+          "cwd": "<REPO>",
+          "durationMs": 156,
+          "status": 0,
+          "signal": null,
+          "error": null,
+          "stdout": "{\n  \"changed\": true,\n  \"path\": \"<RUN>\\\\existing-lifecycle\\\\workspace\\\\.zcode\\\\config.json\"\n}\n",
+          "stderr": ""
+        }
+      ]
+    },
+    {
+      "id": "enabled-ownership-no-hooks",
+      "expected": "Uninstall restores the prior hooks.enabled presence/value and preexisting containers.",
+      "verdict": "defect",
+      "original": {
+        "theme": "dark"
+      },
+      "installed": {
+        "ok": true,
+        "value": {
+          "changed": true,
+          "path": "<RUN>\\enabled-ownership-no-hooks\\workspace\\.zcode\\config.json"
+        }
+      },
+      "removed": {
+        "ok": true,
+        "value": {
+          "changed": true,
+          "path": "<RUN>\\enabled-ownership-no-hooks\\workspace\\.zcode\\config.json"
+        }
+      },
+      "final": {
+        "theme": "dark",
+        "hooks": {
+          "enabled": true
+        }
+      }
+    },
+    {
+      "id": "enabled-ownership-empty-hooks",
+      "expected": "Uninstall restores the prior hooks.enabled presence/value and preexisting containers.",
+      "verdict": "defect",
+      "original": {
+        "hooks": {}
+      },
+      "installed": {
+        "ok": true,
+        "value": {
+          "changed": true,
+          "path": "<RUN>\\enabled-ownership-empty-hooks\\workspace\\.zcode\\config.json"
+        }
+      },
+      "removed": {
+        "ok": true,
+        "value": {
+          "changed": true,
+          "path": "<RUN>\\enabled-ownership-empty-hooks\\workspace\\.zcode\\config.json"
+        }
+      },
+      "final": {
+        "hooks": {
+          "enabled": true
+        }
+      }
+    },
+    {
+      "id": "enabled-ownership-enabled-true",
+      "expected": "Uninstall restores the prior hooks.enabled presence/value and preexisting containers.",
+      "verdict": "pass",
+      "original": {
+        "hooks": {
+          "enabled": true
+        }
+      },
+      "installed": {
+        "ok": true,
+        "value": {
+          "changed": true,
+          "path": "<RUN>\\enabled-ownership-enabled-true\\workspace\\.zcode\\config.json"
+        }
+      },
+      "removed": {
+        "ok": true,
+        "value": {
+          "changed": true,
+          "path": "<RUN>\\enabled-ownership-enabled-true\\workspace\\.zcode\\config.json"
+        }
+      },
+      "final": {
+        "hooks": {
+          "enabled": true
+        }
+      }
+    },
+    {
+      "id": "enabled-ownership-foreign-hook-no-enabled",
+      "expected": "Uninstall restores the prior hooks.enabled presence/value and preexisting containers.",
+      "verdict": "defect",
+      "original": {
+        "hooks": {
+          "events": {
+            "Stop": [
+              {
+                "matcher": ".*",
+                "hooks": [
+                  {
+                    "type": "command",
+                    "command": "foreign-stop-fixture"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "installed": {
+        "ok": true,
+        "value": {
+          "changed": true,
+          "path": "<RUN>\\enabled-ownership-foreign-hook-no-enabled\\workspace\\.zcode\\config.json"
+        }
+      },
+      "removed": {
+        "ok": true,
+        "value": {
+          "changed": true,
+          "path": "<RUN>\\enabled-ownership-foreign-hook-no-enabled\\workspace\\.zcode\\config.json"
+        }
+      },
+      "final": {
+        "hooks": {
+          "events": {
+            "Stop": [
+              {
+                "matcher": ".*",
+                "hooks": [
+                  {
+                    "type": "command",
+                    "command": "foreign-stop-fixture"
+                  }
+                ]
+              }
+            ]
+          },
+          "enabled": true
+        }
+      }
+    },
+    {
+      "id": "fresh-precreated-zdir-lifecycle",
+      "expected": "Empty fixture installs once, repeats without config rewrite, and uninstalls to the original empty configuration.",
+      "verdict": "defect",
+      "first": {
+        "ok": true,
+        "value": {
+          "changed": true,
+          "path": "<RUN>\\fresh-precreated-zdir-lifecycle\\workspace\\.zcode\\config.json"
+        }
+      },
+      "second": {
+        "ok": true,
+        "value": {
+          "changed": false,
+          "path": "<RUN>\\fresh-precreated-zdir-lifecycle\\workspace\\.zcode\\config.json"
+        }
+      },
+      "idempotentBytes": true,
+      "remove": {
+        "ok": true,
+        "value": {
+          "changed": true,
+          "path": "<RUN>\\fresh-precreated-zdir-lifecycle\\workspace\\.zcode\\config.json"
+        }
+      },
+      "final": {
+        "hooks": {
+          "enabled": true
+        }
+      }
+    },
+    {
+      "id": "exact-entry-identity",
+      "expected": "An entry with additional user metadata is not the exact owned entry and must survive uninstall.",
+      "verdict": "defect",
+      "original": {
+        "hooks": {
+          "enabled": true,
+          "events": {
+            "PreToolUse": [
+              {
+                "matcher": ".*",
+                "hooks": [
+                  {
+                    "type": "process",
+                    "command": "<NODE>",
+                    "args": [
+                      "<REPO>\\bin\\gstack861.mjs",
+                      "hook",
+                      "zcode",
+                      "--policy",
+                      "<RUN>\\exact-entry-identity\\policy.json"
+                    ],
+                    "timeoutMs": 10000
+                  }
+                ],
+                "userAnnotation": "foreign-entry-retain"
+              },
+              {
+                "matcher": ".*",
+                "hooks": [
+                  {
+                    "type": "process",
+                    "command": "<NODE>",
+                    "args": [
+                      "<REPO>\\bin\\gstack861.mjs",
+                      "hook",
+                      "zcode",
+                      "--policy",
+                      "<RUN>\\exact-entry-identity\\policy.json"
+                    ],
+                    "timeoutMs": 10000
+                  }
+                ]
+              },
+              {
+                "matcher": ".*",
+                "hooks": [
+                  {
+                    "type": "process",
+                    "command": "<NODE>",
+                    "args": [
+                      "<REPO>\\bin\\gstack861.mjs",
+                      "hook",
+                      "zcode",
+                      "--policy",
+                      "<RUN>\\exact-entry-identity\\policy.json"
+                    ],
+                    "timeoutMs": 9999
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "applied": {
+        "ok": true,
+        "value": {
+          "changed": true,
+          "path": "<RUN>\\exact-entry-identity\\workspace\\.zcode\\config.json"
+        }
+      },
+      "final": {
+        "hooks": {
+          "enabled": true,
+          "events": {
+            "PreToolUse": [
+              {
+                "matcher": ".*",
+                "hooks": [
+                  {
+                    "type": "process",
+                    "command": "<NODE>",
+                    "args": [
+                      "<REPO>\\bin\\gstack861.mjs",
+                      "hook",
+                      "zcode",
+                      "--policy",
+                      "<RUN>\\exact-entry-identity\\policy.json"
+                    ],
+                    "timeoutMs": 9999
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "foreignAnnotationEntryRetained": false
+    },
+    {
+      "id": "preexisting-identical-hook",
+      "expected": "An install that adds nothing must not claim ownership of a hook that already existed.",
+      "verdict": "defect",
+      "installPlanChanged": false,
+      "install": {
+        "ok": true,
+        "value": {
+          "changed": false,
+          "path": "<RUN>\\preexisting-identical-hook\\workspace\\.zcode\\config.json"
+        }
+      },
+      "remove": {
+        "ok": true,
+        "value": {
+          "changed": true,
+          "path": "<RUN>\\preexisting-identical-hook\\workspace\\.zcode\\config.json"
+        }
+      },
+      "original": {
+        "hooks": {
+          "enabled": true,
+          "events": {
+            "PreToolUse": [
+              {
+                "matcher": ".*",
+                "hooks": [
+                  {
+                    "type": "process",
+                    "command": "<NODE>",
+                    "args": [
+                      "<REPO>\\bin\\gstack861.mjs",
+                      "hook",
+                      "zcode",
+                      "--policy",
+                      "<RUN>\\preexisting-identical-hook\\policy.json"
+                    ],
+                    "timeoutMs": 10000
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "final": {
+        "hooks": {
+          "enabled": true
+        }
+      },
+      "interpretation": "Exact hook identity currently serves as inferred ownership; no provenance distinguishes a user-preexisting identical entry."
+    },
+    {
+      "id": "stale-semantic-edit",
+      "expected": "A concurrent semantic config edit is refused and its exact bytes survive.",
+      "verdict": "pass",
+      "result": {
+        "ok": false,
+        "error": "ZCODE_CONFIG_CHANGED",
+        "code": null
+      },
+      "concurrentBytesPreserved": true,
+      "leftovers": []
+    },
+    {
+      "id": "stale-format-only",
+      "expected": "A stale plan refuses any config byte/existence/identity change between plan and apply.",
+      "verdict": "defect",
+      "planExisted": true,
+      "initialIdentity": "562949954301645",
+      "identityAtApply": "562949954301645",
+      "result": {
+        "ok": true,
+        "value": {
+          "changed": true,
+          "path": "<RUN>\\stale-format-only\\workspace\\.zcode\\config.json"
+        }
+      },
+      "delta": [
+        {
+          "path": ".zcode",
+          "before": {
+            "path": ".zcode",
+            "kind": "directory",
+            "mode": 16822,
+            "mtimeMs": 1793370796074.486,
+            "nlink": 1
+          },
+          "after": {
+            "path": ".zcode",
+            "kind": "directory",
+            "mode": 16822,
+            "mtimeMs": 1793370796090.1853,
+            "nlink": 1
+          }
+        },
+        {
+          "path": ".zcode/config.json",
+          "before": {
+            "path": ".zcode/config.json",
+            "kind": "file",
+            "mode": 33206,
+            "mtimeMs": 1793370796079.8132,
+            "nlink": 1,
+            "sha256": "210532f478cec2ba565eaa94a10fee8d23df20b9aec105799d3c68985b1077e3"
+          },
+          "after": {
+            "path": ".zcode/config.json",
+            "kind": "file",
+            "mode": 33206,
+            "mtimeMs": 1793370796088.9812,
+            "nlink": 1,
+            "sha256": "b422e048b2c6922968635f181071b2dc63702e77cd3e1e8ef9e8f5b23dca95e9"
+          }
+        }
+      ]
+    },
+    {
+      "id": "stale-delete-empty",
+      "expected": "A stale plan refuses any config byte/existence/identity change between plan and apply.",
+      "verdict": "defect",
+      "planExisted": true,
+      "initialIdentity": "562949954301678",
+      "identityAtApply": null,
+      "result": {
+        "ok": true,
+        "value": {
+          "changed": true,
+          "path": "<RUN>\\stale-delete-empty\\workspace\\.zcode\\config.json"
+        }
+      },
+      "delta": [
+        {
+          "path": ".zcode",
+          "before": {
+            "path": ".zcode",
+            "kind": "directory",
+            "mode": 16822,
+            "mtimeMs": 1793370796183.566,
+            "nlink": 1
+          },
+          "after": {
+            "path": ".zcode",
+            "kind": "directory",
+            "mode": 16822,
+            "mtimeMs": 1793370796191.5498,
+            "nlink": 1
+          }
+        },
+        {
+          "path": ".zcode/config.json",
+          "before": null,
+          "after": {
+            "path": ".zcode/config.json",
+            "kind": "file",
+            "mode": 33206,
+            "mtimeMs": 1793370796191.5498,
+            "nlink": 1,
+            "sha256": "e56021e9e2ddef7f063570e55081c9d8efadb8c383de75daa7b0e9e7f6b8c65b"
+          }
+        }
+      ]
+    },
+    {
+      "id": "stale-create-empty",
+      "expected": "A stale plan refuses any config byte/existence/identity change between plan and apply.",
+      "verdict": "defect",
+      "planExisted": false,
+      "initialIdentity": null,
+      "identityAtApply": "562949954301711",
+      "result": {
+        "ok": true,
+        "value": {
+          "changed": true,
+          "path": "<RUN>\\stale-create-empty\\workspace\\.zcode\\config.json"
+        }
+      },
+      "delta": [
+        {
+          "path": ".zcode",
+          "before": {
+            "path": ".zcode",
+            "kind": "directory",
+            "mode": 16822,
+            "mtimeMs": 1793370796298.166,
+            "nlink": 1
+          },
+          "after": {
+            "path": ".zcode",
+            "kind": "directory",
+            "mode": 16822,
+            "mtimeMs": 1793370796306.5786,
+            "nlink": 1
+          }
+        },
+        {
+          "path": ".zcode/config.json",
+          "before": {
+            "path": ".zcode/config.json",
+            "kind": "file",
+            "mode": 33206,
+            "mtimeMs": 1793370796298.166,
+            "nlink": 1,
+            "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+          },
+          "after": {
+            "path": ".zcode/config.json",
+            "kind": "file",
+            "mode": 33206,
+            "mtimeMs": 1793370796304.0007,
+            "nlink": 1,
+            "sha256": "a50f9d9a248b4bcf96166e2c274992bc256cd0bfa5dece7bb9f016f93e7da23c"
+          }
+        }
+      ]
+    },
+    {
+      "id": "stale-replace-identical",
+      "expected": "A stale plan refuses any config byte/existence/identity change between plan and apply.",
+      "verdict": "defect",
+      "planExisted": true,
+      "initialIdentity": "562949954301744",
+      "identityAtApply": "562949954301745",
+      "result": {
+        "ok": true,
+        "value": {
+          "changed": true,
+          "path": "<RUN>\\stale-replace-identical\\workspace\\.zcode\\config.json"
+        }
+      },
+      "delta": [
+        {
+          "path": ".zcode",
+          "before": {
+            "path": ".zcode",
+            "kind": "directory",
+            "mode": 16822,
+            "mtimeMs": 1793370796420.1938,
+            "nlink": 1
+          },
+          "after": {
+            "path": ".zcode",
+            "kind": "directory",
+            "mode": 16822,
+            "mtimeMs": 1793370796428.3633,
+            "nlink": 1
+          }
+        },
+        {
+          "path": ".zcode/config.json",
+          "before": {
+            "path": ".zcode/config.json",
+            "kind": "file",
+            "mode": 33206,
+            "mtimeMs": 1793370796420.1938,
+            "nlink": 1,
+            "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+          },
+          "after": {
+            "path": ".zcode/config.json",
+            "kind": "file",
+            "mode": 33206,
+            "mtimeMs": 1793370796428.3633,
+            "nlink": 1,
+            "sha256": "00b9cbe5d2e6102ddbaa84669659c98b57118fe9b325d704882eb2ab2ca50d0d"
+          }
+        }
+      ]
+    },
+    {
+      "id": "bad-config-malformed-json",
+      "expected": "Invalid structures fail closed; a disabled install refuses without changing the configuration.",
+      "verdict": "pass",
+      "installShouldReject": true,
+      "uninstallShouldReject": true,
+      "install": {
+        "ok": false,
+        "error": "ZCODE_CONFIG_INVALID",
+        "code": null
+      },
+      "remove": {
+        "ok": false,
+        "error": "ZCODE_CONFIG_INVALID",
+        "code": null
+      },
+      "previewTreeIdentical": true
+    },
+    {
+      "id": "bad-config-array-config",
+      "expected": "Invalid structures fail closed; a disabled install refuses without changing the configuration.",
+      "verdict": "pass",
+      "installShouldReject": true,
+      "uninstallShouldReject": true,
+      "install": {
+        "ok": false,
+        "error": "ZCODE_CONFIG_INVALID",
+        "code": null
+      },
+      "remove": {
+        "ok": false,
+        "error": "ZCODE_CONFIG_INVALID",
+        "code": null
+      },
+      "previewTreeIdentical": true
+    },
+    {
+      "id": "bad-config-hooks-array",
+      "expected": "Invalid structures fail closed; a disabled install refuses without changing the configuration.",
+      "verdict": "defect",
+      "installShouldReject": true,
+      "uninstallShouldReject": true,
+      "install": {
+        "ok": false,
+        "error": "ZCODE_HOOKS_INVALID",
+        "code": null
+      },
+      "remove": {
+        "ok": true,
+        "value": {
+          "workspace": "<RUN>\\bad-config-hooks-array\\workspace",
+          "configPath": "<RUN>\\bad-config-hooks-array\\workspace\\.zcode\\config.json",
+          "before": "{\"hooks\":[]}",
+          "after": "{\"hooks\":[]}",
+          "config": {
+            "hooks": []
+          },
+          "changed": false
+        }
+      },
+      "previewTreeIdentical": true
+    },
+    {
+      "id": "bad-config-disabled",
+      "expected": "Invalid structures fail closed; a disabled install refuses without changing the configuration.",
+      "verdict": "pass",
+      "installShouldReject": true,
+      "uninstallShouldReject": false,
+      "install": {
+        "ok": false,
+        "error": "ZCODE_HOOKS_DISABLED",
+        "code": null
+      },
+      "remove": {
+        "ok": true,
+        "value": {
+          "workspace": "<RUN>\\bad-config-disabled\\workspace",
+          "configPath": "<RUN>\\bad-config-disabled\\workspace\\.zcode\\config.json",
+          "before": "{\"hooks\":{\"enabled\":false}}",
+          "after": "{\"hooks\":{\"enabled\":false}}",
+          "config": {
+            "hooks": {
+              "enabled": false
+            }
+          },
+          "changed": false
+        }
+      },
+      "previewTreeIdentical": true
+    },
+    {
+      "id": "bad-config-enabled-string",
+      "expected": "Invalid structures fail closed; a disabled install refuses without changing the configuration.",
+      "verdict": "defect",
+      "installShouldReject": true,
+      "uninstallShouldReject": true,
+      "install": {
+        "ok": true,
+        "value": {
+          "workspace": "<RUN>\\bad-config-enabled-string\\workspace",
+          "configPath": "<RUN>\\bad-config-enabled-string\\workspace\\.zcode\\config.json",
+          "existed": true,
+          "before": "{\"hooks\":{\"enabled\":\"false\"}}",
+          "after": "{\"hooks\":{\"enabled\":true,\"events\":{\"PreToolUse\":[{\"hooks\":[{\"args\":[\"<REPO>\\\\bin\\\\gstack861.mjs\",\"hook\",\"zcode\",\"--policy\",\"<RUN>\\\\bad-config-enabled-string\\\\policy.json\"],\"command\":\"<NODE>\",\"timeoutMs\":10000,\"type\":\"process\"}],\"matcher\":\".*\"}]}}}",
+          "config": {
+            "hooks": {
+              "enabled": true,
+              "events": {
+                "PreToolUse": [
+                  {
+                    "matcher": ".*",
+                    "hooks": [
+                      {
+                        "type": "process",
+                        "command": "<NODE>",
+                        "args": [
+                          "<REPO>\\bin\\gstack861.mjs",
+                          "hook",
+                          "zcode",
+                          "--policy",
+                          "<RUN>\\bad-config-enabled-string\\policy.json"
+                        ],
+                        "timeoutMs": 10000
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          "changed": true
+        }
+      },
+      "remove": {
+        "ok": true,
+        "value": {
+          "workspace": "<RUN>\\bad-config-enabled-string\\workspace",
+          "configPath": "<RUN>\\bad-config-enabled-string\\workspace\\.zcode\\config.json",
+          "before": "{\"hooks\":{\"enabled\":\"false\"}}",
+          "after": "{\"hooks\":{\"enabled\":\"false\"}}",
+          "config": {
+            "hooks": {
+              "enabled": "false"
+            }
+          },
+          "changed": false
+        }
+      },
+      "previewTreeIdentical": true
+    },
+    {
+      "id": "bad-config-enabled-null",
+      "expected": "Invalid structures fail closed; a disabled install refuses without changing the configuration.",
+      "verdict": "defect",
+      "installShouldReject": true,
+      "uninstallShouldReject": true,
+      "install": {
+        "ok": true,
+        "value": {
+          "workspace": "<RUN>\\bad-config-enabled-null\\workspace",
+          "configPath": "<RUN>\\bad-config-enabled-null\\workspace\\.zcode\\config.json",
+          "existed": true,
+          "before": "{\"hooks\":{\"enabled\":null}}",
+          "after": "{\"hooks\":{\"enabled\":true,\"events\":{\"PreToolUse\":[{\"hooks\":[{\"args\":[\"<REPO>\\\\bin\\\\gstack861.mjs\",\"hook\",\"zcode\",\"--policy\",\"<RUN>\\\\bad-config-enabled-null\\\\policy.json\"],\"command\":\"<NODE>\",\"timeoutMs\":10000,\"type\":\"process\"}],\"matcher\":\".*\"}]}}}",
+          "config": {
+            "hooks": {
+              "enabled": true,
+              "events": {
+                "PreToolUse": [
+                  {
+                    "matcher": ".*",
+                    "hooks": [
+                      {
+                        "type": "process",
+                        "command": "<NODE>",
+                        "args": [
+                          "<REPO>\\bin\\gstack861.mjs",
+                          "hook",
+                          "zcode",
+                          "--policy",
+                          "<RUN>\\bad-config-enabled-null\\policy.json"
+                        ],
+                        "timeoutMs": 10000
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          "changed": true
+        }
+      },
+      "remove": {
+        "ok": true,
+        "value": {
+          "workspace": "<RUN>\\bad-config-enabled-null\\workspace",
+          "configPath": "<RUN>\\bad-config-enabled-null\\workspace\\.zcode\\config.json",
+          "before": "{\"hooks\":{\"enabled\":null}}",
+          "after": "{\"hooks\":{\"enabled\":null}}",
+          "config": {
+            "hooks": {
+              "enabled": null
+            }
+          },
+          "changed": false
+        }
+      },
+      "previewTreeIdentical": true
+    },
+    {
+      "id": "bad-config-hooks-null",
+      "expected": "Invalid structures fail closed; a disabled install refuses without changing the configuration.",
+      "verdict": "defect",
+      "installShouldReject": true,
+      "uninstallShouldReject": true,
+      "install": {
+        "ok": true,
+        "value": {
+          "workspace": "<RUN>\\bad-config-hooks-null\\workspace",
+          "configPath": "<RUN>\\bad-config-hooks-null\\workspace\\.zcode\\config.json",
+          "existed": true,
+          "before": "{\"hooks\":null}",
+          "after": "{\"hooks\":{\"enabled\":true,\"events\":{\"PreToolUse\":[{\"hooks\":[{\"args\":[\"<REPO>\\\\bin\\\\gstack861.mjs\",\"hook\",\"zcode\",\"--policy\",\"<RUN>\\\\bad-config-hooks-null\\\\policy.json\"],\"command\":\"<NODE>\",\"timeoutMs\":10000,\"type\":\"process\"}],\"matcher\":\".*\"}]}}}",
+          "config": {
+            "hooks": {
+              "enabled": true,
+              "events": {
+                "PreToolUse": [
+                  {
+                    "matcher": ".*",
+                    "hooks": [
+                      {
+                        "type": "process",
+                        "command": "<NODE>",
+                        "args": [
+                          "<REPO>\\bin\\gstack861.mjs",
+                          "hook",
+                          "zcode",
+                          "--policy",
+                          "<RUN>\\bad-config-hooks-null\\policy.json"
+                        ],
+                        "timeoutMs": 10000
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          "changed": true
+        }
+      },
+      "remove": {
+        "ok": true,
+        "value": {
+          "workspace": "<RUN>\\bad-config-hooks-null\\workspace",
+          "configPath": "<RUN>\\bad-config-hooks-null\\workspace\\.zcode\\config.json",
+          "before": "{\"hooks\":null}",
+          "after": "{\"hooks\":null}",
+          "config": {
+            "hooks": null
+          },
+          "changed": false
+        }
+      },
+      "previewTreeIdentical": true
+    },
+    {
+      "id": "bad-config-events-null",
+      "expected": "Invalid structures fail closed; a disabled install refuses without changing the configuration.",
+      "verdict": "defect",
+      "installShouldReject": true,
+      "uninstallShouldReject": true,
+      "install": {
+        "ok": true,
+        "value": {
+          "workspace": "<RUN>\\bad-config-events-null\\workspace",
+          "configPath": "<RUN>\\bad-config-events-null\\workspace\\.zcode\\config.json",
+          "existed": true,
+          "before": "{\"hooks\":{\"events\":null}}",
+          "after": "{\"hooks\":{\"enabled\":true,\"events\":{\"PreToolUse\":[{\"hooks\":[{\"args\":[\"<REPO>\\\\bin\\\\gstack861.mjs\",\"hook\",\"zcode\",\"--policy\",\"<RUN>\\\\bad-config-events-null\\\\policy.json\"],\"command\":\"<NODE>\",\"timeoutMs\":10000,\"type\":\"process\"}],\"matcher\":\".*\"}]}}}",
+          "config": {
+            "hooks": {
+              "events": {
+                "PreToolUse": [
+                  {
+                    "matcher": ".*",
+                    "hooks": [
+                      {
+                        "type": "process",
+                        "command": "<NODE>",
+                        "args": [
+                          "<REPO>\\bin\\gstack861.mjs",
+                          "hook",
+                          "zcode",
+                          "--policy",
+                          "<RUN>\\bad-config-events-null\\policy.json"
+                        ],
+                        "timeoutMs": 10000
+                      }
+                    ]
+                  }
+                ]
+              },
+              "enabled": true
+            }
+          },
+          "changed": true
+        }
+      },
+      "remove": {
+        "ok": true,
+        "value": {
+          "workspace": "<RUN>\\bad-config-events-null\\workspace",
+          "configPath": "<RUN>\\bad-config-events-null\\workspace\\.zcode\\config.json",
+          "before": "{\"hooks\":{\"events\":null}}",
+          "after": "{\"hooks\":{\"events\":null}}",
+          "config": {
+            "hooks": {
+              "events": null
+            }
+          },
+          "changed": false
+        }
+      },
+      "previewTreeIdentical": true
+    },
+    {
+      "id": "bad-config-events-array",
+      "expected": "Invalid structures fail closed; a disabled install refuses without changing the configuration.",
+      "verdict": "defect",
+      "installShouldReject": true,
+      "uninstallShouldReject": true,
+      "install": {
+        "ok": false,
+        "error": "ZCODE_EVENTS_INVALID",
+        "code": null
+      },
+      "remove": {
+        "ok": true,
+        "value": {
+          "workspace": "<RUN>\\bad-config-events-array\\workspace",
+          "configPath": "<RUN>\\bad-config-events-array\\workspace\\.zcode\\config.json",
+          "before": "{\"hooks\":{\"events\":[]}}",
+          "after": "{\"hooks\":{\"events\":[]}}",
+          "config": {
+            "hooks": {
+              "events": []
+            }
+          },
+          "changed": false
+        }
+      },
+      "previewTreeIdentical": true
+    },
+    {
+      "id": "bad-config-pretooluse-object",
+      "expected": "Invalid structures fail closed; a disabled install refuses without changing the configuration.",
+      "verdict": "defect",
+      "installShouldReject": true,
+      "uninstallShouldReject": true,
+      "install": {
+        "ok": false,
+        "error": "ZCODE_EVENTS_INVALID",
+        "code": null
+      },
+      "remove": {
+        "ok": true,
+        "value": {
+          "workspace": "<RUN>\\bad-config-pretooluse-object\\workspace",
+          "configPath": "<RUN>\\bad-config-pretooluse-object\\workspace\\.zcode\\config.json",
+          "before": "{\"hooks\":{\"events\":{\"PreToolUse\":{}}}}",
+          "after": "{\"hooks\":{\"events\":{\"PreToolUse\":{}}}}",
+          "config": {
+            "hooks": {
+              "events": {
+                "PreToolUse": {}
+              }
+            }
+          },
+          "changed": false
+        }
+      },
+      "previewTreeIdentical": true
+    },
+    {
+      "id": "bad-config-foreign-event-nonarray",
+      "expected": "Invalid structures fail closed; a disabled install refuses without changing the configuration.",
+      "verdict": "defect",
+      "installShouldReject": true,
+      "uninstallShouldReject": true,
+      "install": {
+        "ok": true,
+        "value": {
+          "workspace": "<RUN>\\bad-config-foreign-event-nonarray\\workspace",
+          "configPath": "<RUN>\\bad-config-foreign-event-nonarray\\workspace\\.zcode\\config.json",
+          "existed": true,
+          "before": "{\"hooks\":{\"events\":{\"Stop\":\"malformed\"}}}",
+          "after": "{\"hooks\":{\"enabled\":true,\"events\":{\"PreToolUse\":[{\"hooks\":[{\"args\":[\"<REPO>\\\\bin\\\\gstack861.mjs\",\"hook\",\"zcode\",\"--policy\",\"<RUN>\\\\bad-config-foreign-event-nonarray\\\\policy.json\"],\"command\":\"<NODE>\",\"timeoutMs\":10000,\"type\":\"process\"}],\"matcher\":\".*\"}],\"Stop\":\"malformed\"}}}",
+          "config": {
+            "hooks": {
+              "events": {
+                "Stop": "malformed",
+                "PreToolUse": [
+                  {
+                    "matcher": ".*",
+                    "hooks": [
+                      {
+                        "type": "process",
+                        "command": "<NODE>",
+                        "args": [
+                          "<REPO>\\bin\\gstack861.mjs",
+                          "hook",
+                          "zcode",
+                          "--policy",
+                          "<RUN>\\bad-config-foreign-event-nonarray\\policy.json"
+                        ],
+                        "timeoutMs": 10000
+                      }
+                    ]
+                  }
+                ]
+              },
+              "enabled": true
+            }
+          },
+          "changed": true
+        }
+      },
+      "remove": {
+        "ok": true,
+        "value": {
+          "workspace": "<RUN>\\bad-config-foreign-event-nonarray\\workspace",
+          "configPath": "<RUN>\\bad-config-foreign-event-nonarray\\workspace\\.zcode\\config.json",
+          "before": "{\"hooks\":{\"events\":{\"Stop\":\"malformed\"}}}",
+          "after": "{\"hooks\":{\"events\":{\"Stop\":\"malformed\"}}}",
+          "config": {
+            "hooks": {
+              "events": {
+                "Stop": "malformed"
+              }
+            }
+          },
+          "changed": false
+        }
+      },
+      "previewTreeIdentical": true
+    },
+    {
+      "id": "bad-config-invalid-entry-types",
+      "expected": "Invalid structures fail closed; a disabled install refuses without changing the configuration.",
+      "verdict": "defect",
+      "installShouldReject": true,
+      "uninstallShouldReject": true,
+      "install": {
+        "ok": true,
+        "value": {
+          "workspace": "<RUN>\\bad-config-invalid-entry-types\\workspace",
+          "configPath": "<RUN>\\bad-config-invalid-entry-types\\workspace\\.zcode\\config.json",
+          "existed": true,
+          "before": "{\"hooks\":{\"events\":{\"PreToolUse\":[{\"hooks\":\"malformed\",\"matcher\":7}]}}}",
+          "after": "{\"hooks\":{\"enabled\":true,\"events\":{\"PreToolUse\":[{\"hooks\":\"malformed\",\"matcher\":7},{\"hooks\":[{\"args\":[\"<REPO>\\\\bin\\\\gstack861.mjs\",\"hook\",\"zcode\",\"--policy\",\"<RUN>\\\\bad-config-invalid-entry-types\\\\policy.json\"],\"command\":\"<NODE>\",\"timeoutMs\":10000,\"type\":\"process\"}],\"matcher\":\".*\"}]}}}",
+          "config": {
+            "hooks": {
+              "events": {
+                "PreToolUse": [
+                  {
+                    "matcher": 7,
+                    "hooks": "malformed"
+                  },
+                  {
+                    "matcher": ".*",
+                    "hooks": [
+                      {
+                        "type": "process",
+                        "command": "<NODE>",
+                        "args": [
+                          "<REPO>\\bin\\gstack861.mjs",
+                          "hook",
+                          "zcode",
+                          "--policy",
+                          "<RUN>\\bad-config-invalid-entry-types\\policy.json"
+                        ],
+                        "timeoutMs": 10000
+                      }
+                    ]
+                  }
+                ]
+              },
+              "enabled": true
+            }
+          },
+          "changed": true
+        }
+      },
+      "remove": {
+        "ok": true,
+        "value": {
+          "workspace": "<RUN>\\bad-config-invalid-entry-types\\workspace",
+          "configPath": "<RUN>\\bad-config-invalid-entry-types\\workspace\\.zcode\\config.json",
+          "before": "{\"hooks\":{\"events\":{\"PreToolUse\":[{\"hooks\":\"malformed\",\"matcher\":7}]}}}",
+          "after": "{\"hooks\":{\"events\":{\"PreToolUse\":[{\"hooks\":\"malformed\",\"matcher\":7}]}}}",
+          "config": {
+            "hooks": {
+              "events": {
+                "PreToolUse": [
+                  {
+                    "matcher": 7,
+                    "hooks": "malformed"
+                  }
+                ]
+              }
+            }
+          },
+          "changed": false
+        }
+      },
+      "previewTreeIdentical": true
+    },
+    {
+      "id": "config-hardlink",
+      "expected": "Install and uninstall refuse a multiply linked config before mutation.",
+      "verdict": "pass",
+      "install": {
+        "ok": false,
+        "error": "ZCODE_CONFIG_UNSAFE",
+        "code": null
+      },
+      "remove": {
+        "ok": false,
+        "error": "ZCODE_CONFIG_UNSAFE",
+        "code": null
+      },
+      "treeIdentical": true,
+      "nlink": 2
+    },
+    {
+      "id": "config-symlink",
+      "expected": "Install and uninstall refuse a config file symlink before mutation.",
+      "verdict": "pass",
+      "install": {
+        "ok": false,
+        "error": "ZCODE_CONFIG_UNSAFE",
+        "code": null
+      },
+      "remove": {
+        "ok": false,
+        "error": "ZCODE_CONFIG_UNSAFE",
+        "code": null
+      },
+      "treeIdentical": true
+    },
+    {
+      "id": "config-hardlink-after-plan",
+      "expected": "A config hardlink introduced after planning is refused at apply.",
+      "verdict": "pass",
+      "result": {
+        "ok": false,
+        "error": "ZCODE_CONFIG_UNSAFE",
+        "code": null
+      },
+      "originalBytesPreserved": true,
+      "delta": [],
+      "leftovers": []
+    },
+    {
+      "id": "missing-workspace-uninstall",
+      "expected": "Uninstall validates the workspace even when no config exists.",
+      "verdict": "defect",
+      "result": {
+        "ok": true,
+        "value": {
+          "workspace": "<RUN>\\missing-workspace-uninstall\\missing-workspace",
+          "configPath": "<RUN>\\missing-workspace-uninstall\\missing-workspace\\.zcode\\config.json",
+          "before": "{}",
+          "after": "{}",
+          "config": {},
+          "changed": false
+        }
+      },
+      "cliPreview": {
+        "name": "missing-workspace-uninstall-uninstall-preview",
+        "executable": "<NODE>",
+        "args": [
+          "<REPO>\\bin\\gstack861.mjs",
+          "zcode-config-uninstall",
+          "--workspace",
+          "<RUN>\\missing-workspace-uninstall\\missing-workspace",
+          "--policy",
+          "<RUN>\\missing-workspace-uninstall\\policy.json"
+        ],
+        "cwd": "<REPO>",
+        "durationMs": 210,
+        "status": 0,
+        "signal": null,
+        "error": null,
+        "stdout": "{\n  \"changed\": false,\n  \"path\": \"<RUN>\\\\missing-workspace-uninstall\\\\missing-workspace\\\\.zcode\\\\config.json\",\n  \"preview\": {}\n}\n",
+        "stderr": ""
+      }
+    },
+    {
+      "id": "workspace-junction-uninstall",
+      "expected": "Both lifecycle planners refuse a junction workspace root; uninstall never changes the real target.",
+      "verdict": "defect",
+      "install": {
+        "ok": false,
+        "error": "WORKSPACE_INVALID",
+        "code": null
+      },
+      "remove": {
+        "ok": true,
+        "value": {
+          "workspace": "<RUN>\\workspace-junction-uninstall\\workspace-alias",
+          "configPath": "<RUN>\\workspace-junction-uninstall\\workspace-alias\\.zcode\\config.json",
+          "before": "{\"hooks\":{\"enabled\":true,\"events\":{\"PreToolUse\":[{\"hooks\":[{\"args\":[\"<REPO>\\\\bin\\\\gstack861.mjs\",\"hook\",\"zcode\",\"--policy\",\"<RUN>\\\\workspace-junction-uninstall\\\\policy.json\"],\"command\":\"<NODE>\",\"timeoutMs\":10000,\"type\":\"process\"}],\"matcher\":\".*\"}]}}}",
+          "after": "{\"hooks\":{\"enabled\":true}}",
+          "config": {
+            "hooks": {
+              "enabled": true
+            }
+          },
+          "changed": true
+        }
+      },
+      "applied": {
+        "ok": true,
+        "value": {
+          "changed": true,
+          "path": "<RUN>\\workspace-junction-uninstall\\workspace-alias\\.zcode\\config.json"
+        }
+      },
+      "realTargetBytesPreserved": false,
+      "realTargetFinal": {
+        "hooks": {
+          "enabled": true
+        }
+      }
+    },
+    {
+      "id": "zcode-junction-uninstall",
+      "expected": "A linked .zcode directory is refused before read/lock creation in both lifecycle planners.",
+      "verdict": "defect",
+      "install": {
+        "ok": false,
+        "error": "ZCODE_CONFIG_DIR_UNSAFE",
+        "code": null
+      },
+      "remove": {
+        "ok": true,
+        "value": {
+          "workspace": "<RUN>\\zcode-junction-uninstall\\workspace",
+          "configPath": "<RUN>\\zcode-junction-uninstall\\workspace\\.zcode\\config.json",
+          "before": "{\"hooks\":{\"enabled\":true,\"events\":{\"PreToolUse\":[{\"hooks\":[{\"args\":[\"<REPO>\\\\bin\\\\gstack861.mjs\",\"hook\",\"zcode\",\"--policy\",\"<RUN>\\\\zcode-junction-uninstall\\\\policy.json\"],\"command\":\"<NODE>\",\"timeoutMs\":10000,\"type\":\"process\"}],\"matcher\":\".*\"}]}}}",
+          "after": "{\"hooks\":{\"enabled\":true}}",
+          "config": {
+            "hooks": {
+              "enabled": true
+            }
+          },
+          "changed": true
+        }
+      },
+      "applied": {
+        "outcome": {
+          "ok": false,
+          "error": "ZCODE_CONFIG_DIR_UNSAFE",
+          "code": null
+        },
+        "calls": [
+          {
+            "method": "mkdirSync",
+            "path": "<RUN>\\zcode-junction-uninstall\\workspace\\.zcode\\.gstack861-zcode-config.lock"
+          },
+          {
+            "method": "rmdirSync",
+            "path": "<RUN>\\zcode-junction-uninstall\\workspace\\.zcode\\.gstack861-zcode-config.lock"
+          }
+        ]
+      },
+      "externalDelta": [
+        {
+          "path": ".",
+          "before": {
+            "path": ".",
+            "kind": "directory",
+            "mode": 16822,
+            "mtimeMs": 1793370798532.1995,
+            "nlink": 1
+          },
+          "after": {
+            "path": ".",
+            "kind": "directory",
+            "mode": 16822,
+            "mtimeMs": 1793370798535.1523,
+            "nlink": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "ancestor-junction-install",
+      "expected": "A junction in any workspace ancestor is rejected before install writes.",
+      "verdict": "defect",
+      "plan": {
+        "ok": true,
+        "value": {
+          "workspace": "<RUN>\\ancestor-junction-install\\linked-parent\\workspace",
+          "configPath": "<RUN>\\ancestor-junction-install\\linked-parent\\workspace\\.zcode\\config.json",
+          "existed": true,
+          "before": "{}",
+          "after": "{\"hooks\":{\"enabled\":true,\"events\":{\"PreToolUse\":[{\"hooks\":[{\"args\":[\"<REPO>\\\\bin\\\\gstack861.mjs\",\"hook\",\"zcode\",\"--policy\",\"<RUN>\\\\ancestor-junction-install\\\\policy.json\"],\"command\":\"<NODE>\",\"timeoutMs\":10000,\"type\":\"process\"}],\"matcher\":\".*\"}]}}}",
+          "config": {
+            "hooks": {
+              "enabled": true,
+              "events": {
+                "PreToolUse": [
+                  {
+                    "matcher": ".*",
+                    "hooks": [
+                      {
+                        "type": "process",
+                        "command": "<NODE>",
+                        "args": [
+                          "<REPO>\\bin\\gstack861.mjs",
+                          "hook",
+                          "zcode",
+                          "--policy",
+                          "<RUN>\\ancestor-junction-install\\policy.json"
+                        ],
+                        "timeoutMs": 10000
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          "changed": true
+        }
+      },
+      "applied": {
+        "ok": true,
+        "value": {
+          "changed": true,
+          "path": "<RUN>\\ancestor-junction-install\\linked-parent\\workspace\\.zcode\\config.json"
+        }
+      },
+      "realTargetDelta": [
+        {
+          "path": "workspace/.zcode",
+          "before": {
+            "path": "workspace/.zcode",
+            "kind": "directory",
+            "mode": 16822,
+            "mtimeMs": 1793370798618.3193,
+            "nlink": 1
+          },
+          "after": {
+            "path": "workspace/.zcode",
+            "kind": "directory",
+            "mode": 16822,
+            "mtimeMs": 1793370798631.0505,
+            "nlink": 1
+          }
+        },
+        {
+          "path": "workspace/.zcode/config.json",
+          "before": {
+            "path": "workspace/.zcode/config.json",
+            "kind": "file",
+            "mode": 33206,
+            "mtimeMs": 1793370798618.3193,
+            "nlink": 1,
+            "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+          },
+          "after": {
+            "path": "workspace/.zcode/config.json",
+            "kind": "file",
+            "mode": 33206,
+            "mtimeMs": 1793370798629.241,
+            "nlink": 1,
+            "sha256": "09780707216ff46b3074f22818aa68c8776c5663842cf7e591b0a89573ca56ea"
+          }
+        }
+      ]
+    },
+    {
+      "id": "workspace-swapped-after-plan",
+      "expected": "A workspace replaced with a junction after planning is rejected by apply.",
+      "verdict": "defect",
+      "result": {
+        "ok": true,
+        "value": {
+          "changed": true,
+          "path": "<RUN>\\workspace-swapped-after-plan\\workspace\\.zcode\\config.json"
+        }
+      },
+      "externalDelta": [
+        {
+          "path": ".zcode",
+          "before": {
+            "path": ".zcode",
+            "kind": "directory",
+            "mode": 16822,
+            "mtimeMs": 1793370798731.8828,
+            "nlink": 1
+          },
+          "after": {
+            "path": ".zcode",
+            "kind": "directory",
+            "mode": 16822,
+            "mtimeMs": 1793370798737.1794,
+            "nlink": 1
+          }
+        },
+        {
+          "path": ".zcode/config.json",
+          "before": {
+            "path": ".zcode/config.json",
+            "kind": "file",
+            "mode": 33206,
+            "mtimeMs": 1793370798731.8828,
+            "nlink": 1,
+            "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+          },
+          "after": {
+            "path": ".zcode/config.json",
+            "kind": "file",
+            "mode": 33206,
+            "mtimeMs": 1793370798735.9604,
+            "nlink": 1,
+            "sha256": "1710fcf723e003513acd13678a668a238200015b301498516c7a6f6c5d058505"
+          }
+        }
+      ]
+    },
+    {
+      "id": "workspace-plain-replaced-after-plan",
+      "expected": "A new plain workspace at the same path does not inherit approval from the planned workspace.",
+      "verdict": "defect",
+      "plannedIno": "844424931013069",
+      "replacementIno": "562949954302446",
+      "result": {
+        "ok": true,
+        "value": {
+          "changed": true,
+          "path": "<RUN>\\workspace-plain-replaced-after-plan\\workspace\\.zcode\\config.json"
+        }
+      },
+      "final": {
+        "hooks": {
+          "enabled": true,
+          "events": {
+            "PreToolUse": [
+              {
+                "matcher": ".*",
+                "hooks": [
+                  {
+                    "type": "process",
+                    "command": "<NODE>",
+                    "args": [
+                      "<REPO>\\bin\\gstack861.mjs",
+                      "hook",
+                      "zcode",
+                      "--policy",
+                      "<RUN>\\workspace-plain-replaced-after-plan\\policy.json"
+                    ],
+                    "timeoutMs": 10000
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "zcode-swapped-after-plan",
+      "expected": "A .zcode junction introduced after planning is refused before creating a lock in its target.",
+      "verdict": "defect",
+      "outcome": {
+        "ok": false,
+        "error": "ZCODE_CONFIG_DIR_UNSAFE",
+        "code": null
+      },
+      "calls": [
+        {
+          "method": "mkdirSync",
+          "path": "<RUN>\\zcode-swapped-after-plan\\workspace\\.zcode\\.gstack861-zcode-config.lock"
+        },
+        {
+          "method": "rmdirSync",
+          "path": "<RUN>\\zcode-swapped-after-plan\\workspace\\.zcode\\.gstack861-zcode-config.lock"
+        }
+      ],
+      "externalConfigUnchanged": true
+    },
+    {
+      "id": "zcode-swapped-at-temp-write",
+      "expected": "Apply revalidates the directory before committing so a late junction swap cannot redirect writes.",
+      "verdict": "defect",
+      "injected": true,
+      "result": {
+        "ok": false,
+        "error": "ENOENT: no such file or directory, rmdir '<RUN>\\zcode-swapped-at-temp-write\\workspace\\.zcode\\.gstack861-zcode-config.lock'",
+        "code": "ENOENT"
+      },
+      "externalFinal": {
+        "hooks": {
+          "enabled": true,
+          "events": {
+            "PreToolUse": [
+              {
+                "matcher": ".*",
+                "hooks": [
+                  {
+                    "type": "process",
+                    "command": "<NODE>",
+                    "args": [
+                      "<REPO>\\bin\\gstack861.mjs",
+                      "hook",
+                      "zcode",
+                      "--policy",
+                      "<RUN>\\zcode-swapped-at-temp-write\\policy.json"
+                    ],
+                    "timeoutMs": 10000
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "externalEntries": [
+        "config.json"
+      ],
+      "parkedEntries": [
+        ".gstack861-zcode-config.lock",
+        "config.json"
+      ],
+      "injection": "Deterministic fs seam swap immediately before the production temp write, after existing directory/config checks."
+    },
+    {
+      "id": "mutable-plan-content",
+      "expected": "The applied content remains bound to the immutable preview and plan.after.",
+      "verdict": "defect",
+      "planFrozen": true,
+      "configFrozen": false,
+      "mutation": {
+        "ok": true
+      },
+      "result": {
+        "ok": true,
+        "value": {
+          "changed": true,
+          "path": "<RUN>\\mutable-plan-content\\workspace\\.zcode\\config.json"
+        }
+      },
+      "final": {
+        "hooks": {
+          "enabled": false,
+          "events": {
+            "PreToolUse": [
+              {
+                "matcher": ".*",
+                "hooks": [
+                  {
+                    "type": "process",
+                    "command": "<NODE>",
+                    "args": [
+                      "<REPO>\\bin\\gstack861.mjs",
+                      "hook",
+                      "zcode",
+                      "--policy",
+                      "<RUN>\\mutable-plan-content\\policy.json"
+                    ],
+                    "timeoutMs": 10000
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "userInjectedAfterPreview": true
+      },
+      "finalMatchesDeclaredAfter": false
+    },
+    {
+      "id": "plan-path-outside-workspace",
+      "expected": "Apply refuses a plan whose configPath is outside its workspace.",
+      "verdict": "defect",
+      "result": {
+        "ok": true,
+        "value": {
+          "changed": true,
+          "path": "<RUN>\\plan-path-outside-workspace\\external-config-dir\\config.json"
+        }
+      },
+      "externalConfig": {
+        "hooks": {
+          "enabled": true,
+          "events": {
+            "PreToolUse": [
+              {
+                "matcher": ".*",
+                "hooks": [
+                  {
+                    "type": "process",
+                    "command": "<NODE>",
+                    "args": [
+                      "<REPO>\\bin\\gstack861.mjs",
+                      "hook",
+                      "zcode",
+                      "--policy",
+                      "<RUN>\\plan-path-outside-workspace\\policy.json"
+                    ],
+                    "timeoutMs": 10000
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "caveat": "Exported API accepts a caller-supplied plan object; current CLI does not deserialize or expose arbitrary plan objects."
+    },
+    {
+      "id": "io-read-eacces",
+      "expected": "Read/write/rename failures retain original config bytes and clean only this invocation's temporary file and lock.",
+      "verdict": "pass",
+      "injected": true,
+      "result": {
+        "ok": false,
+        "error": "ZCODE_CONFIG_INVALID",
+        "code": null
+      },
+      "originalBytesPreserved": true,
+      "leftovers": [],
+      "injectedAt": "readFileSync"
+    },
+    {
+      "id": "io-write-enospc-partial",
+      "expected": "Read/write/rename failures retain original config bytes and clean only this invocation's temporary file and lock.",
+      "verdict": "pass",
+      "injected": true,
+      "result": {
+        "ok": false,
+        "error": "ENOSPC_FIXTURE",
+        "code": "ENOSPC"
+      },
+      "originalBytesPreserved": true,
+      "leftovers": [],
+      "injectedAt": "writeFileSync"
+    },
+    {
+      "id": "io-rename-eacces",
+      "expected": "Read/write/rename failures retain original config bytes and clean only this invocation's temporary file and lock.",
+      "verdict": "pass",
+      "injected": true,
+      "result": {
+        "ok": false,
+        "error": "EACCES_FIXTURE",
+        "code": "EACCES"
+      },
+      "originalBytesPreserved": true,
+      "leftovers": [],
+      "injectedAt": "renameSync"
+    },
+    {
+      "id": "active-lock",
+      "expected": "An active preexisting lock refuses without deleting the lock or touching config.",
+      "verdict": "pass",
+      "result": {
+        "ok": false,
+        "error": "ZCODE_CONFIG_BUSY",
+        "code": null
+      },
+      "treeIdentical": true
+    },
+    {
+      "id": "cli-mismatched-policy-workspace",
+      "expected": "Install requires the policy workspace to match the selected target; a policy inside the selected workspace is refused.",
+      "verdict": "defect",
+      "preview": {
+        "name": "cli-mismatched-policy-workspace-install-preview",
+        "executable": "<NODE>",
+        "args": [
+          "<REPO>\\bin\\gstack861.mjs",
+          "zcode-config-install",
+          "--workspace",
+          "<RUN>\\cli-mismatched-policy-workspace\\workspace",
+          "--policy",
+          "<RUN>\\cli-mismatched-policy-workspace\\workspace\\foreign-workspace-policy.json"
+        ],
+        "cwd": "<REPO>",
+        "durationMs": 164,
+        "status": 0,
+        "signal": null,
+        "error": null,
+        "stdout": "{\n  \"changed\": true,\n  \"path\": \"<RUN>\\\\cli-mismatched-policy-workspace\\\\workspace\\\\.zcode\\\\config.json\",\n  \"preview\": {\n    \"hooks\": {\n      \"enabled\": true,\n      \"events\": {\n        \"PreToolUse\": [\n          {\n            \"matcher\": \".*\",\n            \"hooks\": [\n              {\n                \"type\": \"process\",\n                \"command\": \"<NODE>\",\n                \"args\": [\n                  \"<REPO>\\\\bin\\\\gstack861.mjs\",\n                  \"hook\",\n                  \"zcode\",\n                  \"--policy\",\n                  \"<RUN>\\\\cli-mismatched-policy-workspace\\\\workspace\\\\foreign-workspace-policy.json\"\n                ],\n                \"timeoutMs\": 10000\n              }\n            ]\n          }\n        ]\n      }\n    }\n  }\n}\n",
+        "stderr": ""
+      },
+      "applied": {
+        "name": "cli-mismatched-policy-workspace-install-apply",
+        "executable": "<NODE>",
+        "args": [
+          "<REPO>\\bin\\gstack861.mjs",
+          "zcode-config-install",
+          "--workspace",
+          "<RUN>\\cli-mismatched-policy-workspace\\workspace",
+          "--policy",
+          "<RUN>\\cli-mismatched-policy-workspace\\workspace\\foreign-workspace-policy.json",
+          "--apply"
+        ],
+        "cwd": "<REPO>",
+        "durationMs": 170,
+        "status": 0,
+        "signal": null,
+        "error": null,
+        "stdout": "{\n  \"changed\": true,\n  \"path\": \"<RUN>\\\\cli-mismatched-policy-workspace\\\\workspace\\\\.zcode\\\\config.json\"\n}\n",
+        "stderr": ""
+      },
+      "configBytesPreserved": false,
+      "final": {
+        "hooks": {
+          "enabled": true,
+          "events": {
+            "PreToolUse": [
+              {
+                "matcher": ".*",
+                "hooks": [
+                  {
+                    "type": "process",
+                    "command": "<NODE>",
+                    "args": [
+                      "<REPO>\\bin\\gstack861.mjs",
+                      "hook",
+                      "zcode",
+                      "--policy",
+                      "<RUN>\\cli-mismatched-policy-workspace\\workspace\\foreign-workspace-policy.json"
+                    ],
+                    "timeoutMs": 10000
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "cli-invalid-config-and-internal-policy-controls",
+      "expected": "Real CLI install refuses invalid JSON and a policy inside its own matching workspace without config writes.",
+      "verdict": "pass",
+      "invalid": {
+        "name": "cli-invalid-config-controls-install-apply",
+        "executable": "<NODE>",
+        "args": [
+          "<REPO>\\bin\\gstack861.mjs",
+          "zcode-config-install",
+          "--workspace",
+          "<RUN>\\cli-invalid-config-controls\\workspace",
+          "--policy",
+          "<RUN>\\cli-invalid-config-controls\\policy.json",
+          "--apply"
+        ],
+        "cwd": "<REPO>",
+        "durationMs": 142,
+        "status": 1,
+        "signal": null,
+        "error": null,
+        "stdout": "",
+        "stderr": "gstack861: ZCODE_CONFIG_INVALID\n"
+      },
+      "invalidOriginalWasRetained": true,
+      "internal": {
+        "name": "cli-invalid-config-controls-install-apply",
+        "executable": "<NODE>",
+        "args": [
+          "<REPO>\\bin\\gstack861.mjs",
+          "zcode-config-install",
+          "--workspace",
+          "<RUN>\\cli-invalid-config-controls\\workspace",
+          "--policy",
+          "<RUN>\\cli-invalid-config-controls\\workspace\\policy.json",
+          "--apply"
+        ],
+        "cwd": "<REPO>",
+        "durationMs": 153,
+        "status": 1,
+        "signal": null,
+        "error": null,
+        "stdout": "",
+        "stderr": "gstack861: POLICY_MUST_BE_OUTSIDE_WORKSPACE\n"
+      },
+      "final": {}
+    },
+    {
+      "id": "missing-uninstall-noop",
+      "expected": "Uninstall in a valid workspace without .zcode is a zero-write no-op in preview and apply.",
+      "verdict": "defect",
+      "preview": {
+        "name": "missing-uninstall-noop-uninstall-preview",
+        "executable": "<NODE>",
+        "args": [
+          "<REPO>\\bin\\gstack861.mjs",
+          "zcode-config-uninstall",
+          "--workspace",
+          "<RUN>\\missing-uninstall-noop\\workspace",
+          "--policy",
+          "<RUN>\\missing-uninstall-noop\\policy.json"
+        ],
+        "cwd": "<REPO>",
+        "durationMs": 157,
+        "status": 0,
+        "signal": null,
+        "error": null,
+        "stdout": "{\n  \"changed\": false,\n  \"path\": \"<RUN>\\\\missing-uninstall-noop\\\\workspace\\\\.zcode\\\\config.json\",\n  \"preview\": {}\n}\n",
+        "stderr": ""
+      },
+      "applied": {
+        "name": "missing-uninstall-noop-uninstall-apply",
+        "executable": "<NODE>",
+        "args": [
+          "<REPO>\\bin\\gstack861.mjs",
+          "zcode-config-uninstall",
+          "--workspace",
+          "<RUN>\\missing-uninstall-noop\\workspace",
+          "--policy",
+          "<RUN>\\missing-uninstall-noop\\policy.json",
+          "--apply"
+        ],
+        "cwd": "<REPO>",
+        "durationMs": 178,
+        "status": 1,
+        "signal": null,
+        "error": null,
+        "stdout": "",
+        "stderr": "gstack861: ZCODE_CONFIG_BUSY\n"
+      },
+      "treeIdentical": true
+    },
+    {
+      "id": "preexisting-empty-event-containers",
+      "expected": "Uninstall preserves a preexisting empty PreToolUse event array and events container.",
+      "verdict": "defect",
+      "original": {
+        "theme": "dark",
+        "hooks": {
+          "enabled": true,
+          "events": {
+            "PreToolUse": []
+          }
+        }
+      },
+      "removed": {
+        "ok": true,
+        "value": {
+          "changed": true,
+          "path": "<RUN>\\preexisting-empty-events\\workspace\\.zcode\\config.json"
+        }
+      },
+      "final": {
+        "theme": "dark",
+        "hooks": {
+          "enabled": true
+        }
+      }
+    },
+    {
+      "id": "concurrent-user-edit-before-uninstall",
+      "expected": {
+        "theme": "light",
+        "userAdded": true,
+        "hooks": {
+          "enabled": false,
+          "events": {
+            "Stop": [
+              {
+                "matcher": "Write",
+                "hooks": [
+                  {
+                    "type": "command",
+                    "command": "concurrent-foreign-hook"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "verdict": "pass",
+      "removed": {
+        "ok": true,
+        "value": {
+          "changed": true,
+          "path": "<RUN>\\concurrent-uninstall-user-edit\\workspace\\.zcode\\config.json"
+        }
+      },
+      "final": {
+        "theme": "light",
+        "hooks": {
+          "enabled": false,
+          "events": {
+            "Stop": [
+              {
+                "matcher": "Write",
+                "hooks": [
+                  {
+                    "type": "command",
+                    "command": "concurrent-foreign-hook"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "userAdded": true
+      }
+    },
+    {
+      "id": "stale-uninstall-plan",
+      "expected": "A semantic edit after uninstall planning is refused and new user bytes survive.",
+      "verdict": "pass",
+      "result": {
+        "ok": false,
+        "error": "ZCODE_CONFIG_CHANGED",
+        "code": null
+      },
+      "bytesPreserved": true,
+      "leftovers": []
+    },
+    {
+      "id": "config-symlink-after-plan",
+      "expected": "A config symlink introduced after planning is refused at apply without writing its target.",
+      "verdict": "pass",
+      "result": {
+        "ok": false,
+        "error": "ZCODE_CONFIG_UNSAFE",
+        "code": null
+      },
+      "targetBytesPreserved": true,
+      "leftovers": []
+    },
+    {
+      "id": "io-mkdir-eacces",
+      "expected": "A directory I/O failure fails closed and is not misreported as contention.",
+      "verdict": "diagnostic-defect",
+      "injected": true,
+      "result": {
+        "ok": false,
+        "error": "ZCODE_CONFIG_BUSY",
+        "code": null
+      },
+      "configBytesPreserved": true
+    },
+    {
+      "id": "config-replaced-at-rename",
+      "expected": "A concurrent semantic edit immediately before commit is detected rather than overwritten.",
+      "verdict": "race-exposure",
+      "injected": true,
+      "result": {
+        "ok": true,
+        "value": {
+          "changed": true,
+          "path": "<RUN>\\config-replaced-at-rename\\workspace\\.zcode\\config.json"
+        }
+      },
+      "final": {
+        "hooks": {
+          "enabled": true,
+          "events": {
+            "PreToolUse": [
+              {
+                "matcher": ".*",
+                "hooks": [
+                  {
+                    "type": "process",
+                    "command": "<NODE>",
+                    "args": [
+                      "<REPO>\\bin\\gstack861.mjs",
+                      "hook",
+                      "zcode",
+                      "--policy",
+                      "<RUN>\\config-replaced-at-rename\\policy.json"
+                    ],
+                    "timeoutMs": 10000
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "injection": "Edit at the rename syscall seam after the last production config read; documents the residual optimistic-concurrency window."
+    }
+  ]
+}

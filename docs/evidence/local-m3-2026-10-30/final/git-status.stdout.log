@@ -1,0 +1,15 @@
+## work/m3-command-aliases-20261029...origin/work/m3-command-aliases-20261029
+ M bin/gstack861.mjs
+ M src/aliases.mjs
+ M src/dsh-profile.mjs
+ M src/fs-utils.mjs
+ M src/install.mjs
+ M src/zcode-profile.mjs
+ M test/aliases.test.mjs
+ M test/dsh-profile.test.mjs
+ M test/host-setup-cli.test.mjs
+ M test/install.test.mjs
+ M test/zcode-profile.test.mjs
+?? docs/LOCAL-M3-ACCEPTANCE-2026-10-30.md
+?? docs/evidence/
+?? test/fs-utils.test.mjs

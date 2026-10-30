@@ -1382,3 +1382,396 @@ test('uninstall --dry-run --purge prints the combined report without touching an
   assert.deepEqual(fs.readdirSync(path.join(target, BACKUPS)), [backup], 'the drift backup must survive');
   assert.ok(fs.existsSync(path.join(target, 'alpha')), 'the skill must stay installed');
 });
+
+// --- I1: strict shared installer paths and observed swaps -----------------------
+
+const directoryLink = (physical, view) => fs.symlinkSync(physical, view, process.platform === 'win32' ? 'junction' : 'dir');
+
+// Capture bytes, identities and modification times; reads may change access time.
+function installTree(root) {
+  const result = [];
+  const walk = filename => {
+    const stat = fs.lstatSync(filename, { bigint: true });
+    const name = path.relative(root, filename);
+    result.push([name, String(stat.dev), String(stat.ino), String(stat.mtimeNs),
+      stat.isSymbolicLink() ? fs.readlinkSync(filename) : stat.isFile() ? fs.readFileSync(filename).toString('hex') : 'directory']);
+    if (stat.isDirectory() && !stat.isSymbolicLink()) {
+      for (const child of fs.readdirSync(filename).sort()) walk(path.join(filename, child));
+    }
+  };
+  walk(root);
+  return result;
+}
+
+for (const operation of ['install', 'uninstall']) {
+  for (const dryRun of [false, true]) {
+    for (const exists of [false, true]) {
+      test(`I1 ${operation}${dryRun ? ' dry-run' : ''} refuses a linked ancestor above a ${exists ? 'present' : 'missing'} target before any writes`, t => {
+        const root = base(t), staging = path.join(root, 'staging'), physical = path.join(root, 'physical'), view = path.join(root, 'view');
+        stage(staging, 'alpha', ALPHA_V1);
+        fs.mkdirSync(physical);
+        if (exists) installSkills({ staging, target: path.join(physical, 'skills'), now: NOW });
+        directoryLink(physical, view);
+        const target = path.join(view, 'skills'), before = installTree(root);
+        assert.throws(() => operation === 'install'
+          ? installSkills({ staging, target, dryRun, now: NOW })
+          : uninstallSkills({ target, dryRun, purge: true, now: NOW }), /^Error: INVALID_TARGET$/);
+        assert.deepEqual(installTree(root), before, 'refusal must precede lock, registry access and directory creation');
+      });
+    }
+  }
+}
+
+if (process.platform === 'win32') {
+  test('I1 extended namespace spelling cannot hide a target ancestor junction', t => {
+    const root = base(t), staging = path.join(root, 'staging'), physical = path.join(root, 'physical'), view = path.join(root, 'view');
+    stage(staging, 'alpha', ALPHA_V1);
+    fs.mkdirSync(physical);
+    directoryLink(physical, view);
+    const target = path.toNamespacedPath(path.join(view, 'skills')), before = installTree(root);
+    for (const dryRun of [false, true]) {
+      assert.throws(() => installSkills({ staging, target, dryRun, now: NOW }), /^Error: INVALID_TARGET$/);
+      assert.throws(() => uninstallSkills({ target, dryRun, now: NOW }), /^Error: INVALID_TARGET$/);
+    }
+    assert.deepEqual(installTree(root), before);
+  });
+
+  test('I1 plain extended namespace paths retain the normal install and uninstall lifecycle', t => {
+    const root = base(t), staging = path.join(root, 'staging'), target = path.join(root, 'skills');
+    stage(staging, 'alpha', ALPHA_V1);
+    assert.deepEqual(installSkills({ staging: path.toNamespacedPath(staging), target: path.toNamespacedPath(target), now: NOW }),
+      { installed: ['alpha'], skipped: [], backedUp: [] });
+    assert.deepEqual(uninstallSkills({ target, now: NOW }), { uninstalled: ['alpha'], backupsRemoved: 0 });
+  });
+}
+
+for (const dryRun of [false, true]) {
+  for (const linkAt of ['ancestor', 'root', 'skill', 'auxiliary']) {
+    test(`I1 install${dryRun ? ' dry-run' : ''} refuses a staging ${linkAt} directory link`, t => {
+      const root = base(t), physical = path.join(root, 'physical'), target = path.join(root, 'target');
+      const source = path.join(physical, 'staging');
+      stageMulti(source, 'alpha', ALPHA_V1, { 'sections/scope.md': SCOPE_V1 });
+      let staging = source;
+      if (linkAt === 'ancestor') {
+        directoryLink(physical, path.join(root, 'view'));
+        staging = path.join(root, 'view', 'staging');
+      } else if (linkAt === 'root') {
+        staging = path.join(root, 'view');
+        directoryLink(source, staging);
+      } else {
+        const original = path.join(source, 'alpha', ...(linkAt === 'auxiliary' ? ['sections'] : []));
+        const parked = path.join(root, 'parked');
+        fs.renameSync(original, parked);
+        directoryLink(parked, original);
+      }
+      const before = installTree(root);
+      const code = linkAt === 'ancestor' || linkAt === 'root' ? /^Error: INVALID_STAGING$/
+        : linkAt === 'skill' ? /^Error: STAGING_INVALID$/ : /^Error: TAMPERED_STAGING$/;
+      assert.throws(() => installSkills({ staging, target, dryRun, now: NOW }), code);
+      assert.deepEqual(installTree(root), before);
+    });
+  }
+  for (const filename of ['manifest.json', 'SKILL.md', 'sections/scope.md']) {
+    test(`I1 install${dryRun ? ' dry-run' : ''} refuses a multiply linked staging ${filename}`, t => {
+      const root = base(t), staging = path.join(root, 'staging'), target = path.join(root, 'target');
+      stageMulti(staging, 'alpha', ALPHA_V1, { 'sections/scope.md': SCOPE_V1 });
+      fs.linkSync(path.join(staging, 'alpha', ...filename.split('/')), path.join(root, 'external-link'));
+      const before = installTree(root);
+      assert.throws(() => installSkills({ staging, target, dryRun, now: NOW }),
+        filename.includes('/') ? /^Error: TAMPERED_STAGING$/ : /^Error: STAGING_INVALID$/);
+      assert.deepEqual(installTree(root), before);
+    });
+  }
+}
+
+test('I1 missing target suffix previews write nothing and a real multi-file lifecycle still succeeds', t => {
+  const root = base(t), staging = path.join(root, 'staging'), target = path.join(root, 'new', 'nested', 'skills');
+  stageMulti(staging, 'alpha', ALPHA_V1, { 'sections/deep/scope.md': SCOPE_V1 });
+  const before = installTree(root);
+  assert.deepEqual(installSkills({ staging, target, dryRun: true, now: NOW }),
+    { dryRun: true, wouldInstall: ['alpha'], wouldSkip: [], wouldBackUp: [] });
+  assert.deepEqual(uninstallSkills({ target, dryRun: true, now: NOW }), { dryRun: true, wouldUninstall: [], wouldPurge: [] });
+  assert.deepEqual(uninstallSkills({ target, now: NOW }), { uninstalled: [], backupsRemoved: 0 });
+  assert.deepEqual(installTree(root), before);
+  assert.deepEqual(installSkills({ staging, target, now: NOW }), { installed: ['alpha'], skipped: [], backedUp: [] });
+  assert.deepEqual(installSkills({ staging, target, now: NOW }), { installed: [], skipped: ['alpha'], backedUp: [] });
+  const installed = installTree(root);
+  assert.deepEqual(uninstallSkills({ target, dryRun: true, now: NOW }), { dryRun: true, wouldUninstall: ['alpha'], wouldPurge: [] });
+  assert.deepEqual(installTree(root), installed);
+  assert.deepEqual(uninstallSkills({ target, now: NOW }), { uninstalled: ['alpha'], backupsRemoved: 0 });
+});
+
+// Swaps happen after an observed read/create has returned, leaving a later check
+// an opportunity to refuse. These fixtures do not claim final-syscall atomicity.
+for (const replacement of ['junction', 'plain']) {
+  for (const dryRun of [false, true]) {
+    test(`I1 install${dryRun ? ' dry-run' : ''} rejects a ${replacement} target ancestor replacement observed during staging reads`, t => {
+      const root = base(t), staging = path.join(root, 'staging'), parent = path.join(root, 'parent'), parked = path.join(root, 'parked');
+      const foreign = path.join(root, 'foreign'), target = path.join(parent, 'skills');
+      stage(staging, 'alpha', ALPHA_V1);
+      fs.mkdirSync(parent); fs.mkdirSync(foreign);
+      fs.writeFileSync(path.join(foreign, 'operator.txt'), 'preserve');
+      const real = fs.readdirSync; let swapped = false;
+      fs.readdirSync = function (filename, ...args) {
+        const result = real.call(this, filename, ...args);
+        if (!swapped && filename === staging) {
+          swapped = true;
+          fs.renameSync(parent, parked);
+          if (replacement === 'junction') directoryLink(foreign, parent);
+          else fs.renameSync(foreign, parent);
+        }
+        return result;
+      };
+      try {
+        assert.throws(() => installSkills({ staging, target, dryRun, now: NOW }), /^Error: INVALID_TARGET$/);
+      } finally { fs.readdirSync = real; }
+      assert.equal(swapped, true);
+      assert.deepEqual(fs.readdirSync(replacement === 'junction' ? foreign : parent), ['operator.txt']);
+      assert.deepEqual(fs.readdirSync(parked), []);
+    });
+
+    test(`I1 uninstall${dryRun ? ' dry-run' : ''} rejects a ${replacement} ancestor replacement observed during ownership reads`, t => {
+      const root = base(t), staging = path.join(root, 'staging'), parent = path.join(root, 'parent'), parked = path.join(root, 'parked');
+      const foreign = path.join(root, 'foreign'), target = path.join(parent, 'skills');
+      stage(staging, 'alpha', ALPHA_V1);
+      installSkills({ staging, target, now: NOW });
+      fs.cpSync(parent, foreign, { recursive: true });
+      const before = installTree(foreign), real = fs.readdirSync; let swapped = false;
+      fs.readdirSync = function (filename, ...args) {
+        const result = real.call(this, filename, ...args);
+        if (!swapped && filename === path.join(target, 'alpha')) {
+          swapped = true;
+          fs.renameSync(parent, parked);
+          if (replacement === 'junction') directoryLink(foreign, parent);
+          else fs.renameSync(foreign, parent);
+        }
+        return result;
+      };
+      try {
+        assert.throws(() => uninstallSkills({ target, dryRun, now: NOW }), /^Error: INVALID_TARGET$/);
+      } finally { fs.readdirSync = real; }
+      assert.equal(swapped, true);
+      assert.deepEqual(installTree(replacement === 'junction' ? foreign : parent), before);
+      assert.equal(fs.readFileSync(path.join(parked, 'skills', 'alpha', 'SKILL.md'), 'utf8'), ALPHA_V1);
+    });
+  }
+}
+
+test('I1 target creation must not refresh away an existing ancestor replacement', t => {
+  const root = base(t), staging = path.join(root, 'staging'), parent = path.join(root, 'parent'), target = path.join(parent, 'new', 'skills');
+  stage(staging, 'alpha', ALPHA_V1);
+  fs.mkdirSync(parent);
+  const real = fs.mkdirSync; let swapped = false;
+  fs.mkdirSync = function (filename, ...args) {
+    const result = real.call(this, filename, ...args);
+    if (!swapped && filename === target) {
+      swapped = true;
+      fs.renameSync(parent, path.join(root, 'parked'));
+      real(target, { recursive: true });
+      fs.writeFileSync(path.join(parent, 'operator.txt'), 'preserve');
+    }
+    return result;
+  };
+  try { assert.throws(() => installSkills({ staging, target, now: NOW }), /^Error: INVALID_TARGET$/); }
+  finally { fs.mkdirSync = real; }
+  assert.equal(swapped, true);
+  assert.deepEqual(fs.readdirSync(target), []);
+  assert.equal(fs.readFileSync(path.join(parent, 'operator.txt'), 'utf8'), 'preserve');
+});
+
+test('I1 an ancestor swap after lock creation preserves the replacement lock and target', t => {
+  const root = base(t), staging = path.join(root, 'staging'), parent = path.join(root, 'parent'), target = path.join(parent, 'skills');
+  stage(staging, 'alpha', ALPHA_V1);
+  fs.mkdirSync(target, { recursive: true });
+  const real = fs.mkdirSync; let swapped = false;
+  fs.mkdirSync = function (filename, ...args) {
+    const result = real.call(this, filename, ...args);
+    if (!swapped && filename === path.join(target, LOCK)) {
+      swapped = true;
+      fs.renameSync(parent, path.join(root, 'parked'));
+      real(path.join(target, LOCK), { recursive: true });
+      fs.writeFileSync(path.join(target, LOCK, 'operator.txt'), 'preserve');
+    }
+    return result;
+  };
+  try { assert.throws(() => installSkills({ staging, target, now: NOW }), /^Error: INVALID_TARGET$/); }
+  finally { fs.mkdirSync = real; }
+  assert.equal(swapped, true);
+  assert.deepEqual(fs.readdirSync(target), [LOCK]);
+  assert.equal(fs.readFileSync(path.join(target, LOCK, 'operator.txt'), 'utf8'), 'preserve');
+});
+
+test('I1 staging ancestor replacement during a manifest read refuses before target creation', t => {
+  const root = base(t), parent = path.join(root, 'parent'), staging = path.join(parent, 'staging'), target = path.join(root, 'target');
+  stage(staging, 'alpha', ALPHA_V1);
+  const replacement = path.join(root, 'replacement');
+  fs.cpSync(parent, replacement, { recursive: true });
+  const real = fs.readFileSync; let swapped = false;
+  fs.readFileSync = function (filename, ...args) {
+    const result = real.call(this, filename, ...args);
+    // readPlainFile uses a verified fd; the old reader uses the pathname.
+    if (!swapped && (typeof filename === 'number' || filename === path.join(staging, 'alpha', 'manifest.json'))) {
+      swapped = true;
+      fs.renameSync(parent, path.join(root, 'parked'));
+      fs.renameSync(replacement, parent);
+    }
+    return result;
+  };
+  try { assert.throws(() => installSkills({ staging, target, now: NOW }), /^Error: STAGING_INVALID$/); }
+  finally { fs.readFileSync = real; }
+  assert.equal(swapped, true);
+  assert.equal(fs.existsSync(target), false);
+});
+
+test('I1 failed temp mkdir preserves a colliding operator directory', t => {
+  const root = base(t), staging = path.join(root, 'staging'), target = path.join(root, 'target');
+  stage(staging, 'alpha', ALPHA_V1);
+  const real = fs.mkdirSync; let collision;
+  fs.mkdirSync = function (filename, ...args) {
+    if (!collision && path.dirname(filename) === target && path.basename(filename).startsWith('.gstack861-tmp-')) {
+      collision = filename;
+      real(filename);
+      fs.writeFileSync(path.join(filename, 'operator.txt'), 'preserve');
+    }
+    return real.call(this, filename, ...args);
+  };
+  try { assert.throws(() => installSkills({ staging, target, now: NOW }), /EEXIST/); }
+  finally { fs.mkdirSync = real; }
+  assert.ok(collision);
+  assert.equal(fs.readFileSync(path.join(collision, 'operator.txt'), 'utf8'), 'preserve');
+  assert.equal(fs.existsSync(registryFile(target)), false);
+});
+
+test('I1 failed temp write cleans only invocation-owned files and preserves an operator sibling', t => {
+  const root = base(t), staging = path.join(root, 'staging'), target = path.join(root, 'target');
+  stage(staging, 'alpha', ALPHA_V1);
+  const real = fs.writeFileSync; let temp;
+  fs.writeFileSync = function (filename, ...args) {
+    if (!temp && path.basename(filename) === 'manifest.json' && path.basename(path.dirname(filename)).startsWith('.gstack861-tmp-')) {
+      temp = path.dirname(filename);
+      real(path.join(temp, 'operator.txt'), 'preserve');
+      throw Object.assign(new Error('EIO'), { code: 'EIO' });
+    }
+    return real.call(this, filename, ...args);
+  };
+  try { assert.throws(() => installSkills({ staging, target, now: NOW }), /EIO/); }
+  finally { fs.writeFileSync = real; }
+  assert.ok(temp);
+  assert.deepEqual(fs.readdirSync(temp), ['operator.txt']);
+  assert.equal(fs.readFileSync(path.join(temp, 'operator.txt'), 'utf8'), 'preserve');
+  assert.equal(fs.existsSync(registryFile(target)), false);
+});
+
+// R2: identical inode/device does not prove that generated contents are still ours.
+for (const edited of [false, true]) {
+  test(`R2 manifest write failure ${edited ? 'preserves an in-place operator edit to' : 'cleans the unchanged generated'} SKILL.md`, t => {
+    const root = base(t), staging = path.join(root, 'staging'), target = path.join(root, 'target');
+    stage(staging, 'alpha', ALPHA_V1);
+    const real = fs.writeFileSync; let temp, original;
+    fs.writeFileSync = function (filename, ...args) {
+      if (!temp && path.basename(filename) === 'manifest.json' && path.basename(path.dirname(filename)).startsWith('.gstack861-tmp-')) {
+        temp = path.dirname(filename);
+        const skill = path.join(temp, 'SKILL.md');
+        original = fs.lstatSync(skill, { bigint: true });
+        assert.equal(fs.readFileSync(skill, 'utf8'), ALPHA_V1, 'edit only a completed generated file');
+        if (edited) {
+          real(skill, 'OPERATOR DATA');
+          const after = fs.lstatSync(skill, { bigint: true });
+          assert.equal(after.dev, original.dev);
+          assert.equal(after.ino, original.ino, 'the operator edit must preserve the generated inode');
+        }
+        throw Object.assign(new Error('EIO'), { code: 'EIO' });
+      }
+      return real.call(this, filename, ...args);
+    };
+    try { assert.throws(() => installSkills({ staging, target, now: NOW }), error => error.code === 'EIO'); }
+    finally { fs.writeFileSync = real; }
+    assert.ok(temp, 'inject at the later temporary manifest write');
+    if (edited) {
+      assert.equal(fs.existsSync(temp), true, 'retain the nonempty parent of operator data');
+      assert.deepEqual(fs.readdirSync(temp), ['SKILL.md']);
+      const skill = path.join(temp, 'SKILL.md'), after = fs.lstatSync(skill, { bigint: true });
+      assert.equal(after.dev, original.dev);
+      assert.equal(after.ino, original.ino);
+      assert.equal(fs.readFileSync(skill, 'utf8'), 'OPERATOR DATA');
+      assert.deepEqual(fs.readdirSync(target), [path.basename(temp)]);
+    } else {
+      assert.equal(fs.existsSync(temp), false, 'remove generated bytes and the now-empty temporary directory');
+      assert.deepEqual(fs.readdirSync(target), []);
+    }
+    assert.equal(fs.existsSync(path.join(target, 'alpha')), false);
+    assert.equal(fs.existsSync(registryFile(target)), false);
+    assert.equal(fs.existsSync(path.join(target, LOCK)), false);
+  });
+}
+
+test('R2 cleanup preserves a completed file when its verified contents cannot be read', t => {
+  const root = base(t), staging = path.join(root, 'staging'), target = path.join(root, 'target');
+  stage(staging, 'alpha', ALPHA_V1);
+  const realWrite = fs.writeFileSync, realRead = fs.readFileSync;
+  let temp, original, refused = false;
+  fs.writeFileSync = function (filename, ...args) {
+    if (!temp && path.basename(filename) === 'manifest.json' && path.basename(path.dirname(filename)).startsWith('.gstack861-tmp-')) {
+      temp = path.dirname(filename);
+      original = fs.lstatSync(path.join(temp, 'SKILL.md'), { bigint: true });
+      throw Object.assign(new Error('EIO'), { code: 'EIO' });
+    }
+    return realWrite.call(this, filename, ...args);
+  };
+  fs.readFileSync = function (filename, ...args) {
+    if (original && typeof filename === 'number') {
+      const stat = fs.fstatSync(filename, { bigint: true });
+      if (stat.dev === original.dev && stat.ino === original.ino) {
+        refused = true;
+        throw Object.assign(new Error('EACCES'), { code: 'EACCES' });
+      }
+    }
+    return realRead.call(this, filename, ...args);
+  };
+  try { assert.throws(() => installSkills({ staging, target, now: NOW }), error => error.code === 'EIO'); }
+  finally { fs.writeFileSync = realWrite; fs.readFileSync = realRead; }
+  assert.ok(temp);
+  assert.equal(fs.existsSync(temp), true, 'unreadable ownership evidence cannot authorize deletion');
+  assert.deepEqual(fs.readdirSync(temp), ['SKILL.md']);
+  assert.equal(fs.readFileSync(path.join(temp, 'SKILL.md'), 'utf8'), ALPHA_V1);
+  assert.equal(fs.lstatSync(path.join(temp, 'SKILL.md'), { bigint: true }).ino, original.ino);
+  assert.equal(refused, true, 'cleanup must read the original file through a verified descriptor');
+  assert.deepEqual(fs.readdirSync(target), [path.basename(temp)]);
+  assert.equal(fs.existsSync(path.join(target, 'alpha')), false);
+  assert.equal(fs.existsSync(registryFile(target)), false);
+  assert.equal(fs.existsSync(path.join(target, LOCK)), false);
+});
+
+test('R2 moved file content proof rejects an in-place manifest edit at the existing install verification', t => {
+  const root = base(t), staging = path.join(root, 'staging'), target = path.join(root, 'target');
+  stage(staging, 'alpha', ALPHA_V1);
+  const dest = path.join(target, 'alpha'), real = fs.renameSync;
+  let original, edited;
+  fs.renameSync = function (source, filename, ...args) {
+    const result = real.call(this, source, filename, ...args);
+    if (!original && filename === dest && path.basename(source).startsWith('.gstack861-tmp-')) {
+      const manifestFile = path.join(dest, 'manifest.json');
+      original = fs.lstatSync(manifestFile, { bigint: true });
+      // Keep generator and all digest fields valid: the retained exact-byte proof
+      // must catch a metadata-only edit that the older ownership check accepts.
+      const manifest = JSON.parse(fs.readFileSync(manifestFile, 'utf8'));
+      edited = `${JSON.stringify({ ...manifest, status: 'OPERATOR DATA' })}\n`;
+      fs.writeFileSync(manifestFile, edited);
+      const after = fs.lstatSync(manifestFile, { bigint: true });
+      assert.equal(after.dev, original.dev);
+      assert.equal(after.ino, original.ino);
+    }
+    return result;
+  };
+  try { assert.throws(() => installSkills({ staging, target, now: NOW }), /^Error: USER_FILE_REFUSED$/); }
+  finally { fs.renameSync = real; }
+  assert.ok(original, 'edit the manifest after the temporary directory rename');
+  const manifestFile = path.join(dest, 'manifest.json'), after = fs.lstatSync(manifestFile, { bigint: true });
+  assert.equal(after.dev, original.dev);
+  assert.equal(after.ino, original.ino);
+  assert.equal(fs.readFileSync(manifestFile, 'utf8'), edited, 'rollback must preserve the changed installed file');
+  assert.equal(fs.readFileSync(path.join(dest, 'SKILL.md'), 'utf8'), ALPHA_V1);
+  assert.deepEqual(fs.readdirSync(target), ['alpha']);
+  assert.equal(fs.existsSync(registryFile(target)), false);
+  assert.equal(fs.existsSync(path.join(target, LOCK)), false);
+});

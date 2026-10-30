@@ -1,0 +1,1289 @@
+✖ merges workspace hook config while preserving unrelated settings and existing hooks (14.6145ms)
+✖ apply is idempotent and uninstall removes only the exact owned hook (16.9186ms)
+✖ fresh .zcode preview writes nothing and apply supports a true clean roundtrip (24.5353ms)
+✖ uninstall without a receipt is a verified zero-write no-op even without .zcode (4.2067ms)
+✔ install and uninstall preview preserve all tree bytes and metadata (10.1744ms)
+✖ receipt restores original field presence: absent hooks (10.3483ms)
+✖ receipt restores original field presence: empty hooks (13.6284ms)
+✔ receipt restores original field presence: preexisting true (10.231ms)
+✖ receipt restores original field presence: empty events (12.8383ms)
+✖ receipt restores original field presence: empty PreToolUse (11.8645ms)
+✖ receipt restores original field presence: foreign hook without enabled (10.6823ms)
+✖ preexisting exact hook is never adopted, including absent enabled: undefined (5.9624ms)
+✖ preexisting exact hook is never adopted, including absent enabled: true (6.6223ms)
+✖ missing receipt never authorizes removing an annotated foreign near-match (7.4288ms)
+✖ uninstall removes at most one full recorded entry and preserves metadata and duplicates (11.1761ms)
+✖ uninstall preserves a modified owned entry and unrelated concurrent user edits (12.7322ms)
+✔ uninstall preserves foreign hooks and user false while removing the recorded entry (10.1708ms)
+✖ conflicting installer identity refuses without replacing original receipt (6.5594ms)
+✔ semantic stale install plan refuses and preserves exact concurrent bytes (8.0924ms)
+✔ semantic stale uninstall plan refuses and preserves exact concurrent bytes (8.2498ms)
+✖ raw snapshot refuses stale format (7.2974ms)
+✖ raw snapshot refuses stale delete (5.7302ms)
+✖ raw snapshot refuses stale create (8.5921ms)
+✖ raw snapshot refuses stale identical inode replacement (7.1036ms)
+✖ stale receipt bytes are bound to a plan even when configuration is unchanged (9.3684ms)
+✖ authentic plans are deeply frozen and forged external destinations refuse (5.534ms)
+✖ existingConfig preview cannot authorize overwriting different disk state (7.1678ms)
+✔ both planners fail closed on malformed JSON (5.5839ms)
+✔ both planners fail closed on array root (5.0905ms)
+✖ both planners fail closed on null hooks (5.0145ms)
+✖ both planners fail closed on array hooks (4.6227ms)
+✖ both planners fail closed on string enabled (4.5757ms)
+✖ both planners fail closed on null enabled (4.4076ms)
+✖ both planners fail closed on null events (4.412ms)
+✖ both planners fail closed on array events (4.4297ms)
+✖ both planners fail closed on non-array event (4.6192ms)
+✖ both planners fail closed on non-object entry (4.7247ms)
+✖ both planners fail closed on number matcher (6.5448ms)
+✖ both planners fail closed on string hooks (5.5727ms)
+✖ both planners fail closed on invalid command (4.9016ms)
+✔ disabled install refuses while foreign extension metadata survives normal roundtrip (9.9013ms)
+✖ both planners reject missing or junction workspace and linked .zcode (3.184ms)
+✖ both planners refuse a junction in a workspace ancestor (6.2729ms)
+✔ both planners reject multiply linked config (6.0751ms)
+✖ both planners reject multiply linked receipt (7.2514ms)
+✖ apply rejects plain workspace replacement after plan (10.9477ms)
+✖ apply rejects junction workspace replacement after plan (10.592ms)
+✖ apply rejects plain .zcode replacement after plan (9.7761ms)
+✖ apply rejects junction .zcode replacement after plan (8.6519ms)
+✖ a .zcode link introduced after preview is refused before any lock mutation (6.9201ms)
+✖ unsafe or incomplete receipt refuses both planners: corrupt (11.2141ms)
+✖ unsafe or incomplete receipt refuses both planners: pending (8.2269ms)
+✖ unsafe or incomplete receipt refuses both planners: symlink (6.8089ms)
+✖ install transaction rolls back exact bytes after intent-write (10.1809ms)
+✔ install transaction rolls back exact bytes after config-write (7.44ms)
+✔ install transaction rolls back exact bytes after config-rename (7.2302ms)
+✖ install transaction rolls back exact bytes after receipt-finalize (7.5214ms)
+✖ uninstall transaction restores config and committed receipt after config-rename (7.6877ms)
+✖ uninstall transaction restores config and committed receipt after receipt-finalize (7.2364ms)
+✖ failed receipt finalize plus failed rollback leaves pending recovery evidence and refuses later mutation (7.3192ms)
+✖ rollback never overwrites a concurrent user edit after config commit (7.2588ms)
+✖ active foreign lock survives and non-EEXIST lock errors retain their code (6.8403ms)
+✖ failed fresh installation removes only its own empty directory and preserves foreign files (3.2532ms)
+✖ post-commit lock cleanup failure reports committed state and preserves ownership receipt (7.1687ms)
+ℹ tests 64
+ℹ suites 0
+ℹ pass 11
+ℹ fail 53
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 770.981
+
+✖ failing tests:
+
+test at gstack861-m3-audit\test\zcode-profile.test.mjs:44:1
+✖ merges workspace hook config while preserving unrelated settings and existing hooks (14.6145ms)
+  Error: ENOENT: no such file or directory, open 'C:\Users\ADMINI~1\AppData\Local\Temp\g861-zc-vhC9Di\workspace\.zcode\.gstack861-zcode-receipt.json'
+      at Object.openSync (node:fs:621:18)
+      at Object.readFileSync (node:fs:487:35)
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:49:30)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    errno: -4058,
+    code: 'ENOENT',
+    syscall: 'open',
+    path: 'C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\g861-zc-vhC9Di\\workspace\\.zcode\\.gstack861-zcode-receipt.json'
+  }
+
+test at gstack861-m3-audit\test\zcode-profile.test.mjs:52:1
+✖ apply is idempotent and uninstall removes only the exact owned hook (16.9186ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  ... Skipped lines
+  
+    [
+      {
+        kind: 'dir',
+        mtime: 1793373024162.9895,
+        path: '.'
+  ...
+        kind: 'dir',
+  +     mtime: 1793373024170.4617,
+  -     mtime: 1793373024168.0515,
+        path: '.zcode'
+      },
+      {
+        kind: 'file',
+        mtime: 1793373024166.809,
+  
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:55:102)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ { path: '.', kind: 'dir', mtime: 1793373024162.9895 }, { path: '.zcode', kind: 'dir', mtime: 1793373024170.4617 }, { path: '.zcode\\config.json', kind: 'file', mtime: 1793373024166.809, sha256: '1ef4353b5f724c9e30a24cfdc857bc89a351777937ad0272212ea77187f3b2fb' } ],
+    expected: [ { path: '.', kind: 'dir', mtime: 1793373024162.9895 }, { path: '.zcode', kind: 'dir', mtime: 1793373024168.0515 }, { path: '.zcode\\config.json', kind: 'file', mtime: 1793373024166.809, sha256: '1ef4353b5f724c9e30a24cfdc857bc89a351777937ad0272212ea77187f3b2fb' } ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at gstack861-m3-audit\test\zcode-profile.test.mjs:58:1
+✖ fresh .zcode preview writes nothing and apply supports a true clean roundtrip (24.5353ms)
+  Error: ZCODE_CONFIG_BUSY
+      at fail (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/src/zcode-profile.mjs:6:30)
+      at applyZcodeConfigPlan (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/src/zcode-profile.mjs:73:52)
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:61:16)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at gstack861-m3-audit\test\zcode-profile.test.mjs:64:1
+✖ uninstall without a receipt is a verified zero-write no-op even without .zcode (4.2067ms)
+  Error: ZCODE_CONFIG_BUSY
+      at fail (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/src/zcode-profile.mjs:6:30)
+      at applyZcodeConfigPlan (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/src/zcode-profile.mjs:73:52)
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:66:51)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at gstack861-m3-audit\test\zcode-profile.test.mjs:77:4
+✖ receipt restores original field presence: absent hooks (10.3483ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    {
+  +   hooks: {
+  +     enabled: true
+  +   },
+      theme: 'dark'
+    }
+  
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:78:92)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { theme: 'dark', hooks: { enabled: true } },
+    expected: { theme: 'dark' },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at gstack861-m3-audit\test\zcode-profile.test.mjs:77:4
+✖ receipt restores original field presence: empty hooks (13.6284ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    {
+  +   hooks: {
+  +     enabled: true
+  +   }
+  -   hooks: {}
+    }
+  
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:78:92)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { hooks: { enabled: true } },
+    expected: { hooks: {} },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at gstack861-m3-audit\test\zcode-profile.test.mjs:77:4
+✖ receipt restores original field presence: empty events (12.8383ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    {
+      hooks: {
+        enabled: true,
+  -     events: {}
+      }
+    }
+  
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:78:92)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { hooks: { enabled: true } },
+    expected: { hooks: { enabled: true, events: {} } },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at gstack861-m3-audit\test\zcode-profile.test.mjs:77:4
+✖ receipt restores original field presence: empty PreToolUse (11.8645ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    {
+      hooks: {
+        enabled: true,
+  -     events: {
+  -       PreToolUse: []
+  -     }
+      }
+    }
+  
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:78:92)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { hooks: { enabled: true } },
+    expected: { hooks: { enabled: true, events: [Object] } },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at gstack861-m3-audit\test\zcode-profile.test.mjs:77:4
+✖ receipt restores original field presence: foreign hook without enabled (10.6823ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    {
+      hooks: {
+  +     enabled: true,
+        events: {
+          Stop: [
+            {
+              hooks: [
+                {
+  
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:78:92)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { hooks: { events: [Object], enabled: true } },
+    expected: { hooks: { events: [Object] } },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at gstack861-m3-audit\test\zcode-profile.test.mjs:80:42
+✖ preexisting exact hook is never adopted, including absent enabled: undefined (5.9624ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:83:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at gstack861-m3-audit\test\zcode-profile.test.mjs:80:42
+✖ preexisting exact hook is never adopted, including absent enabled: true (6.6223ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  ... Skipped lines
+  
+    [
+      {
+        kind: 'dir',
+        mtime: 1793373024296.6885,
+        path: '.'
+  ...
+        kind: 'dir',
+  +     mtime: 1793373024299.6443,
+  -     mtime: 1793373024297.869,
+        path: '.zcode'
+      },
+      {
+        kind: 'file',
+        mtime: 1793373024297.869,
+  
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:83:102)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ { path: '.', kind: 'dir', mtime: 1793373024296.6885 }, { path: '.zcode', kind: 'dir', mtime: 1793373024299.6443 }, { path: '.zcode\\config.json', kind: 'file', mtime: 1793373024297.869, sha256: 'e7302914f2203821816e0d6bb4e17df6799a21fe55fcaa03dabd2daa8cdcfa82' } ],
+    expected: [ { path: '.', kind: 'dir', mtime: 1793373024296.6885 }, { path: '.zcode', kind: 'dir', mtime: 1793373024297.869 }, { path: '.zcode\\config.json', kind: 'file', mtime: 1793373024297.869, sha256: 'e7302914f2203821816e0d6bb4e17df6799a21fe55fcaa03dabd2daa8cdcfa82' } ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at gstack861-m3-audit\test\zcode-profile.test.mjs:86:1
+✖ missing receipt never authorizes removing an annotated foreign near-match (7.4288ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:89:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at gstack861-m3-audit\test\zcode-profile.test.mjs:91:1
+✖ uninstall removes at most one full recorded entry and preserves metadata and duplicates (11.1761ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  ... Skipped lines
+  
+    [
+      {
+        hooks: [
+          {
+            args: [
+  ...
+            command: 'C:\\Program Files\\nodejs\\node.exe',
+  -         timeoutMs: 10000,
+  -         type: 'process'
+  -       }
+  -     ],
+  -     matcher: '.*',
+  -     userMetadata: 'keep'
+  -   },
+  -   {
+  -     hooks: [
+  -       {
+  -         args: [
+  -           'C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\g861-zc-jvmVJu\\bin\\gstack861.mjs',
+  -           'hook',
+  -           'zcode',
+  -           '--policy',
+  -           'C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\g861-zc-jvmVJu\\private\\policy.json'
+  -         ],
+  -         command: 'C:\\Program Files\\nodejs\\node.exe',
+  -         timeoutMs: 10000,
+  -         type: 'process'
+  -       }
+  -     ],
+  -     matcher: '.*'
+  -   },
+  -   {
+  -     hooks: [
+  -       {
+  -         args: [
+  -           'C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\g861-zc-jvmVJu\\bin\\gstack861.mjs',
+  -           'hook',
+  -           'zcode',
+  -           '--policy',
+  -           'C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\g861-zc-jvmVJu\\private\\policy.json'
+  -         ],
+  -         command: 'C:\\Program Files\\nodejs\\node.exe',
+            timeoutMs: 9999,
+            type: 'process'
+          }
+        ],
+        matcher: '.*'
+  
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:95:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ { matcher: '.*', hooks: [Array] } ],
+    expected: [ { matcher: '.*', hooks: [Array], userMetadata: 'keep' }, { matcher: '.*', hooks: [Array] }, { matcher: '.*', hooks: [Array] } ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at gstack861-m3-audit\test\zcode-profile.test.mjs:97:1
+✖ uninstall preserves a modified owned entry and unrelated concurrent user edits (12.7322ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    {
+      hooks: {
+        enabled: false,
+        events: {
+  -       PreToolUse: [
+  -         {
+  -           hooks: [
+  -             {
+  -               args: [
+  -                 'C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\g861-zc-RE5EOI\\bin\\gstack861.mjs',
+  -                 'hook',
+  -                 'zcode',
+  -                 '--policy',
+  -                 'C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\g861-zc-RE5EOI\\private\\policy.json'
+  -               ],
+  -               command: 'C:\\Program Files\\nodejs\\node.exe',
+  -               timeoutMs: 10000,
+  -               type: 'process'
+  -             }
+  -           ],
+  -           matcher: '.*',
+  -           userMetadata: 'keep'
+  -         }
+  -       ],
+          Stop: [
+            {
+              hooks: [
+                {
+                  command: 'stop',
+  
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:101:24)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { theme: 'light', hooks: { enabled: false, events: [Object] }, userAdded: true },
+    expected: { theme: 'light', hooks: { enabled: false, events: [Object] }, userAdded: true },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at gstack861-m3-audit\test\zcode-profile.test.mjs:108:1
+✖ conflicting installer identity refuses without replacing original receipt (6.5594ms)
+  Error: ENOENT: no such file or directory, open 'C:\Users\ADMINI~1\AppData\Local\Temp\g861-zc-Pa9gaS\workspace\.zcode\.gstack861-zcode-receipt.json'
+      at Object.openSync (node:fs:621:18)
+      at Object.readFileSync (node:fs:487:35)
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:109:70)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    errno: -4058,
+    code: 'ENOENT',
+    syscall: 'open',
+    path: 'C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\g861-zc-Pa9gaS\\workspace\\.zcode\\.gstack861-zcode-receipt.json'
+  }
+
+test at gstack861-m3-audit\test\zcode-profile.test.mjs:120:87
+✖ raw snapshot refuses stale format (7.2974ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:126:44)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /ZCODE_CONFIG_CHANGED/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at gstack861-m3-audit\test\zcode-profile.test.mjs:120:87
+✖ raw snapshot refuses stale delete (5.7302ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:126:44)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /ZCODE_CONFIG_CHANGED/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at gstack861-m3-audit\test\zcode-profile.test.mjs:120:87
+✖ raw snapshot refuses stale create (8.5921ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:126:44)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /ZCODE_CONFIG_CHANGED/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at gstack861-m3-audit\test\zcode-profile.test.mjs:120:87
+✖ raw snapshot refuses stale identical inode replacement (7.1036ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:126:44)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /ZCODE_CONFIG_CHANGED/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at gstack861-m3-audit\test\zcode-profile.test.mjs:128:1
+✖ stale receipt bytes are bound to a plan even when configuration is unchanged (9.3684ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:130:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /ZCODE_CONFIG_CHANGED/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at gstack861-m3-audit\test\zcode-profile.test.mjs:132:1
+✖ authentic plans are deeply frozen and forged external destinations refuse (5.534ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:134:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at gstack861-m3-audit\test\zcode-profile.test.mjs:139:1
+✖ existingConfig preview cannot authorize overwriting different disk state (7.1678ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  ... Skipped lines
+  
+    [
+      {
+        kind: 'dir',
+        mtime: 1793373024412.222,
+        path: '.'
+  ...
+        kind: 'dir',
+  +     mtime: 1793373024415.7617,
+  -     mtime: 1793373024412.222,
+        path: '.zcode'
+      },
+      {
+        kind: 'file',
+        mtime: 1793373024412.222,
+  
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:141:96)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ { path: '.', kind: 'dir', mtime: 1793373024412.222 }, { path: '.zcode', kind: 'dir', mtime: 1793373024415.7617 }, { path: '.zcode\\config.json', kind: 'file', mtime: 1793373024412.222, sha256: '1a8e53048499726f603ebc721ad57652b11b437e916b6085818ebe91fab4b47a' } ],
+    expected: [ { path: '.', kind: 'dir', mtime: 1793373024412.222 }, { path: '.zcode', kind: 'dir', mtime: 1793373024412.222 }, { path: '.zcode\\config.json', kind: 'file', mtime: 1793373024412.222, sha256: '1a8e53048499726f603ebc721ad57652b11b437e916b6085818ebe91fab4b47a' } ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at gstack861-m3-audit\test\zcode-profile.test.mjs:150:4
+✖ both planners fail closed on null hooks (5.0145ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:152:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /ZCODE_CONFIG_INVALID|ZCODE_HOOKS_INVALID|ZCODE_EVENTS_INVALID/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at gstack861-m3-audit\test\zcode-profile.test.mjs:150:4
+✖ both planners fail closed on array hooks (4.6227ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:153:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /ZCODE_CONFIG_INVALID|ZCODE_HOOKS_INVALID|ZCODE_EVENTS_INVALID/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at gstack861-m3-audit\test\zcode-profile.test.mjs:150:4
+✖ both planners fail closed on string enabled (4.5757ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:152:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /ZCODE_CONFIG_INVALID|ZCODE_HOOKS_INVALID|ZCODE_EVENTS_INVALID/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at gstack861-m3-audit\test\zcode-profile.test.mjs:150:4
+✖ both planners fail closed on null enabled (4.4076ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:152:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /ZCODE_CONFIG_INVALID|ZCODE_HOOKS_INVALID|ZCODE_EVENTS_INVALID/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at gstack861-m3-audit\test\zcode-profile.test.mjs:150:4
+✖ both planners fail closed on null events (4.412ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:152:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /ZCODE_CONFIG_INVALID|ZCODE_HOOKS_INVALID|ZCODE_EVENTS_INVALID/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at gstack861-m3-audit\test\zcode-profile.test.mjs:150:4
+✖ both planners fail closed on array events (4.4297ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:153:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /ZCODE_CONFIG_INVALID|ZCODE_HOOKS_INVALID|ZCODE_EVENTS_INVALID/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at gstack861-m3-audit\test\zcode-profile.test.mjs:150:4
+✖ both planners fail closed on non-array event (4.6192ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:152:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /ZCODE_CONFIG_INVALID|ZCODE_HOOKS_INVALID|ZCODE_EVENTS_INVALID/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at gstack861-m3-audit\test\zcode-profile.test.mjs:150:4
+✖ both planners fail closed on non-object entry (4.7247ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /ZCODE_CONFIG_INVALID|ZCODE_HOOKS_INVALID|ZCODE_EVENTS_INVALID/. Input:
+  
+  "TypeError: Cannot read properties of null (reading 'matcher')"
+  
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:152:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: TypeError: Cannot read properties of null (reading 'matcher')
+        at hookIdentity (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/src/zcode-profile.mjs:22:35)
+        at Array.map (<anonymous>)
+        at merge (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/src/zcode-profile.mjs:39:32)
+        at planZcodeConfig (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/src/zcode-profile.mjs:64:14)
+        at file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:152:23
+        at getActual (node:assert:611:5)
+        at strict.throws (node:assert:759:24)
+        at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:152:10)
+        at Test.runInAsyncScope (node:async_hooks:227:14)
+        at Test.run (node:internal/test_runner/test:1402:25),
+    expected: /ZCODE_CONFIG_INVALID|ZCODE_HOOKS_INVALID|ZCODE_EVENTS_INVALID/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at gstack861-m3-audit\test\zcode-profile.test.mjs:150:4
+✖ both planners fail closed on number matcher (6.5448ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:152:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /ZCODE_CONFIG_INVALID|ZCODE_HOOKS_INVALID|ZCODE_EVENTS_INVALID/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at gstack861-m3-audit\test\zcode-profile.test.mjs:150:4
+✖ both planners fail closed on string hooks (5.5727ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:152:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /ZCODE_CONFIG_INVALID|ZCODE_HOOKS_INVALID|ZCODE_EVENTS_INVALID/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at gstack861-m3-audit\test\zcode-profile.test.mjs:150:4
+✖ both planners fail closed on invalid command (4.9016ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:152:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /ZCODE_CONFIG_INVALID|ZCODE_HOOKS_INVALID|ZCODE_EVENTS_INVALID/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at gstack861-m3-audit\test\zcode-profile.test.mjs:162:1
+✖ both planners reject missing or junction workspace and linked .zcode (3.184ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:164:71)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /WORKSPACE_INVALID/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at gstack861-m3-audit\test\zcode-profile.test.mjs:171:1
+✖ both planners refuse a junction in a workspace ancestor (6.2729ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:174:71)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /WORKSPACE_INVALID/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at gstack861-m3-audit\test\zcode-profile.test.mjs:177:45
+✖ both planners reject multiply linked receipt (7.2514ms)
+  Error: ENOENT: no such file or directory, link 'C:\Users\ADMINI~1\AppData\Local\Temp\g861-zc-zXQKla\workspace\.zcode\.gstack861-zcode-receipt.json' -> 'C:\Users\ADMINI~1\AppData\Local\Temp\g861-zc-zXQKla\hardlink'
+      at Object.linkSync (node:fs:1975:11)
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:179:61)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    errno: -4058,
+    code: 'ENOENT',
+    syscall: 'link',
+    path: 'C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\g861-zc-zXQKla\\workspace\\.zcode\\.gstack861-zcode-receipt.json',
+    dest: 'C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\g861-zc-zXQKla\\hardlink'
+  }
+
+test at gstack861-m3-audit\test\zcode-profile.test.mjs:182:96
+✖ apply rejects plain workspace replacement after plan (10.9477ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:187:37)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /ZCODE_CONFIG_CHANGED|ZCODE_CONFIG_DIR_UNSAFE|WORKSPACE_INVALID/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at gstack861-m3-audit\test\zcode-profile.test.mjs:182:96
+✖ apply rejects junction workspace replacement after plan (10.592ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:187:37)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /ZCODE_CONFIG_CHANGED|ZCODE_CONFIG_DIR_UNSAFE|WORKSPACE_INVALID/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at gstack861-m3-audit\test\zcode-profile.test.mjs:182:96
+✖ apply rejects plain .zcode replacement after plan (9.7761ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:187:37)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /ZCODE_CONFIG_CHANGED|ZCODE_CONFIG_DIR_UNSAFE|WORKSPACE_INVALID/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at gstack861-m3-audit\test\zcode-profile.test.mjs:182:96
+✖ apply rejects junction .zcode replacement after plan (8.6519ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    [
+      {
+        kind: 'dir',
+  +     mtime: 1793373024554.4507,
+  -     mtime: 1793373024552.6116,
+        path: '.'
+      },
+      {
+        kind: 'file',
+        mtime: 1793373024552.6116,
+  
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:187:152)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ { path: '.', kind: 'dir', mtime: 1793373024554.4507 }, { path: 'config.json', kind: 'file', mtime: 1793373024552.6116, sha256: '44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a' } ],
+    expected: [ { path: '.', kind: 'dir', mtime: 1793373024552.6116 }, { path: 'config.json', kind: 'file', mtime: 1793373024552.6116, sha256: '44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a' } ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at gstack861-m3-audit\test\zcode-profile.test.mjs:189:1
+✖ a .zcode link introduced after preview is refused before any lock mutation (6.9201ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    [
+      {
+        kind: 'dir',
+  +     mtime: 1793373024561.8528,
+  -     mtime: 1793373024557.616,
+        path: '.'
+      },
+      {
+        kind: 'file',
+        mtime: 1793373024560.0889,
+  
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:191:138)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ { path: '.', kind: 'dir', mtime: 1793373024561.8528 }, { path: 'config.json', kind: 'file', mtime: 1793373024560.0889, sha256: '44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a' } ],
+    expected: [ { path: '.', kind: 'dir', mtime: 1793373024557.616 }, { path: 'config.json', kind: 'file', mtime: 1793373024560.0889, sha256: '44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a' } ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at gstack861-m3-audit\test\zcode-profile.test.mjs:193:56
+✖ unsafe or incomplete receipt refuses both planners: corrupt (11.2141ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:199:71)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /ZCODE_RECEIPT_INVALID|ZCODE_RECEIPT_UNSAFE/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at gstack861-m3-audit\test\zcode-profile.test.mjs:193:56
+✖ unsafe or incomplete receipt refuses both planners: pending (8.2269ms)
+  Error: ENOENT: no such file or directory, open 'C:\Users\ADMINI~1\AppData\Local\Temp\g861-zc-p2gECk\workspace\.zcode\.gstack861-zcode-receipt.json'
+      at Object.openSync (node:fs:621:18)
+      at Object.readFileSync (node:fs:487:35)
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:196:60)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    errno: -4058,
+    code: 'ENOENT',
+    syscall: 'open',
+    path: 'C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\g861-zc-p2gECk\\workspace\\.zcode\\.gstack861-zcode-receipt.json'
+  }
+
+test at gstack861-m3-audit\test\zcode-profile.test.mjs:193:56
+✖ unsafe or incomplete receipt refuses both planners: symlink (6.8089ms)
+  Error: ENOENT: no such file or directory, rename 'C:\Users\ADMINI~1\AppData\Local\Temp\g861-zc-P8OgRj\workspace\.zcode\.gstack861-zcode-receipt.json' -> 'C:\Users\ADMINI~1\AppData\Local\Temp\g861-zc-P8OgRj\receipt-target'
+      at Object.renameSync (node:fs:1073:11)
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:197:85)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    errno: -4058,
+    code: 'ENOENT',
+    syscall: 'rename',
+    path: 'C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\g861-zc-P8OgRj\\workspace\\.zcode\\.gstack861-zcode-receipt.json',
+    dest: 'C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\g861-zc-P8OgRj\\receipt-target'
+  }
+
+test at gstack861-m3-audit\test\zcode-profile.test.mjs:202:92
+✖ install transaction rolls back exact bytes after intent-write (10.1809ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:213:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /EIO/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at gstack861-m3-audit\test\zcode-profile.test.mjs:202:92
+✖ install transaction rolls back exact bytes after receipt-finalize (7.5214ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:213:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /EIO/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at gstack861-m3-audit\test\zcode-profile.test.mjs:216:60
+✖ uninstall transaction restores config and committed receipt after config-rename (7.6877ms)
+  Error: ENOENT: no such file or directory, open 'C:\Users\ADMINI~1\AppData\Local\Temp\g861-zc-KwXYQL\workspace\.zcode\.gstack861-zcode-receipt.json'
+      at Object.openSync (node:fs:621:18)
+      at Object.readFileSync (node:fs:487:35)
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:217:133)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    errno: -4058,
+    code: 'ENOENT',
+    syscall: 'open',
+    path: 'C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\g861-zc-KwXYQL\\workspace\\.zcode\\.gstack861-zcode-receipt.json'
+  }
+
+test at gstack861-m3-audit\test\zcode-profile.test.mjs:216:60
+✖ uninstall transaction restores config and committed receipt after receipt-finalize (7.2364ms)
+  Error: ENOENT: no such file or directory, open 'C:\Users\ADMINI~1\AppData\Local\Temp\g861-zc-33FdJu\workspace\.zcode\.gstack861-zcode-receipt.json'
+      at Object.openSync (node:fs:621:18)
+      at Object.readFileSync (node:fs:487:35)
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:217:133)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    errno: -4058,
+    code: 'ENOENT',
+    syscall: 'open',
+    path: 'C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\g861-zc-33FdJu\\workspace\\.zcode\\.gstack861-zcode-receipt.json'
+  }
+
+test at gstack861-m3-audit\test\zcode-profile.test.mjs:226:1
+✖ failed receipt finalize plus failed rollback leaves pending recovery evidence and refuses later mutation (7.3192ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:233:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /ZCODE_CONFIG_RECOVERY_REQUIRED/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at gstack861-m3-audit\test\zcode-profile.test.mjs:237:1
+✖ rollback never overwrites a concurrent user edit after config commit (7.2588ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:243:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /ZCODE_CONFIG_RECOVERY_REQUIRED/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at gstack861-m3-audit\test\zcode-profile.test.mjs:246:1
+✖ active foreign lock survives and non-EEXIST lock errors retain their code (6.8403ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /EACCES/. Input:
+  
+  'Error: ZCODE_CONFIG_BUSY'
+  
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:250:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: Error: ZCODE_CONFIG_BUSY
+        at fail (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/src/zcode-profile.mjs:6:30)
+        at applyZcodeConfigPlan (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/src/zcode-profile.mjs:73:52)
+        at file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:250:23
+        at getActual (node:assert:611:5)
+        at strict.throws (node:assert:759:24)
+        at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:250:10)
+        at Test.runInAsyncScope (node:async_hooks:227:14)
+        at Test.run (node:internal/test_runner/test:1402:25)
+        at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+        at Test.postRun (node:internal/test_runner/test:1542:19),
+    expected: /EACCES/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at gstack861-m3-audit\test\zcode-profile.test.mjs:252:1
+✖ failed fresh installation removes only its own empty directory and preserves foreign files (3.2532ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /EIO/. Input:
+  
+  'Error: ZCODE_CONFIG_BUSY'
+  
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:258:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: Error: ZCODE_CONFIG_BUSY
+        at fail (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/src/zcode-profile.mjs:6:30)
+        at applyZcodeConfigPlan (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/src/zcode-profile.mjs:73:52)
+        at file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:258:23
+        at getActual (node:assert:611:5)
+        at strict.throws (node:assert:759:24)
+        at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:258:10)
+        at Test.runInAsyncScope (node:async_hooks:227:14)
+        at Test.run (node:internal/test_runner/test:1402:25)
+        at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+        at Test.postRun (node:internal/test_runner/test:1542:19),
+    expected: /EIO/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at gstack861-m3-audit\test\zcode-profile.test.mjs:261:1
+✖ post-commit lock cleanup failure reports committed state and preserves ownership receipt (7.1687ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /ZCODE_CONFIG_COMMITTED_CLEANUP_FAILED/. Input:
+  
+  'Error: EACCES'
+  
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:264:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: Error: EACCES
+        at ioError (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:41:39)
+        at Object.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:263:95)
+        at Object.apply (node:internal/test_runner/mock/mock:805:20)
+        at applyZcodeConfigPlan (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/src/zcode-profile.mjs:88:18)
+        at file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:264:23
+        at getActual (node:assert:611:5)
+        at strict.throws (node:assert:759:24)
+        at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:264:10)
+        at Test.runInAsyncScope (node:async_hooks:227:14)
+        at Test.run (node:internal/test_runner/test:1402:25),
+    expected: /ZCODE_CONFIG_COMMITTED_CLEANUP_FAILED/,
+    operator: 'throws',
+    diff: 'simple'
+  }

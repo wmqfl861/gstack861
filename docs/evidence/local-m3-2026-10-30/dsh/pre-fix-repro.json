@@ -1,0 +1,48 @@
+{
+  "baseline": "680b2f19b2dbef8831e3be1fd996203589b5c41d",
+  "root": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\g861-m3-dsh-repro-M7VqVO",
+  "modelRequests": 0,
+  "profile": {
+    "schemaVersion": 1,
+    "host": "dsh",
+    "profileName": "gstack861",
+    "output": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\g861-m3-dsh-repro-M7VqVO\\profile",
+    "files": [
+      "package.json",
+      "cordis.yml",
+      "cordis.patch.yml",
+      "plugins/gstack861-guard/package.json",
+      "plugins/gstack861-guard/index.mjs",
+      "README.md"
+    ],
+    "status": "scaffolded-not-host-verified",
+    "requiresOperatorSteps": [
+      "review-profile",
+      "install-profile-dependencies",
+      "launch-disposable-profile",
+      "verify-plugin-activation",
+      "run-live-guard-acceptance"
+    ]
+  },
+  "dependencyProof": [
+    {
+      "name": "gstack861-guard",
+      "spec": "file:./plugins/gstack861-guard",
+      "exists": true
+    },
+    {
+      "name": "gstack861-skills",
+      "spec": "file:./plugins/gstack861-skills",
+      "exists": false
+    }
+  ],
+  "windowsUrlProof": {
+    "oldTestUrl": "file:///C:/Users/Administrator/AppData/Local/Temp/g861-m3-dsh-repro-M7VqVO/dsh.mjs",
+    "correctUrl": "file:///C:/Users/Administrator/AppData/Local/Temp/g861-m3-dsh-repro-M7VqVO/dsh.mjs",
+    "equal": true
+  },
+  "invalidPolicy": {
+    "scaffoldAccepted": true,
+    "sharedCoreError": "INVALID_TOOL_BINDING"
+  }
+}

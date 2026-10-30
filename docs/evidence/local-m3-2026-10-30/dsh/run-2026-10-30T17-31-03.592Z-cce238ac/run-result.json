@@ -1,0 +1,2247 @@
+{
+  "schemaVersion": 1,
+  "runId": "run-2026-10-30T17-31-03.592Z-cce238ac",
+  "baseline": "680b2f19b2dbef8831e3be1fd996203589b5c41d",
+  "testedSourceFingerprint": "bf16abf5e6d555a859af8ad88d7d7aebc6606f58ca4463c4a20011b6de5e2b5d",
+  "reviewedPlanSha256": "ce91543b5e28972cbd5c626ae7add11641131fde78f63394be165f8e1605d338",
+  "status": "passed",
+  "evidenceClass": "installed-generated-profile-and-fixture-pipeline",
+  "requestEvidence": {
+    "modelRequestsObserved": 0,
+    "networkEntryAttempts": 0,
+    "controlledZeroModelConclusion": "supported-for-all-five-completed-controls",
+    "basis": "taskless exact plugin roster; no model/Agent/credential services; clean environment; process network/child tripwires"
+  },
+  "hostChildrenLaunched": 5,
+  "controls": [
+    {
+      "label": "clean-pipeline",
+      "status": "passed",
+      "durationMs": 1787,
+      "processStatus": 0,
+      "signal": null,
+      "processError": null,
+      "activationWarningObserved": false,
+      "expectedActivationWarning": false,
+      "environmentKeys": [
+        "ComSpec",
+        "DSH_AGENTS_HOME",
+        "DSH_HOME",
+        "DSH_TELEMETRY_DISABLED",
+        "ELECTRON_RUN_AS_NODE",
+        "GSTACK861_MODEL_CALL",
+        "HOMEDRIVE",
+        "HOMEPATH",
+        "LOGONSERVER",
+        "PATH",
+        "SYSTEMDRIVE",
+        "SystemRoot",
+        "TEMP",
+        "TMP",
+        "USERDOMAIN",
+        "USERNAME",
+        "USERPROFILE",
+        "WINDIR"
+      ],
+      "setup": {
+        "generated": {
+          "schemaVersion": 1,
+          "host": "dsh",
+          "profileName": "g861accept",
+          "output": "<fixtures>\\clean-pipeline-GUS7h9\\home\\profiles\\g861accept",
+          "files": [
+            "package.json",
+            "cordis.yml",
+            "cordis.patch.yml",
+            "plugins/gstack861-guard/package.json",
+            "plugins/gstack861-guard/index.mjs",
+            "plugins/gstack861-skills/package.json",
+            "plugins/gstack861-skills/index.mjs",
+            "README.md"
+          ],
+          "status": "scaffolded-not-host-verified",
+          "requiresOperatorSteps": [
+            "review-profile",
+            "install-profile-dependencies",
+            "launch-disposable-profile",
+            "verify-plugin-activation",
+            "run-live-guard-acceptance"
+          ]
+        },
+        "dependencies": [
+          {
+            "name": "gstack861-guard",
+            "source": "<fixtures>\\clean-pipeline-GUS7h9\\home\\profiles\\g861accept\\plugins\\gstack861-guard",
+            "manifestSha256": "a76f5d0d449a65fd3d4ebd446ff53507095340094b054fa795c7dc671ca9504b",
+            "shimSha256": "6aae261d62e336a39fee14f4cdc1f27095fdabb877f153aeec273b002e99b267"
+          },
+          {
+            "name": "gstack861-skills",
+            "source": "<fixtures>\\clean-pipeline-GUS7h9\\home\\profiles\\g861accept\\plugins\\gstack861-skills",
+            "manifestSha256": "d63dadeeee14428a6d86ef350798fe740fabe750f5a5957372aca8b4d54c2828",
+            "shimSha256": "6ba8186fb7ce9f46d11d1f5ed78cbe54d8ee408e732b817985fe36079f08f30b"
+          }
+        ],
+        "staged": {
+          "schemaVersion": 1,
+          "host": "dsh",
+          "staging": "<fixtures>\\clean-pipeline-GUS7h9\\staging",
+          "staged": 1,
+          "files": 1,
+          "root": {
+            "name": "gstack",
+            "sha256": "6f2b1c6217d4c96a9558f1ac7e129218341c5b8a191bf3bff37c95162f339f00",
+            "files": 0
+          }
+        },
+        "aliased": {
+          "schemaVersion": 1,
+          "host": "dsh",
+          "output": "<fixtures>\\clean-pipeline-GUS7h9\\aliases",
+          "aliases": [
+            {
+              "name": "connect-chrome",
+              "aliasOf": "open-gstack-browser",
+              "sha256": "d331e89662e0fbfd828eb88a0db4bc5c7dcaa64e1d8967cf04d7b3c42b45ecaa"
+            }
+          ],
+          "note": "Rewritten copy, not symlink; install separately. Not host-verified."
+        },
+        "installed": [
+          {
+            "installed": [
+              "gstack",
+              "open-gstack-browser"
+            ],
+            "skipped": [],
+            "backedUp": []
+          },
+          {
+            "installed": [
+              "connect-chrome"
+            ],
+            "skipped": [],
+            "backedUp": []
+          }
+        ],
+        "registry": [
+          {
+            "name": "connect-chrome",
+            "sha256": "d331e89662e0fbfd828eb88a0db4bc5c7dcaa64e1d8967cf04d7b3c42b45ecaa",
+            "files": {
+              "sections/fixture.txt": "9045390925ae7a2c3c8cab40b78f0538a332f27ebb1f62e1d6decc3ddd9355b1"
+            }
+          },
+          {
+            "name": "gstack",
+            "sha256": "6f2b1c6217d4c96a9558f1ac7e129218341c5b8a191bf3bff37c95162f339f00"
+          },
+          {
+            "name": "open-gstack-browser",
+            "sha256": "fc6fa5582adcb5bc50ff43fc70a17aa1a5a452738396a8df8109cbdeba94663a",
+            "files": {
+              "sections/fixture.txt": "9045390925ae7a2c3c8cab40b78f0538a332f27ebb1f62e1d6decc3ddd9355b1"
+            }
+          }
+        ],
+        "gitFixture": {
+          "executable": "C:\\Program Files\\Git\\ucrt64\\bin\\git.exe",
+          "initialized": true,
+          "verifiedInsideWorkTree": true,
+          "sentinelSha256": "05becdb83bb897f6103c8d91439e2e9092144edf5b3955a746fce4975c12bfdc",
+          "globalAndSystemConfig": "isolated empty file",
+          "templates": "disabled",
+          "hooks": "disabled",
+          "initStdout": "Initialized empty Git repository in <fixtures>/clean-pipeline-GUS7h9/workspace with spaces Ω/.git/\n",
+          "initStderr": ""
+        }
+      },
+      "host": {
+        "schemaVersion": 1,
+        "label": "clean-pipeline",
+        "status": "passed",
+        "runtime": {
+          "node": "24.21.0",
+          "dsh": "0.2.1-rc.3",
+          "installAnchor": "C:\\Users\\Administrator\\AppData\\Local\\Programs\\DeepSeek Harness\\resources\\app.asar\\dsh\\node_modules\\@deepseek-ai\\dsh\\package.json"
+        },
+        "sourceFingerprint": "bf16abf5e6d555a859af8ad88d7d7aebc6606f58ca4463c4a20011b6de5e2b5d",
+        "isolation": {
+          "environmentKeys": [
+            "ComSpec",
+            "DSH_AGENTS_HOME",
+            "DSH_HOME",
+            "DSH_TELEMETRY_DISABLED",
+            "ELECTRON_RUN_AS_NODE",
+            "GSTACK861_MODEL_CALL",
+            "HOMEDRIVE",
+            "HOMEPATH",
+            "LOGONSERVER",
+            "PATH",
+            "SYSTEMDRIVE",
+            "SystemRoot",
+            "TEMP",
+            "TMP",
+            "USERDOMAIN",
+            "USERNAME",
+            "USERPROFILE",
+            "WINDIR"
+          ],
+          "home": "<fixtures>\\clean-pipeline-GUS7h9\\home",
+          "agentsHome": "<fixtures>\\clean-pipeline-GUS7h9\\agents",
+          "cwd": "<fixtures>\\clean-pipeline-GUS7h9\\cwd",
+          "fixtureHomeVerified": true,
+          "neutralIdentityVerified": true,
+          "taskless": true,
+          "explicitLaunchEnvironment": {
+            "source": "process",
+            "names": []
+          }
+        },
+        "controls": [
+          {
+            "case": "allow-write",
+            "passed": true,
+            "filename": "<fixtures>\\clean-pipeline-GUS7h9\\workspace with spaces Ω\\allowed.txt",
+            "outcome": {
+              "isError": false,
+              "content": [
+                {
+                  "type": "text",
+                  "text": "fixture-write-complete"
+                }
+              ],
+              "value": "fixture-write-complete"
+            },
+            "before": {
+              "write": 0,
+              "read": 0
+            },
+            "after": {
+              "write": 1,
+              "read": 0
+            }
+          },
+          {
+            "case": "allow-read",
+            "passed": true,
+            "filename": "<fixtures>\\clean-pipeline-GUS7h9\\workspace with spaces Ω\\allowed.txt",
+            "outcome": {
+              "isError": false,
+              "content": [
+                {
+                  "type": "text",
+                  "text": "fixture-allowed-by-real-guard\n"
+                }
+              ],
+              "value": "fixture-allowed-by-real-guard\n"
+            },
+            "before": {
+              "write": 1,
+              "read": 0
+            },
+            "after": {
+              "write": 1,
+              "read": 1
+            }
+          },
+          {
+            "case": "deny-outside-scope",
+            "passed": true,
+            "filename": "<fixtures>\\clean-pipeline-GUS7h9\\outside\\denied.txt",
+            "outcome": {
+              "isError": true,
+              "error": {
+                "message": "gstack861:OUTSIDE_SCOPE"
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Error: gstack861:OUTSIDE_SCOPE"
+                }
+              ]
+            },
+            "before": {
+              "write": 1,
+              "read": 1
+            },
+            "after": {
+              "write": 1,
+              "read": 1
+            }
+          },
+          {
+            "case": "deny-git-protected",
+            "passed": true,
+            "filename": "<fixtures>\\clean-pipeline-GUS7h9\\workspace with spaces Ω\\.git\\config",
+            "outcome": {
+              "isError": true,
+              "error": {
+                "message": "gstack861:PROTECTED_PATH"
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Error: gstack861:PROTECTED_PATH"
+                }
+              ]
+            },
+            "before": {
+              "write": 1,
+              "read": 1
+            },
+            "after": {
+              "write": 1,
+              "read": 1
+            }
+          },
+          {
+            "case": "deny-runtime-corrupt-policy",
+            "passed": true,
+            "filename": "<fixtures>\\clean-pipeline-GUS7h9\\workspace with spaces Ω\\recovered.txt",
+            "outcome": {
+              "isError": true,
+              "error": {
+                "message": "gstack861:POLICY_UNAVAILABLE"
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Error: gstack861:POLICY_UNAVAILABLE"
+                }
+              ]
+            },
+            "before": {
+              "write": 1,
+              "read": 1
+            },
+            "after": {
+              "write": 1,
+              "read": 1
+            }
+          },
+          {
+            "case": "allow-after-policy-recovery",
+            "passed": true,
+            "filename": "<fixtures>\\clean-pipeline-GUS7h9\\workspace with spaces Ω\\recovered.txt",
+            "outcome": {
+              "isError": false,
+              "content": [
+                {
+                  "type": "text",
+                  "text": "fixture-write-complete"
+                }
+              ],
+              "value": "fixture-write-complete"
+            },
+            "before": {
+              "write": 1,
+              "read": 1
+            },
+            "after": {
+              "write": 2,
+              "read": 1
+            }
+          },
+          {
+            "case": "read-after-policy-recovery",
+            "passed": true,
+            "filename": "<fixtures>\\clean-pipeline-GUS7h9\\workspace with spaces Ω\\recovered.txt",
+            "outcome": {
+              "isError": false,
+              "content": [
+                {
+                  "type": "text",
+                  "text": "fixture-recovered-through-same-guard\n"
+                }
+              ],
+              "value": "fixture-recovered-through-same-guard\n"
+            },
+            "before": {
+              "write": 2,
+              "read": 1
+            },
+            "after": {
+              "write": 2,
+              "read": 2
+            }
+          }
+        ],
+        "warnings": [],
+        "entries": [
+          {
+            "id": "include",
+            "module": "cordis:include",
+            "disabled": false,
+            "state": 2,
+            "missingServices": [],
+            "namespaceExports": [
+              "inject"
+            ]
+          },
+          {
+            "id": "system-prompt",
+            "module": "@deepseek-ai/dsh-system-prompt",
+            "disabled": false,
+            "state": 2,
+            "missingServices": [],
+            "namespaceExports": [
+              "PERSONA_PREFIX_SECTION",
+              "PERSONA_SUFFIX_SECTION",
+              "SystemPrompt",
+              "TOOL_ORDER_REST",
+              "default",
+              "joinContextSections",
+              "renderContextSections",
+              "renderContextSnapshot",
+              "renderPrompt"
+            ]
+          },
+          {
+            "id": "tools",
+            "module": "@deepseek-ai/dsh-tools",
+            "disabled": false,
+            "state": 2,
+            "missingServices": [],
+            "namespaceExports": [
+              "CodeRunFailedError",
+              "JsonSchemaError",
+              "RUN_CODE_NAME",
+              "TOOL_ABORTED",
+              "TOOL_ABORTED_BEFORE_DISPATCH",
+              "TOOL_RUNTIME_SCHEDULER",
+              "ToolArgsError",
+              "ToolNotFoundError",
+              "ToolOutputError",
+              "ToolRuntime",
+              "assertObjectJsonSchema",
+              "assertSupportedJsonSchema",
+              "default",
+              "defineContentToolFixture",
+              "defineTool",
+              "jsonSchemaToPy",
+              "jsonSchemaToTs",
+              "parameterSchemaSpecToJsonSchema",
+              "renderToolsSdk",
+              "renderToolsSdkPy",
+              "validateArgs",
+              "validateJsonSchemaValue",
+              "valueSchemaSpecToJsonSchema"
+            ]
+          },
+          {
+            "id": "gstack861-guard",
+            "module": "gstack861-guard",
+            "disabled": false,
+            "state": 2,
+            "missingServices": [],
+            "namespaceExports": [
+              "apply",
+              "inject",
+              "name"
+            ]
+          },
+          {
+            "id": "gstack861-skills",
+            "module": "gstack861-skills",
+            "disabled": false,
+            "state": 2,
+            "missingServices": [],
+            "namespaceExports": [
+              "apply",
+              "inject",
+              "name"
+            ]
+          }
+        ],
+        "bodyInvocations": {
+          "write": 2,
+          "read": 2
+        },
+        "tripwires": {
+          "network": [],
+          "subprocess": [],
+          "sensitiveFileReads": []
+        },
+        "profile": {
+          "name": "g861accept",
+          "dir": "<fixtures>\\clean-pipeline-GUS7h9\\home\\profiles\\g861accept",
+          "bundles": [],
+          "generatedEntries": [
+            {
+              "id": "system-prompt",
+              "name": "@deepseek-ai/dsh-system-prompt",
+              "config": {
+                "personaPrefix": ""
+              }
+            },
+            {
+              "id": "tools",
+              "name": "@deepseek-ai/dsh-tools"
+            },
+            {
+              "id": "gstack861-guard",
+              "name": "gstack861-guard",
+              "config": {
+                "policyPath": "<fixtures>\\clean-pipeline-GUS7h9\\private\\policy.json"
+              }
+            },
+            {
+              "id": "gstack861-skills",
+              "name": "gstack861-skills",
+              "config": {
+                "skillsDir": "<fixtures>\\clean-pipeline-GUS7h9\\workspace with spaces Ω\\skills"
+              }
+            }
+          ],
+          "overlays": []
+        },
+        "registry": [
+          {
+            "name": "connect-chrome",
+            "expectedSha256": "d331e89662e0fbfd828eb88a0db4bc5c7dcaa64e1d8967cf04d7b3c42b45ecaa",
+            "actualSha256": "d331e89662e0fbfd828eb88a0db4bc5c7dcaa64e1d8967cf04d7b3c42b45ecaa",
+            "matches": true,
+            "manifestName": "connect-chrome",
+            "path": "<fixtures>\\clean-pipeline-GUS7h9\\workspace with spaces Ω\\skills\\connect-chrome\\SKILL.md"
+          },
+          {
+            "name": "gstack",
+            "expectedSha256": "6f2b1c6217d4c96a9558f1ac7e129218341c5b8a191bf3bff37c95162f339f00",
+            "actualSha256": "6f2b1c6217d4c96a9558f1ac7e129218341c5b8a191bf3bff37c95162f339f00",
+            "matches": true,
+            "manifestName": "gstack",
+            "path": "<fixtures>\\clean-pipeline-GUS7h9\\workspace with spaces Ω\\skills\\gstack\\SKILL.md"
+          },
+          {
+            "name": "open-gstack-browser",
+            "expectedSha256": "fc6fa5582adcb5bc50ff43fc70a17aa1a5a452738396a8df8109cbdeba94663a",
+            "actualSha256": "fc6fa5582adcb5bc50ff43fc70a17aa1a5a452738396a8df8109cbdeba94663a",
+            "matches": true,
+            "manifestName": "open-gstack-browser",
+            "path": "<fixtures>\\clean-pipeline-GUS7h9\\workspace with spaces Ω\\skills\\open-gstack-browser\\SKILL.md"
+          }
+        ],
+        "services": {
+          "systemPrompt": true,
+          "tools": true,
+          "skills": false,
+          "llm": false,
+          "agents": false,
+          "credentials": false,
+          "sessionTelemetry": false
+        },
+        "acceptanceDispatchGate": {
+          "expectedIds": [
+            "system-prompt",
+            "tools",
+            "gstack861-guard",
+            "gstack861-skills"
+          ],
+          "allExpectedActive": true,
+          "dispatchPermitted": true
+        },
+        "authenticAdapters": {
+          "gstack861-guard": {
+            "namespacePresent": true,
+            "name": "gstack861-guard",
+            "applyIdentity": true,
+            "injectMatches": true
+          },
+          "gstack861-skills": {
+            "namespacePresent": true,
+            "name": "gstack861-skills",
+            "applyIdentity": true,
+            "injectMatches": true
+          }
+        },
+        "promptIndex": {
+          "section": {
+            "name": "gstack861:skills",
+            "text": "3 gstack861 skills installed, one per line: skill name | one-line description | absolute path of its SKILL.md. Descriptions are summaries only; when a skill is relevant, read the full SKILL.md at its path with your file tools before following it.\n- connect-chrome | Fixture canonical browser connection instructions. | <fixtures>\\clean-pipeline-GUS7h9\\workspace with spaces Ω\\skills\\connect-chrome\\SKILL.md\n- gstack | Fixture root instructions. | <fixtures>\\clean-pipeline-GUS7h9\\workspace with spaces Ω\\skills\\gstack\\SKILL.md\n- open-gstack-browser | Fixture canonical browser connection instructions. | <fixtures>\\clean-pipeline-GUS7h9\\workspace with spaces Ω\\skills\\open-gstack-browser\\SKILL.md\n",
+            "interpolate": false
+          },
+          "listedCount": 3,
+          "nativeSkillsService": false,
+          "modelConsumption": "not-run"
+        },
+        "generatedProfileIntegrity": {
+          "before": {
+            "cordis.patch.yml": "4589421ffe6a661b3ab6ec434cb12be4968d0c5115bc45217b2ea80d52c221a6",
+            "cordis.yml": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+            "package.json": "f4e45c1e3d78a05f4add815ca50dc6c69aecb53d1c817566aeb927d87276bbcb",
+            "plugins/gstack861-guard/index.mjs": "6aae261d62e336a39fee14f4cdc1f27095fdabb877f153aeec273b002e99b267",
+            "plugins/gstack861-guard/package.json": "a76f5d0d449a65fd3d4ebd446ff53507095340094b054fa795c7dc671ca9504b",
+            "plugins/gstack861-skills/index.mjs": "6ba8186fb7ce9f46d11d1f5ed78cbe54d8ee408e732b817985fe36079f08f30b",
+            "plugins/gstack861-skills/package.json": "d63dadeeee14428a6d86ef350798fe740fabe750f5a5957372aca8b4d54c2828",
+            "README.md": "b85dc95f80969e08ec55d5445f58d915c3fccecfd2ae03bf0a76ec49dc630a8f"
+          },
+          "after": {
+            "cordis.patch.yml": "4589421ffe6a661b3ab6ec434cb12be4968d0c5115bc45217b2ea80d52c221a6",
+            "cordis.yml": "c300dcf2ebc5f02062d6591268d29d3db6fe45e0cb138f5467276fe2ba06076e",
+            "package.json": "f4e45c1e3d78a05f4add815ca50dc6c69aecb53d1c817566aeb927d87276bbcb",
+            "plugins/gstack861-guard/index.mjs": "6aae261d62e336a39fee14f4cdc1f27095fdabb877f153aeec273b002e99b267",
+            "plugins/gstack861-guard/package.json": "a76f5d0d449a65fd3d4ebd446ff53507095340094b054fa795c7dc671ca9504b",
+            "plugins/gstack861-skills/index.mjs": "6ba8186fb7ce9f46d11d1f5ed78cbe54d8ee408e732b817985fe36079f08f30b",
+            "plugins/gstack861-skills/package.json": "d63dadeeee14428a6d86ef350798fe740fabe750f5a5957372aca8b4d54c2828",
+            "README.md": "b85dc95f80969e08ec55d5445f58d915c3fccecfd2ae03bf0a76ec49dc630a8f"
+          },
+          "allowedHostRewrite": [
+            "cordis.yml"
+          ],
+          "packagePatchAndShimsUnchanged": true
+        },
+        "shutdown": "drained"
+      }
+    },
+    {
+      "label": "startup-invalid-policy",
+      "status": "passed",
+      "durationMs": 1664,
+      "processStatus": 0,
+      "signal": null,
+      "processError": null,
+      "activationWarningObserved": true,
+      "expectedActivationWarning": true,
+      "environmentKeys": [
+        "ComSpec",
+        "DSH_AGENTS_HOME",
+        "DSH_HOME",
+        "DSH_TELEMETRY_DISABLED",
+        "ELECTRON_RUN_AS_NODE",
+        "GSTACK861_MODEL_CALL",
+        "HOMEDRIVE",
+        "HOMEPATH",
+        "LOGONSERVER",
+        "PATH",
+        "SYSTEMDRIVE",
+        "SystemRoot",
+        "TEMP",
+        "TMP",
+        "USERDOMAIN",
+        "USERNAME",
+        "USERPROFILE",
+        "WINDIR"
+      ],
+      "setup": {
+        "generated": {
+          "schemaVersion": 1,
+          "host": "dsh",
+          "profileName": "g861accept",
+          "output": "<fixtures>\\startup-invalid-policy-h0Zzka\\home\\profiles\\g861accept",
+          "files": [
+            "package.json",
+            "cordis.yml",
+            "cordis.patch.yml",
+            "plugins/gstack861-guard/package.json",
+            "plugins/gstack861-guard/index.mjs",
+            "plugins/gstack861-skills/package.json",
+            "plugins/gstack861-skills/index.mjs",
+            "README.md"
+          ],
+          "status": "scaffolded-not-host-verified",
+          "requiresOperatorSteps": [
+            "review-profile",
+            "install-profile-dependencies",
+            "launch-disposable-profile",
+            "verify-plugin-activation",
+            "run-live-guard-acceptance"
+          ]
+        },
+        "dependencies": [
+          {
+            "name": "gstack861-guard",
+            "source": "<fixtures>\\startup-invalid-policy-h0Zzka\\home\\profiles\\g861accept\\plugins\\gstack861-guard",
+            "manifestSha256": "a76f5d0d449a65fd3d4ebd446ff53507095340094b054fa795c7dc671ca9504b",
+            "shimSha256": "6aae261d62e336a39fee14f4cdc1f27095fdabb877f153aeec273b002e99b267"
+          },
+          {
+            "name": "gstack861-skills",
+            "source": "<fixtures>\\startup-invalid-policy-h0Zzka\\home\\profiles\\g861accept\\plugins\\gstack861-skills",
+            "manifestSha256": "d63dadeeee14428a6d86ef350798fe740fabe750f5a5957372aca8b4d54c2828",
+            "shimSha256": "6ba8186fb7ce9f46d11d1f5ed78cbe54d8ee408e732b817985fe36079f08f30b"
+          }
+        ],
+        "staged": {
+          "schemaVersion": 1,
+          "host": "dsh",
+          "staging": "<fixtures>\\startup-invalid-policy-h0Zzka\\staging",
+          "staged": 1,
+          "files": 1,
+          "root": {
+            "name": "gstack",
+            "sha256": "6f2b1c6217d4c96a9558f1ac7e129218341c5b8a191bf3bff37c95162f339f00",
+            "files": 0
+          }
+        },
+        "aliased": {
+          "schemaVersion": 1,
+          "host": "dsh",
+          "output": "<fixtures>\\startup-invalid-policy-h0Zzka\\aliases",
+          "aliases": [
+            {
+              "name": "connect-chrome",
+              "aliasOf": "open-gstack-browser",
+              "sha256": "d331e89662e0fbfd828eb88a0db4bc5c7dcaa64e1d8967cf04d7b3c42b45ecaa"
+            }
+          ],
+          "note": "Rewritten copy, not symlink; install separately. Not host-verified."
+        },
+        "installed": [
+          {
+            "installed": [
+              "gstack",
+              "open-gstack-browser"
+            ],
+            "skipped": [],
+            "backedUp": []
+          },
+          {
+            "installed": [
+              "connect-chrome"
+            ],
+            "skipped": [],
+            "backedUp": []
+          }
+        ],
+        "registry": [
+          {
+            "name": "connect-chrome",
+            "sha256": "d331e89662e0fbfd828eb88a0db4bc5c7dcaa64e1d8967cf04d7b3c42b45ecaa",
+            "files": {
+              "sections/fixture.txt": "9045390925ae7a2c3c8cab40b78f0538a332f27ebb1f62e1d6decc3ddd9355b1"
+            }
+          },
+          {
+            "name": "gstack",
+            "sha256": "6f2b1c6217d4c96a9558f1ac7e129218341c5b8a191bf3bff37c95162f339f00"
+          },
+          {
+            "name": "open-gstack-browser",
+            "sha256": "fc6fa5582adcb5bc50ff43fc70a17aa1a5a452738396a8df8109cbdeba94663a",
+            "files": {
+              "sections/fixture.txt": "9045390925ae7a2c3c8cab40b78f0538a332f27ebb1f62e1d6decc3ddd9355b1"
+            }
+          }
+        ],
+        "gitFixture": {
+          "executable": "C:\\Program Files\\Git\\ucrt64\\bin\\git.exe",
+          "initialized": true,
+          "verifiedInsideWorkTree": true,
+          "sentinelSha256": "05becdb83bb897f6103c8d91439e2e9092144edf5b3955a746fce4975c12bfdc",
+          "globalAndSystemConfig": "isolated empty file",
+          "templates": "disabled",
+          "hooks": "disabled",
+          "initStdout": "Initialized empty Git repository in <fixtures>/startup-invalid-policy-h0Zzka/workspace with spaces Ω/.git/\n",
+          "initStderr": ""
+        }
+      },
+      "host": {
+        "schemaVersion": 1,
+        "label": "startup-invalid-policy",
+        "status": "passed",
+        "runtime": {
+          "node": "24.21.0",
+          "dsh": "0.2.1-rc.3",
+          "installAnchor": "C:\\Users\\Administrator\\AppData\\Local\\Programs\\DeepSeek Harness\\resources\\app.asar\\dsh\\node_modules\\@deepseek-ai\\dsh\\package.json"
+        },
+        "sourceFingerprint": "bf16abf5e6d555a859af8ad88d7d7aebc6606f58ca4463c4a20011b6de5e2b5d",
+        "isolation": {
+          "environmentKeys": [
+            "ComSpec",
+            "DSH_AGENTS_HOME",
+            "DSH_HOME",
+            "DSH_TELEMETRY_DISABLED",
+            "ELECTRON_RUN_AS_NODE",
+            "GSTACK861_MODEL_CALL",
+            "HOMEDRIVE",
+            "HOMEPATH",
+            "LOGONSERVER",
+            "PATH",
+            "SYSTEMDRIVE",
+            "SystemRoot",
+            "TEMP",
+            "TMP",
+            "USERDOMAIN",
+            "USERNAME",
+            "USERPROFILE",
+            "WINDIR"
+          ],
+          "home": "<fixtures>\\startup-invalid-policy-h0Zzka\\home",
+          "agentsHome": "<fixtures>\\startup-invalid-policy-h0Zzka\\agents",
+          "cwd": "<fixtures>\\startup-invalid-policy-h0Zzka\\cwd",
+          "fixtureHomeVerified": true,
+          "neutralIdentityVerified": true,
+          "taskless": true,
+          "explicitLaunchEnvironment": {
+            "source": "process",
+            "names": []
+          }
+        },
+        "controls": [
+          {
+            "case": "startup-invalid-policy",
+            "passed": true,
+            "toolDispatches": 0,
+            "note": "Host boot returned with optional failure; acceptance gate refused tools."
+          }
+        ],
+        "warnings": [
+          "dsh: warning: 1 entry did not activate\ngstack861-guard (gstack861-guard): SyntaxError: Expected property name or '}' in JSON at position 2 (line 1 column 3)\n    at JSON.parse (<anonymous>)\n    at loadPolicy (<repo>/src/policy.mjs:132:37)\n    at new apply (<repo>/src/adapters/dsh.mjs:11:3)\n    at Fiber.execute (file:///C:/Users/Administrator/AppData/Local/Programs/DeepSeek%20Harness/resources/app.asar/dsh/node_modules/@deepseek-ai/cordis/lib/index.js:1068:24)\n    at file:///C:/Users/Administrator/AppData/Local/Programs/DeepSeek%20Harness/resources/app.asar/dsh/node_modules/@deepseek-ai/cordis/lib/index.js:1142:34\n    at <fixtures>/startup-invalid-policy-h0Zzka/home/profiles/g861accept/#gstack861-guard\n    at <fixtures>/startup-invalid-policy-h0Zzka/home/profiles/g861accept/#include\n"
+        ],
+        "entries": [
+          {
+            "id": "include",
+            "module": "cordis:include",
+            "disabled": false,
+            "state": 2,
+            "missingServices": [],
+            "namespaceExports": [
+              "inject"
+            ]
+          },
+          {
+            "id": "system-prompt",
+            "module": "@deepseek-ai/dsh-system-prompt",
+            "disabled": false,
+            "state": 2,
+            "missingServices": [],
+            "namespaceExports": [
+              "PERSONA_PREFIX_SECTION",
+              "PERSONA_SUFFIX_SECTION",
+              "SystemPrompt",
+              "TOOL_ORDER_REST",
+              "default",
+              "joinContextSections",
+              "renderContextSections",
+              "renderContextSnapshot",
+              "renderPrompt"
+            ]
+          },
+          {
+            "id": "tools",
+            "module": "@deepseek-ai/dsh-tools",
+            "disabled": false,
+            "state": 2,
+            "missingServices": [],
+            "namespaceExports": [
+              "CodeRunFailedError",
+              "JsonSchemaError",
+              "RUN_CODE_NAME",
+              "TOOL_ABORTED",
+              "TOOL_ABORTED_BEFORE_DISPATCH",
+              "TOOL_RUNTIME_SCHEDULER",
+              "ToolArgsError",
+              "ToolNotFoundError",
+              "ToolOutputError",
+              "ToolRuntime",
+              "assertObjectJsonSchema",
+              "assertSupportedJsonSchema",
+              "default",
+              "defineContentToolFixture",
+              "defineTool",
+              "jsonSchemaToPy",
+              "jsonSchemaToTs",
+              "parameterSchemaSpecToJsonSchema",
+              "renderToolsSdk",
+              "renderToolsSdkPy",
+              "validateArgs",
+              "validateJsonSchemaValue",
+              "valueSchemaSpecToJsonSchema"
+            ]
+          },
+          {
+            "id": "gstack861-guard",
+            "module": "gstack861-guard",
+            "disabled": false,
+            "state": 3,
+            "missingServices": [],
+            "namespaceExports": [
+              "apply",
+              "inject",
+              "name"
+            ]
+          },
+          {
+            "id": "gstack861-skills",
+            "module": "gstack861-skills",
+            "disabled": false,
+            "state": 2,
+            "missingServices": [],
+            "namespaceExports": [
+              "apply",
+              "inject",
+              "name"
+            ]
+          }
+        ],
+        "bodyInvocations": {
+          "write": 0,
+          "read": 0
+        },
+        "tripwires": {
+          "network": [],
+          "subprocess": [],
+          "sensitiveFileReads": []
+        },
+        "profile": {
+          "name": "g861accept",
+          "dir": "<fixtures>\\startup-invalid-policy-h0Zzka\\home\\profiles\\g861accept",
+          "bundles": [],
+          "generatedEntries": [
+            {
+              "id": "system-prompt",
+              "name": "@deepseek-ai/dsh-system-prompt",
+              "config": {
+                "personaPrefix": ""
+              }
+            },
+            {
+              "id": "tools",
+              "name": "@deepseek-ai/dsh-tools"
+            },
+            {
+              "id": "gstack861-guard",
+              "name": "gstack861-guard",
+              "config": {
+                "policyPath": "<fixtures>\\startup-invalid-policy-h0Zzka\\private\\policy.json"
+              }
+            },
+            {
+              "id": "gstack861-skills",
+              "name": "gstack861-skills",
+              "config": {
+                "skillsDir": "<fixtures>\\startup-invalid-policy-h0Zzka\\workspace with spaces Ω\\skills"
+              }
+            }
+          ],
+          "overlays": []
+        },
+        "registry": [
+          {
+            "name": "connect-chrome",
+            "expectedSha256": "d331e89662e0fbfd828eb88a0db4bc5c7dcaa64e1d8967cf04d7b3c42b45ecaa",
+            "actualSha256": "d331e89662e0fbfd828eb88a0db4bc5c7dcaa64e1d8967cf04d7b3c42b45ecaa",
+            "matches": true,
+            "manifestName": "connect-chrome",
+            "path": "<fixtures>\\startup-invalid-policy-h0Zzka\\workspace with spaces Ω\\skills\\connect-chrome\\SKILL.md"
+          },
+          {
+            "name": "gstack",
+            "expectedSha256": "6f2b1c6217d4c96a9558f1ac7e129218341c5b8a191bf3bff37c95162f339f00",
+            "actualSha256": "6f2b1c6217d4c96a9558f1ac7e129218341c5b8a191bf3bff37c95162f339f00",
+            "matches": true,
+            "manifestName": "gstack",
+            "path": "<fixtures>\\startup-invalid-policy-h0Zzka\\workspace with spaces Ω\\skills\\gstack\\SKILL.md"
+          },
+          {
+            "name": "open-gstack-browser",
+            "expectedSha256": "fc6fa5582adcb5bc50ff43fc70a17aa1a5a452738396a8df8109cbdeba94663a",
+            "actualSha256": "fc6fa5582adcb5bc50ff43fc70a17aa1a5a452738396a8df8109cbdeba94663a",
+            "matches": true,
+            "manifestName": "open-gstack-browser",
+            "path": "<fixtures>\\startup-invalid-policy-h0Zzka\\workspace with spaces Ω\\skills\\open-gstack-browser\\SKILL.md"
+          }
+        ],
+        "services": {
+          "systemPrompt": true,
+          "tools": true,
+          "skills": false,
+          "llm": false,
+          "agents": false,
+          "credentials": false,
+          "sessionTelemetry": false
+        },
+        "acceptanceDispatchGate": {
+          "expectedIds": [
+            "system-prompt",
+            "tools",
+            "gstack861-guard",
+            "gstack861-skills"
+          ],
+          "allExpectedActive": false,
+          "dispatchPermitted": false
+        },
+        "authenticAdapters": {
+          "gstack861-guard": {
+            "namespacePresent": true,
+            "name": "gstack861-guard",
+            "applyIdentity": true,
+            "injectMatches": true
+          },
+          "gstack861-skills": {
+            "namespacePresent": true,
+            "name": "gstack861-skills",
+            "applyIdentity": true,
+            "injectMatches": true
+          }
+        },
+        "generatedProfileIntegrity": {
+          "before": {
+            "cordis.patch.yml": "fce647b1aac1b90bdb2f2a4fdd354528116989aba731564923e1ae59e8870dfb",
+            "cordis.yml": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+            "package.json": "f4e45c1e3d78a05f4add815ca50dc6c69aecb53d1c817566aeb927d87276bbcb",
+            "plugins/gstack861-guard/index.mjs": "6aae261d62e336a39fee14f4cdc1f27095fdabb877f153aeec273b002e99b267",
+            "plugins/gstack861-guard/package.json": "a76f5d0d449a65fd3d4ebd446ff53507095340094b054fa795c7dc671ca9504b",
+            "plugins/gstack861-skills/index.mjs": "6ba8186fb7ce9f46d11d1f5ed78cbe54d8ee408e732b817985fe36079f08f30b",
+            "plugins/gstack861-skills/package.json": "d63dadeeee14428a6d86ef350798fe740fabe750f5a5957372aca8b4d54c2828",
+            "README.md": "ebc6fbe719d89422342613da69ed8d903a99d315c4a27f10c85ec62be307bfae"
+          },
+          "after": {
+            "cordis.patch.yml": "fce647b1aac1b90bdb2f2a4fdd354528116989aba731564923e1ae59e8870dfb",
+            "cordis.yml": "c300dcf2ebc5f02062d6591268d29d3db6fe45e0cb138f5467276fe2ba06076e",
+            "package.json": "f4e45c1e3d78a05f4add815ca50dc6c69aecb53d1c817566aeb927d87276bbcb",
+            "plugins/gstack861-guard/index.mjs": "6aae261d62e336a39fee14f4cdc1f27095fdabb877f153aeec273b002e99b267",
+            "plugins/gstack861-guard/package.json": "a76f5d0d449a65fd3d4ebd446ff53507095340094b054fa795c7dc671ca9504b",
+            "plugins/gstack861-skills/index.mjs": "6ba8186fb7ce9f46d11d1f5ed78cbe54d8ee408e732b817985fe36079f08f30b",
+            "plugins/gstack861-skills/package.json": "d63dadeeee14428a6d86ef350798fe740fabe750f5a5957372aca8b4d54c2828",
+            "README.md": "ebc6fbe719d89422342613da69ed8d903a99d315c4a27f10c85ec62be307bfae"
+          },
+          "allowedHostRewrite": [
+            "cordis.yml"
+          ],
+          "packagePatchAndShimsUnchanged": true
+        },
+        "shutdown": "drained"
+      }
+    },
+    {
+      "label": "startup-no-system-prompt",
+      "status": "passed",
+      "durationMs": 1701,
+      "processStatus": 0,
+      "signal": null,
+      "processError": null,
+      "activationWarningObserved": true,
+      "expectedActivationWarning": true,
+      "environmentKeys": [
+        "ComSpec",
+        "DSH_AGENTS_HOME",
+        "DSH_HOME",
+        "DSH_TELEMETRY_DISABLED",
+        "ELECTRON_RUN_AS_NODE",
+        "GSTACK861_MODEL_CALL",
+        "HOMEDRIVE",
+        "HOMEPATH",
+        "LOGONSERVER",
+        "PATH",
+        "SYSTEMDRIVE",
+        "SystemRoot",
+        "TEMP",
+        "TMP",
+        "USERDOMAIN",
+        "USERNAME",
+        "USERPROFILE",
+        "WINDIR"
+      ],
+      "setup": {
+        "generated": {
+          "schemaVersion": 1,
+          "host": "dsh",
+          "profileName": "g861accept",
+          "output": "<fixtures>\\startup-no-system-prompt-whQVlO\\home\\profiles\\g861accept",
+          "files": [
+            "package.json",
+            "cordis.yml",
+            "cordis.patch.yml",
+            "plugins/gstack861-guard/package.json",
+            "plugins/gstack861-guard/index.mjs",
+            "plugins/gstack861-skills/package.json",
+            "plugins/gstack861-skills/index.mjs",
+            "README.md"
+          ],
+          "status": "scaffolded-not-host-verified",
+          "requiresOperatorSteps": [
+            "review-profile",
+            "install-profile-dependencies",
+            "launch-disposable-profile",
+            "verify-plugin-activation",
+            "run-live-guard-acceptance"
+          ]
+        },
+        "dependencies": [
+          {
+            "name": "gstack861-guard",
+            "source": "<fixtures>\\startup-no-system-prompt-whQVlO\\home\\profiles\\g861accept\\plugins\\gstack861-guard",
+            "manifestSha256": "a76f5d0d449a65fd3d4ebd446ff53507095340094b054fa795c7dc671ca9504b",
+            "shimSha256": "6aae261d62e336a39fee14f4cdc1f27095fdabb877f153aeec273b002e99b267"
+          },
+          {
+            "name": "gstack861-skills",
+            "source": "<fixtures>\\startup-no-system-prompt-whQVlO\\home\\profiles\\g861accept\\plugins\\gstack861-skills",
+            "manifestSha256": "d63dadeeee14428a6d86ef350798fe740fabe750f5a5957372aca8b4d54c2828",
+            "shimSha256": "6ba8186fb7ce9f46d11d1f5ed78cbe54d8ee408e732b817985fe36079f08f30b"
+          }
+        ],
+        "staged": {
+          "schemaVersion": 1,
+          "host": "dsh",
+          "staging": "<fixtures>\\startup-no-system-prompt-whQVlO\\staging",
+          "staged": 1,
+          "files": 1,
+          "root": {
+            "name": "gstack",
+            "sha256": "6f2b1c6217d4c96a9558f1ac7e129218341c5b8a191bf3bff37c95162f339f00",
+            "files": 0
+          }
+        },
+        "aliased": {
+          "schemaVersion": 1,
+          "host": "dsh",
+          "output": "<fixtures>\\startup-no-system-prompt-whQVlO\\aliases",
+          "aliases": [
+            {
+              "name": "connect-chrome",
+              "aliasOf": "open-gstack-browser",
+              "sha256": "d331e89662e0fbfd828eb88a0db4bc5c7dcaa64e1d8967cf04d7b3c42b45ecaa"
+            }
+          ],
+          "note": "Rewritten copy, not symlink; install separately. Not host-verified."
+        },
+        "installed": [
+          {
+            "installed": [
+              "gstack",
+              "open-gstack-browser"
+            ],
+            "skipped": [],
+            "backedUp": []
+          },
+          {
+            "installed": [
+              "connect-chrome"
+            ],
+            "skipped": [],
+            "backedUp": []
+          }
+        ],
+        "registry": [
+          {
+            "name": "connect-chrome",
+            "sha256": "d331e89662e0fbfd828eb88a0db4bc5c7dcaa64e1d8967cf04d7b3c42b45ecaa",
+            "files": {
+              "sections/fixture.txt": "9045390925ae7a2c3c8cab40b78f0538a332f27ebb1f62e1d6decc3ddd9355b1"
+            }
+          },
+          {
+            "name": "gstack",
+            "sha256": "6f2b1c6217d4c96a9558f1ac7e129218341c5b8a191bf3bff37c95162f339f00"
+          },
+          {
+            "name": "open-gstack-browser",
+            "sha256": "fc6fa5582adcb5bc50ff43fc70a17aa1a5a452738396a8df8109cbdeba94663a",
+            "files": {
+              "sections/fixture.txt": "9045390925ae7a2c3c8cab40b78f0538a332f27ebb1f62e1d6decc3ddd9355b1"
+            }
+          }
+        ],
+        "gitFixture": {
+          "executable": "C:\\Program Files\\Git\\ucrt64\\bin\\git.exe",
+          "initialized": true,
+          "verifiedInsideWorkTree": true,
+          "sentinelSha256": "05becdb83bb897f6103c8d91439e2e9092144edf5b3955a746fce4975c12bfdc",
+          "globalAndSystemConfig": "isolated empty file",
+          "templates": "disabled",
+          "hooks": "disabled",
+          "initStdout": "Initialized empty Git repository in <fixtures>/startup-no-system-prompt-whQVlO/workspace with spaces Ω/.git/\n",
+          "initStderr": ""
+        }
+      },
+      "host": {
+        "schemaVersion": 1,
+        "label": "startup-no-system-prompt",
+        "status": "passed",
+        "runtime": {
+          "node": "24.21.0",
+          "dsh": "0.2.1-rc.3",
+          "installAnchor": "C:\\Users\\Administrator\\AppData\\Local\\Programs\\DeepSeek Harness\\resources\\app.asar\\dsh\\node_modules\\@deepseek-ai\\dsh\\package.json"
+        },
+        "sourceFingerprint": "bf16abf5e6d555a859af8ad88d7d7aebc6606f58ca4463c4a20011b6de5e2b5d",
+        "isolation": {
+          "environmentKeys": [
+            "ComSpec",
+            "DSH_AGENTS_HOME",
+            "DSH_HOME",
+            "DSH_TELEMETRY_DISABLED",
+            "ELECTRON_RUN_AS_NODE",
+            "GSTACK861_MODEL_CALL",
+            "HOMEDRIVE",
+            "HOMEPATH",
+            "LOGONSERVER",
+            "PATH",
+            "SYSTEMDRIVE",
+            "SystemRoot",
+            "TEMP",
+            "TMP",
+            "USERDOMAIN",
+            "USERNAME",
+            "USERPROFILE",
+            "WINDIR"
+          ],
+          "home": "<fixtures>\\startup-no-system-prompt-whQVlO\\home",
+          "agentsHome": "<fixtures>\\startup-no-system-prompt-whQVlO\\agents",
+          "cwd": "<fixtures>\\startup-no-system-prompt-whQVlO\\cwd",
+          "fixtureHomeVerified": true,
+          "neutralIdentityVerified": true,
+          "taskless": true,
+          "explicitLaunchEnvironment": {
+            "source": "process",
+            "names": []
+          }
+        },
+        "controls": [
+          {
+            "case": "startup-no-system-prompt",
+            "passed": true,
+            "toolDispatches": 0,
+            "note": "Host boot returned with optional failure; acceptance gate refused tools."
+          }
+        ],
+        "warnings": [
+          "dsh: warning: 3 entries did not activate\ntools (@deepseek-ai/dsh-tools): pending (waiting for service: systemPrompt)\ngstack861-guard (gstack861-guard): pending (waiting for service: tools)\ngstack861-skills (gstack861-skills): pending (waiting for service: systemPrompt)\n"
+        ],
+        "entries": [
+          {
+            "id": "include",
+            "module": "cordis:include",
+            "disabled": false,
+            "state": 2,
+            "missingServices": [],
+            "namespaceExports": [
+              "inject"
+            ]
+          },
+          {
+            "id": "system-prompt",
+            "module": "@deepseek-ai/dsh-system-prompt",
+            "disabled": true,
+            "state": null,
+            "missingServices": [],
+            "namespaceExports": []
+          },
+          {
+            "id": "tools",
+            "module": "@deepseek-ai/dsh-tools",
+            "disabled": false,
+            "state": 0,
+            "missingServices": [
+              "systemPrompt"
+            ],
+            "namespaceExports": [
+              "CodeRunFailedError",
+              "JsonSchemaError",
+              "RUN_CODE_NAME",
+              "TOOL_ABORTED",
+              "TOOL_ABORTED_BEFORE_DISPATCH",
+              "TOOL_RUNTIME_SCHEDULER",
+              "ToolArgsError",
+              "ToolNotFoundError",
+              "ToolOutputError",
+              "ToolRuntime",
+              "assertObjectJsonSchema",
+              "assertSupportedJsonSchema",
+              "default",
+              "defineContentToolFixture",
+              "defineTool",
+              "jsonSchemaToPy",
+              "jsonSchemaToTs",
+              "parameterSchemaSpecToJsonSchema",
+              "renderToolsSdk",
+              "renderToolsSdkPy",
+              "validateArgs",
+              "validateJsonSchemaValue",
+              "valueSchemaSpecToJsonSchema"
+            ]
+          },
+          {
+            "id": "gstack861-guard",
+            "module": "gstack861-guard",
+            "disabled": false,
+            "state": 0,
+            "missingServices": [
+              "tools"
+            ],
+            "namespaceExports": [
+              "apply",
+              "inject",
+              "name"
+            ]
+          },
+          {
+            "id": "gstack861-skills",
+            "module": "gstack861-skills",
+            "disabled": false,
+            "state": 0,
+            "missingServices": [
+              "systemPrompt"
+            ],
+            "namespaceExports": [
+              "apply",
+              "inject",
+              "name"
+            ]
+          }
+        ],
+        "bodyInvocations": {
+          "write": 0,
+          "read": 0
+        },
+        "tripwires": {
+          "network": [],
+          "subprocess": [],
+          "sensitiveFileReads": []
+        },
+        "profile": {
+          "name": "g861accept",
+          "dir": "<fixtures>\\startup-no-system-prompt-whQVlO\\home\\profiles\\g861accept",
+          "bundles": [],
+          "generatedEntries": [
+            {
+              "id": "system-prompt",
+              "name": "@deepseek-ai/dsh-system-prompt",
+              "config": {
+                "personaPrefix": ""
+              }
+            },
+            {
+              "id": "tools",
+              "name": "@deepseek-ai/dsh-tools"
+            },
+            {
+              "id": "gstack861-guard",
+              "name": "gstack861-guard",
+              "config": {
+                "policyPath": "<fixtures>\\startup-no-system-prompt-whQVlO\\private\\policy.json"
+              }
+            },
+            {
+              "id": "gstack861-skills",
+              "name": "gstack861-skills",
+              "config": {
+                "skillsDir": "<fixtures>\\startup-no-system-prompt-whQVlO\\workspace with spaces Ω\\skills"
+              }
+            }
+          ],
+          "overlays": [
+            [
+              {
+                "id": "system-prompt",
+                "disabled": true
+              }
+            ]
+          ]
+        },
+        "registry": [
+          {
+            "name": "connect-chrome",
+            "expectedSha256": "d331e89662e0fbfd828eb88a0db4bc5c7dcaa64e1d8967cf04d7b3c42b45ecaa",
+            "actualSha256": "d331e89662e0fbfd828eb88a0db4bc5c7dcaa64e1d8967cf04d7b3c42b45ecaa",
+            "matches": true,
+            "manifestName": "connect-chrome",
+            "path": "<fixtures>\\startup-no-system-prompt-whQVlO\\workspace with spaces Ω\\skills\\connect-chrome\\SKILL.md"
+          },
+          {
+            "name": "gstack",
+            "expectedSha256": "6f2b1c6217d4c96a9558f1ac7e129218341c5b8a191bf3bff37c95162f339f00",
+            "actualSha256": "6f2b1c6217d4c96a9558f1ac7e129218341c5b8a191bf3bff37c95162f339f00",
+            "matches": true,
+            "manifestName": "gstack",
+            "path": "<fixtures>\\startup-no-system-prompt-whQVlO\\workspace with spaces Ω\\skills\\gstack\\SKILL.md"
+          },
+          {
+            "name": "open-gstack-browser",
+            "expectedSha256": "fc6fa5582adcb5bc50ff43fc70a17aa1a5a452738396a8df8109cbdeba94663a",
+            "actualSha256": "fc6fa5582adcb5bc50ff43fc70a17aa1a5a452738396a8df8109cbdeba94663a",
+            "matches": true,
+            "manifestName": "open-gstack-browser",
+            "path": "<fixtures>\\startup-no-system-prompt-whQVlO\\workspace with spaces Ω\\skills\\open-gstack-browser\\SKILL.md"
+          }
+        ],
+        "services": {
+          "systemPrompt": false,
+          "tools": false,
+          "skills": false,
+          "llm": false,
+          "agents": false,
+          "credentials": false,
+          "sessionTelemetry": false
+        },
+        "acceptanceDispatchGate": {
+          "expectedIds": [
+            "system-prompt",
+            "tools",
+            "gstack861-guard",
+            "gstack861-skills"
+          ],
+          "allExpectedActive": false,
+          "dispatchPermitted": false
+        },
+        "authenticAdapters": {
+          "gstack861-guard": {
+            "namespacePresent": true,
+            "name": "gstack861-guard",
+            "applyIdentity": true,
+            "injectMatches": true
+          },
+          "gstack861-skills": {
+            "namespacePresent": true,
+            "name": "gstack861-skills",
+            "applyIdentity": true,
+            "injectMatches": true
+          }
+        },
+        "generatedProfileIntegrity": {
+          "before": {
+            "cordis.patch.yml": "18e849021d35ea639903fd737df1e3dead8cdbbe053795dc0076f2b4236c536f",
+            "cordis.yml": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+            "package.json": "f4e45c1e3d78a05f4add815ca50dc6c69aecb53d1c817566aeb927d87276bbcb",
+            "plugins/gstack861-guard/index.mjs": "6aae261d62e336a39fee14f4cdc1f27095fdabb877f153aeec273b002e99b267",
+            "plugins/gstack861-guard/package.json": "a76f5d0d449a65fd3d4ebd446ff53507095340094b054fa795c7dc671ca9504b",
+            "plugins/gstack861-skills/index.mjs": "6ba8186fb7ce9f46d11d1f5ed78cbe54d8ee408e732b817985fe36079f08f30b",
+            "plugins/gstack861-skills/package.json": "d63dadeeee14428a6d86ef350798fe740fabe750f5a5957372aca8b4d54c2828",
+            "README.md": "3195ddd3f07232ecf998292fa311f7106070bcf3e43e8b109d29a3d530355308"
+          },
+          "after": {
+            "cordis.patch.yml": "18e849021d35ea639903fd737df1e3dead8cdbbe053795dc0076f2b4236c536f",
+            "cordis.yml": "c300dcf2ebc5f02062d6591268d29d3db6fe45e0cb138f5467276fe2ba06076e",
+            "package.json": "f4e45c1e3d78a05f4add815ca50dc6c69aecb53d1c817566aeb927d87276bbcb",
+            "plugins/gstack861-guard/index.mjs": "6aae261d62e336a39fee14f4cdc1f27095fdabb877f153aeec273b002e99b267",
+            "plugins/gstack861-guard/package.json": "a76f5d0d449a65fd3d4ebd446ff53507095340094b054fa795c7dc671ca9504b",
+            "plugins/gstack861-skills/index.mjs": "6ba8186fb7ce9f46d11d1f5ed78cbe54d8ee408e732b817985fe36079f08f30b",
+            "plugins/gstack861-skills/package.json": "d63dadeeee14428a6d86ef350798fe740fabe750f5a5957372aca8b4d54c2828",
+            "README.md": "3195ddd3f07232ecf998292fa311f7106070bcf3e43e8b109d29a3d530355308"
+          },
+          "allowedHostRewrite": [
+            "cordis.yml"
+          ],
+          "packagePatchAndShimsUnchanged": true
+        },
+        "shutdown": "drained"
+      }
+    },
+    {
+      "label": "startup-corrupt-registry",
+      "status": "passed",
+      "durationMs": 1656,
+      "processStatus": 0,
+      "signal": null,
+      "processError": null,
+      "activationWarningObserved": true,
+      "expectedActivationWarning": true,
+      "environmentKeys": [
+        "ComSpec",
+        "DSH_AGENTS_HOME",
+        "DSH_HOME",
+        "DSH_TELEMETRY_DISABLED",
+        "ELECTRON_RUN_AS_NODE",
+        "GSTACK861_MODEL_CALL",
+        "HOMEDRIVE",
+        "HOMEPATH",
+        "LOGONSERVER",
+        "PATH",
+        "SYSTEMDRIVE",
+        "SystemRoot",
+        "TEMP",
+        "TMP",
+        "USERDOMAIN",
+        "USERNAME",
+        "USERPROFILE",
+        "WINDIR"
+      ],
+      "setup": {
+        "generated": {
+          "schemaVersion": 1,
+          "host": "dsh",
+          "profileName": "g861accept",
+          "output": "<fixtures>\\startup-corrupt-registry-wNcKwW\\home\\profiles\\g861accept",
+          "files": [
+            "package.json",
+            "cordis.yml",
+            "cordis.patch.yml",
+            "plugins/gstack861-guard/package.json",
+            "plugins/gstack861-guard/index.mjs",
+            "plugins/gstack861-skills/package.json",
+            "plugins/gstack861-skills/index.mjs",
+            "README.md"
+          ],
+          "status": "scaffolded-not-host-verified",
+          "requiresOperatorSteps": [
+            "review-profile",
+            "install-profile-dependencies",
+            "launch-disposable-profile",
+            "verify-plugin-activation",
+            "run-live-guard-acceptance"
+          ]
+        },
+        "dependencies": [
+          {
+            "name": "gstack861-guard",
+            "source": "<fixtures>\\startup-corrupt-registry-wNcKwW\\home\\profiles\\g861accept\\plugins\\gstack861-guard",
+            "manifestSha256": "a76f5d0d449a65fd3d4ebd446ff53507095340094b054fa795c7dc671ca9504b",
+            "shimSha256": "6aae261d62e336a39fee14f4cdc1f27095fdabb877f153aeec273b002e99b267"
+          },
+          {
+            "name": "gstack861-skills",
+            "source": "<fixtures>\\startup-corrupt-registry-wNcKwW\\home\\profiles\\g861accept\\plugins\\gstack861-skills",
+            "manifestSha256": "d63dadeeee14428a6d86ef350798fe740fabe750f5a5957372aca8b4d54c2828",
+            "shimSha256": "6ba8186fb7ce9f46d11d1f5ed78cbe54d8ee408e732b817985fe36079f08f30b"
+          }
+        ],
+        "staged": {
+          "schemaVersion": 1,
+          "host": "dsh",
+          "staging": "<fixtures>\\startup-corrupt-registry-wNcKwW\\staging",
+          "staged": 1,
+          "files": 1,
+          "root": {
+            "name": "gstack",
+            "sha256": "6f2b1c6217d4c96a9558f1ac7e129218341c5b8a191bf3bff37c95162f339f00",
+            "files": 0
+          }
+        },
+        "aliased": {
+          "schemaVersion": 1,
+          "host": "dsh",
+          "output": "<fixtures>\\startup-corrupt-registry-wNcKwW\\aliases",
+          "aliases": [
+            {
+              "name": "connect-chrome",
+              "aliasOf": "open-gstack-browser",
+              "sha256": "d331e89662e0fbfd828eb88a0db4bc5c7dcaa64e1d8967cf04d7b3c42b45ecaa"
+            }
+          ],
+          "note": "Rewritten copy, not symlink; install separately. Not host-verified."
+        },
+        "installed": [
+          {
+            "installed": [
+              "gstack",
+              "open-gstack-browser"
+            ],
+            "skipped": [],
+            "backedUp": []
+          },
+          {
+            "installed": [
+              "connect-chrome"
+            ],
+            "skipped": [],
+            "backedUp": []
+          }
+        ],
+        "registry": [
+          {
+            "name": "connect-chrome",
+            "sha256": "d331e89662e0fbfd828eb88a0db4bc5c7dcaa64e1d8967cf04d7b3c42b45ecaa",
+            "files": {
+              "sections/fixture.txt": "9045390925ae7a2c3c8cab40b78f0538a332f27ebb1f62e1d6decc3ddd9355b1"
+            }
+          },
+          {
+            "name": "gstack",
+            "sha256": "6f2b1c6217d4c96a9558f1ac7e129218341c5b8a191bf3bff37c95162f339f00"
+          },
+          {
+            "name": "open-gstack-browser",
+            "sha256": "fc6fa5582adcb5bc50ff43fc70a17aa1a5a452738396a8df8109cbdeba94663a",
+            "files": {
+              "sections/fixture.txt": "9045390925ae7a2c3c8cab40b78f0538a332f27ebb1f62e1d6decc3ddd9355b1"
+            }
+          }
+        ],
+        "gitFixture": {
+          "executable": "C:\\Program Files\\Git\\ucrt64\\bin\\git.exe",
+          "initialized": true,
+          "verifiedInsideWorkTree": true,
+          "sentinelSha256": "05becdb83bb897f6103c8d91439e2e9092144edf5b3955a746fce4975c12bfdc",
+          "globalAndSystemConfig": "isolated empty file",
+          "templates": "disabled",
+          "hooks": "disabled",
+          "initStdout": "Initialized empty Git repository in <fixtures>/startup-corrupt-registry-wNcKwW/workspace with spaces Ω/.git/\n",
+          "initStderr": ""
+        }
+      },
+      "host": {
+        "schemaVersion": 1,
+        "label": "startup-corrupt-registry",
+        "status": "passed",
+        "runtime": {
+          "node": "24.21.0",
+          "dsh": "0.2.1-rc.3",
+          "installAnchor": "C:\\Users\\Administrator\\AppData\\Local\\Programs\\DeepSeek Harness\\resources\\app.asar\\dsh\\node_modules\\@deepseek-ai\\dsh\\package.json"
+        },
+        "sourceFingerprint": "bf16abf5e6d555a859af8ad88d7d7aebc6606f58ca4463c4a20011b6de5e2b5d",
+        "isolation": {
+          "environmentKeys": [
+            "ComSpec",
+            "DSH_AGENTS_HOME",
+            "DSH_HOME",
+            "DSH_TELEMETRY_DISABLED",
+            "ELECTRON_RUN_AS_NODE",
+            "GSTACK861_MODEL_CALL",
+            "HOMEDRIVE",
+            "HOMEPATH",
+            "LOGONSERVER",
+            "PATH",
+            "SYSTEMDRIVE",
+            "SystemRoot",
+            "TEMP",
+            "TMP",
+            "USERDOMAIN",
+            "USERNAME",
+            "USERPROFILE",
+            "WINDIR"
+          ],
+          "home": "<fixtures>\\startup-corrupt-registry-wNcKwW\\home",
+          "agentsHome": "<fixtures>\\startup-corrupt-registry-wNcKwW\\agents",
+          "cwd": "<fixtures>\\startup-corrupt-registry-wNcKwW\\cwd",
+          "fixtureHomeVerified": true,
+          "neutralIdentityVerified": true,
+          "taskless": true,
+          "explicitLaunchEnvironment": {
+            "source": "process",
+            "names": []
+          }
+        },
+        "controls": [
+          {
+            "case": "startup-corrupt-registry",
+            "passed": true,
+            "toolDispatches": 0,
+            "note": "Host boot returned with optional failure; acceptance gate refused tools."
+          }
+        ],
+        "warnings": [
+          "dsh: warning: 1 entry did not activate\ngstack861-skills (gstack861-skills): Error: REGISTRY_INVALID\n    at fail (<repo>/src/install.mjs:20:30)\n    at registryEntries (<repo>/src/install.mjs:156:66)\n    at loadRegistry (<repo>/src/install.mjs:149:10)\n    at new apply (<repo>/src/adapters/dsh-skills.mjs:46:19)\n    at Fiber.execute (file:///C:/Users/Administrator/AppData/Local/Programs/DeepSeek%20Harness/resources/app.asar/dsh/node_modules/@deepseek-ai/cordis/lib/index.js:1068:24)\n    at file:///C:/Users/Administrator/AppData/Local/Programs/DeepSeek%20Harness/resources/app.asar/dsh/node_modules/@deepseek-ai/cordis/lib/index.js:1142:34\n    at <fixtures>/startup-corrupt-registry-wNcKwW/home/profiles/g861accept/#gstack861-skills\n    at <fixtures>/startup-corrupt-registry-wNcKwW/home/profiles/g861accept/#include\n"
+        ],
+        "entries": [
+          {
+            "id": "include",
+            "module": "cordis:include",
+            "disabled": false,
+            "state": 2,
+            "missingServices": [],
+            "namespaceExports": [
+              "inject"
+            ]
+          },
+          {
+            "id": "system-prompt",
+            "module": "@deepseek-ai/dsh-system-prompt",
+            "disabled": false,
+            "state": 2,
+            "missingServices": [],
+            "namespaceExports": [
+              "PERSONA_PREFIX_SECTION",
+              "PERSONA_SUFFIX_SECTION",
+              "SystemPrompt",
+              "TOOL_ORDER_REST",
+              "default",
+              "joinContextSections",
+              "renderContextSections",
+              "renderContextSnapshot",
+              "renderPrompt"
+            ]
+          },
+          {
+            "id": "tools",
+            "module": "@deepseek-ai/dsh-tools",
+            "disabled": false,
+            "state": 2,
+            "missingServices": [],
+            "namespaceExports": [
+              "CodeRunFailedError",
+              "JsonSchemaError",
+              "RUN_CODE_NAME",
+              "TOOL_ABORTED",
+              "TOOL_ABORTED_BEFORE_DISPATCH",
+              "TOOL_RUNTIME_SCHEDULER",
+              "ToolArgsError",
+              "ToolNotFoundError",
+              "ToolOutputError",
+              "ToolRuntime",
+              "assertObjectJsonSchema",
+              "assertSupportedJsonSchema",
+              "default",
+              "defineContentToolFixture",
+              "defineTool",
+              "jsonSchemaToPy",
+              "jsonSchemaToTs",
+              "parameterSchemaSpecToJsonSchema",
+              "renderToolsSdk",
+              "renderToolsSdkPy",
+              "validateArgs",
+              "validateJsonSchemaValue",
+              "valueSchemaSpecToJsonSchema"
+            ]
+          },
+          {
+            "id": "gstack861-guard",
+            "module": "gstack861-guard",
+            "disabled": false,
+            "state": 2,
+            "missingServices": [],
+            "namespaceExports": [
+              "apply",
+              "inject",
+              "name"
+            ]
+          },
+          {
+            "id": "gstack861-skills",
+            "module": "gstack861-skills",
+            "disabled": false,
+            "state": 3,
+            "missingServices": [],
+            "namespaceExports": [
+              "apply",
+              "inject",
+              "name"
+            ]
+          }
+        ],
+        "bodyInvocations": {
+          "write": 0,
+          "read": 0
+        },
+        "tripwires": {
+          "network": [],
+          "subprocess": [],
+          "sensitiveFileReads": []
+        },
+        "profile": {
+          "name": "g861accept",
+          "dir": "<fixtures>\\startup-corrupt-registry-wNcKwW\\home\\profiles\\g861accept",
+          "bundles": [],
+          "generatedEntries": [
+            {
+              "id": "system-prompt",
+              "name": "@deepseek-ai/dsh-system-prompt",
+              "config": {
+                "personaPrefix": ""
+              }
+            },
+            {
+              "id": "tools",
+              "name": "@deepseek-ai/dsh-tools"
+            },
+            {
+              "id": "gstack861-guard",
+              "name": "gstack861-guard",
+              "config": {
+                "policyPath": "<fixtures>\\startup-corrupt-registry-wNcKwW\\private\\policy.json"
+              }
+            },
+            {
+              "id": "gstack861-skills",
+              "name": "gstack861-skills",
+              "config": {
+                "skillsDir": "<fixtures>\\startup-corrupt-registry-wNcKwW\\workspace with spaces Ω\\skills"
+              }
+            }
+          ],
+          "overlays": []
+        },
+        "registry": [
+          {
+            "name": "connect-chrome",
+            "expectedSha256": "d331e89662e0fbfd828eb88a0db4bc5c7dcaa64e1d8967cf04d7b3c42b45ecaa",
+            "actualSha256": "d331e89662e0fbfd828eb88a0db4bc5c7dcaa64e1d8967cf04d7b3c42b45ecaa",
+            "matches": true,
+            "manifestName": "connect-chrome",
+            "path": "<fixtures>\\startup-corrupt-registry-wNcKwW\\workspace with spaces Ω\\skills\\connect-chrome\\SKILL.md"
+          },
+          {
+            "name": "gstack",
+            "expectedSha256": "6f2b1c6217d4c96a9558f1ac7e129218341c5b8a191bf3bff37c95162f339f00",
+            "actualSha256": "6f2b1c6217d4c96a9558f1ac7e129218341c5b8a191bf3bff37c95162f339f00",
+            "matches": true,
+            "manifestName": "gstack",
+            "path": "<fixtures>\\startup-corrupt-registry-wNcKwW\\workspace with spaces Ω\\skills\\gstack\\SKILL.md"
+          },
+          {
+            "name": "open-gstack-browser",
+            "expectedSha256": "fc6fa5582adcb5bc50ff43fc70a17aa1a5a452738396a8df8109cbdeba94663a",
+            "actualSha256": "fc6fa5582adcb5bc50ff43fc70a17aa1a5a452738396a8df8109cbdeba94663a",
+            "matches": true,
+            "manifestName": "open-gstack-browser",
+            "path": "<fixtures>\\startup-corrupt-registry-wNcKwW\\workspace with spaces Ω\\skills\\open-gstack-browser\\SKILL.md"
+          }
+        ],
+        "services": {
+          "systemPrompt": true,
+          "tools": true,
+          "skills": false,
+          "llm": false,
+          "agents": false,
+          "credentials": false,
+          "sessionTelemetry": false
+        },
+        "acceptanceDispatchGate": {
+          "expectedIds": [
+            "system-prompt",
+            "tools",
+            "gstack861-guard",
+            "gstack861-skills"
+          ],
+          "allExpectedActive": false,
+          "dispatchPermitted": false
+        },
+        "authenticAdapters": {
+          "gstack861-guard": {
+            "namespacePresent": true,
+            "name": "gstack861-guard",
+            "applyIdentity": true,
+            "injectMatches": true
+          },
+          "gstack861-skills": {
+            "namespacePresent": true,
+            "name": "gstack861-skills",
+            "applyIdentity": true,
+            "injectMatches": true
+          }
+        },
+        "generatedProfileIntegrity": {
+          "before": {
+            "cordis.patch.yml": "a64efb88213d8bd1ee1044bc066b8898c803862386706b9602f3ac8c91a77fc1",
+            "cordis.yml": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+            "package.json": "f4e45c1e3d78a05f4add815ca50dc6c69aecb53d1c817566aeb927d87276bbcb",
+            "plugins/gstack861-guard/index.mjs": "6aae261d62e336a39fee14f4cdc1f27095fdabb877f153aeec273b002e99b267",
+            "plugins/gstack861-guard/package.json": "a76f5d0d449a65fd3d4ebd446ff53507095340094b054fa795c7dc671ca9504b",
+            "plugins/gstack861-skills/index.mjs": "6ba8186fb7ce9f46d11d1f5ed78cbe54d8ee408e732b817985fe36079f08f30b",
+            "plugins/gstack861-skills/package.json": "d63dadeeee14428a6d86ef350798fe740fabe750f5a5957372aca8b4d54c2828",
+            "README.md": "c68d16ecc46fc25b67652136149179e288bbac5ce5c900362b8e4013e89b26d3"
+          },
+          "after": {
+            "cordis.patch.yml": "a64efb88213d8bd1ee1044bc066b8898c803862386706b9602f3ac8c91a77fc1",
+            "cordis.yml": "c300dcf2ebc5f02062d6591268d29d3db6fe45e0cb138f5467276fe2ba06076e",
+            "package.json": "f4e45c1e3d78a05f4add815ca50dc6c69aecb53d1c817566aeb927d87276bbcb",
+            "plugins/gstack861-guard/index.mjs": "6aae261d62e336a39fee14f4cdc1f27095fdabb877f153aeec273b002e99b267",
+            "plugins/gstack861-guard/package.json": "a76f5d0d449a65fd3d4ebd446ff53507095340094b054fa795c7dc671ca9504b",
+            "plugins/gstack861-skills/index.mjs": "6ba8186fb7ce9f46d11d1f5ed78cbe54d8ee408e732b817985fe36079f08f30b",
+            "plugins/gstack861-skills/package.json": "d63dadeeee14428a6d86ef350798fe740fabe750f5a5957372aca8b4d54c2828",
+            "README.md": "c68d16ecc46fc25b67652136149179e288bbac5ce5c900362b8e4013e89b26d3"
+          },
+          "allowedHostRewrite": [
+            "cordis.yml"
+          ],
+          "packagePatchAndShimsUnchanged": true
+        },
+        "shutdown": "drained"
+      }
+    },
+    {
+      "label": "startup-tampered-skill",
+      "status": "passed",
+      "durationMs": 1589,
+      "processStatus": 0,
+      "signal": null,
+      "processError": null,
+      "activationWarningObserved": true,
+      "expectedActivationWarning": true,
+      "environmentKeys": [
+        "ComSpec",
+        "DSH_AGENTS_HOME",
+        "DSH_HOME",
+        "DSH_TELEMETRY_DISABLED",
+        "ELECTRON_RUN_AS_NODE",
+        "GSTACK861_MODEL_CALL",
+        "HOMEDRIVE",
+        "HOMEPATH",
+        "LOGONSERVER",
+        "PATH",
+        "SYSTEMDRIVE",
+        "SystemRoot",
+        "TEMP",
+        "TMP",
+        "USERDOMAIN",
+        "USERNAME",
+        "USERPROFILE",
+        "WINDIR"
+      ],
+      "setup": {
+        "generated": {
+          "schemaVersion": 1,
+          "host": "dsh",
+          "profileName": "g861accept",
+          "output": "<fixtures>\\startup-tampered-skill-o6maeL\\home\\profiles\\g861accept",
+          "files": [
+            "package.json",
+            "cordis.yml",
+            "cordis.patch.yml",
+            "plugins/gstack861-guard/package.json",
+            "plugins/gstack861-guard/index.mjs",
+            "plugins/gstack861-skills/package.json",
+            "plugins/gstack861-skills/index.mjs",
+            "README.md"
+          ],
+          "status": "scaffolded-not-host-verified",
+          "requiresOperatorSteps": [
+            "review-profile",
+            "install-profile-dependencies",
+            "launch-disposable-profile",
+            "verify-plugin-activation",
+            "run-live-guard-acceptance"
+          ]
+        },
+        "dependencies": [
+          {
+            "name": "gstack861-guard",
+            "source": "<fixtures>\\startup-tampered-skill-o6maeL\\home\\profiles\\g861accept\\plugins\\gstack861-guard",
+            "manifestSha256": "a76f5d0d449a65fd3d4ebd446ff53507095340094b054fa795c7dc671ca9504b",
+            "shimSha256": "6aae261d62e336a39fee14f4cdc1f27095fdabb877f153aeec273b002e99b267"
+          },
+          {
+            "name": "gstack861-skills",
+            "source": "<fixtures>\\startup-tampered-skill-o6maeL\\home\\profiles\\g861accept\\plugins\\gstack861-skills",
+            "manifestSha256": "d63dadeeee14428a6d86ef350798fe740fabe750f5a5957372aca8b4d54c2828",
+            "shimSha256": "6ba8186fb7ce9f46d11d1f5ed78cbe54d8ee408e732b817985fe36079f08f30b"
+          }
+        ],
+        "staged": {
+          "schemaVersion": 1,
+          "host": "dsh",
+          "staging": "<fixtures>\\startup-tampered-skill-o6maeL\\staging",
+          "staged": 1,
+          "files": 1,
+          "root": {
+            "name": "gstack",
+            "sha256": "6f2b1c6217d4c96a9558f1ac7e129218341c5b8a191bf3bff37c95162f339f00",
+            "files": 0
+          }
+        },
+        "aliased": {
+          "schemaVersion": 1,
+          "host": "dsh",
+          "output": "<fixtures>\\startup-tampered-skill-o6maeL\\aliases",
+          "aliases": [
+            {
+              "name": "connect-chrome",
+              "aliasOf": "open-gstack-browser",
+              "sha256": "d331e89662e0fbfd828eb88a0db4bc5c7dcaa64e1d8967cf04d7b3c42b45ecaa"
+            }
+          ],
+          "note": "Rewritten copy, not symlink; install separately. Not host-verified."
+        },
+        "installed": [
+          {
+            "installed": [
+              "gstack",
+              "open-gstack-browser"
+            ],
+            "skipped": [],
+            "backedUp": []
+          },
+          {
+            "installed": [
+              "connect-chrome"
+            ],
+            "skipped": [],
+            "backedUp": []
+          }
+        ],
+        "registry": [
+          {
+            "name": "connect-chrome",
+            "sha256": "d331e89662e0fbfd828eb88a0db4bc5c7dcaa64e1d8967cf04d7b3c42b45ecaa",
+            "files": {
+              "sections/fixture.txt": "9045390925ae7a2c3c8cab40b78f0538a332f27ebb1f62e1d6decc3ddd9355b1"
+            }
+          },
+          {
+            "name": "gstack",
+            "sha256": "6f2b1c6217d4c96a9558f1ac7e129218341c5b8a191bf3bff37c95162f339f00"
+          },
+          {
+            "name": "open-gstack-browser",
+            "sha256": "fc6fa5582adcb5bc50ff43fc70a17aa1a5a452738396a8df8109cbdeba94663a",
+            "files": {
+              "sections/fixture.txt": "9045390925ae7a2c3c8cab40b78f0538a332f27ebb1f62e1d6decc3ddd9355b1"
+            }
+          }
+        ],
+        "gitFixture": {
+          "executable": "C:\\Program Files\\Git\\ucrt64\\bin\\git.exe",
+          "initialized": true,
+          "verifiedInsideWorkTree": true,
+          "sentinelSha256": "05becdb83bb897f6103c8d91439e2e9092144edf5b3955a746fce4975c12bfdc",
+          "globalAndSystemConfig": "isolated empty file",
+          "templates": "disabled",
+          "hooks": "disabled",
+          "initStdout": "Initialized empty Git repository in <fixtures>/startup-tampered-skill-o6maeL/workspace with spaces Ω/.git/\n",
+          "initStderr": ""
+        }
+      },
+      "host": {
+        "schemaVersion": 1,
+        "label": "startup-tampered-skill",
+        "status": "passed",
+        "runtime": {
+          "node": "24.21.0",
+          "dsh": "0.2.1-rc.3",
+          "installAnchor": "C:\\Users\\Administrator\\AppData\\Local\\Programs\\DeepSeek Harness\\resources\\app.asar\\dsh\\node_modules\\@deepseek-ai\\dsh\\package.json"
+        },
+        "sourceFingerprint": "bf16abf5e6d555a859af8ad88d7d7aebc6606f58ca4463c4a20011b6de5e2b5d",
+        "isolation": {
+          "environmentKeys": [
+            "ComSpec",
+            "DSH_AGENTS_HOME",
+            "DSH_HOME",
+            "DSH_TELEMETRY_DISABLED",
+            "ELECTRON_RUN_AS_NODE",
+            "GSTACK861_MODEL_CALL",
+            "HOMEDRIVE",
+            "HOMEPATH",
+            "LOGONSERVER",
+            "PATH",
+            "SYSTEMDRIVE",
+            "SystemRoot",
+            "TEMP",
+            "TMP",
+            "USERDOMAIN",
+            "USERNAME",
+            "USERPROFILE",
+            "WINDIR"
+          ],
+          "home": "<fixtures>\\startup-tampered-skill-o6maeL\\home",
+          "agentsHome": "<fixtures>\\startup-tampered-skill-o6maeL\\agents",
+          "cwd": "<fixtures>\\startup-tampered-skill-o6maeL\\cwd",
+          "fixtureHomeVerified": true,
+          "neutralIdentityVerified": true,
+          "taskless": true,
+          "explicitLaunchEnvironment": {
+            "source": "process",
+            "names": []
+          }
+        },
+        "controls": [
+          {
+            "case": "startup-tampered-skill",
+            "passed": true,
+            "toolDispatches": 0,
+            "note": "Host boot returned with optional failure; acceptance gate refused tools."
+          }
+        ],
+        "warnings": [
+          "dsh: warning: 1 entry did not activate\ngstack861-skills (gstack861-skills): Error: SKILL_TAMPERED\n    at fail (<repo>/src/adapters/dsh-skills.mjs:10:30)\n    at new apply (<repo>/src/adapters/dsh-skills.mjs:57:46)\n    at Fiber.execute (file:///C:/Users/Administrator/AppData/Local/Programs/DeepSeek%20Harness/resources/app.asar/dsh/node_modules/@deepseek-ai/cordis/lib/index.js:1068:24)\n    at file:///C:/Users/Administrator/AppData/Local/Programs/DeepSeek%20Harness/resources/app.asar/dsh/node_modules/@deepseek-ai/cordis/lib/index.js:1142:34\n    at <fixtures>/startup-tampered-skill-o6maeL/home/profiles/g861accept/#gstack861-skills\n    at <fixtures>/startup-tampered-skill-o6maeL/home/profiles/g861accept/#include\n"
+        ],
+        "entries": [
+          {
+            "id": "include",
+            "module": "cordis:include",
+            "disabled": false,
+            "state": 2,
+            "missingServices": [],
+            "namespaceExports": [
+              "inject"
+            ]
+          },
+          {
+            "id": "system-prompt",
+            "module": "@deepseek-ai/dsh-system-prompt",
+            "disabled": false,
+            "state": 2,
+            "missingServices": [],
+            "namespaceExports": [
+              "PERSONA_PREFIX_SECTION",
+              "PERSONA_SUFFIX_SECTION",
+              "SystemPrompt",
+              "TOOL_ORDER_REST",
+              "default",
+              "joinContextSections",
+              "renderContextSections",
+              "renderContextSnapshot",
+              "renderPrompt"
+            ]
+          },
+          {
+            "id": "tools",
+            "module": "@deepseek-ai/dsh-tools",
+            "disabled": false,
+            "state": 2,
+            "missingServices": [],
+            "namespaceExports": [
+              "CodeRunFailedError",
+              "JsonSchemaError",
+              "RUN_CODE_NAME",
+              "TOOL_ABORTED",
+              "TOOL_ABORTED_BEFORE_DISPATCH",
+              "TOOL_RUNTIME_SCHEDULER",
+              "ToolArgsError",
+              "ToolNotFoundError",
+              "ToolOutputError",
+              "ToolRuntime",
+              "assertObjectJsonSchema",
+              "assertSupportedJsonSchema",
+              "default",
+              "defineContentToolFixture",
+              "defineTool",
+              "jsonSchemaToPy",
+              "jsonSchemaToTs",
+              "parameterSchemaSpecToJsonSchema",
+              "renderToolsSdk",
+              "renderToolsSdkPy",
+              "validateArgs",
+              "validateJsonSchemaValue",
+              "valueSchemaSpecToJsonSchema"
+            ]
+          },
+          {
+            "id": "gstack861-guard",
+            "module": "gstack861-guard",
+            "disabled": false,
+            "state": 2,
+            "missingServices": [],
+            "namespaceExports": [
+              "apply",
+              "inject",
+              "name"
+            ]
+          },
+          {
+            "id": "gstack861-skills",
+            "module": "gstack861-skills",
+            "disabled": false,
+            "state": 3,
+            "missingServices": [],
+            "namespaceExports": [
+              "apply",
+              "inject",
+              "name"
+            ]
+          }
+        ],
+        "bodyInvocations": {
+          "write": 0,
+          "read": 0
+        },
+        "tripwires": {
+          "network": [],
+          "subprocess": [],
+          "sensitiveFileReads": []
+        },
+        "profile": {
+          "name": "g861accept",
+          "dir": "<fixtures>\\startup-tampered-skill-o6maeL\\home\\profiles\\g861accept",
+          "bundles": [],
+          "generatedEntries": [
+            {
+              "id": "system-prompt",
+              "name": "@deepseek-ai/dsh-system-prompt",
+              "config": {
+                "personaPrefix": ""
+              }
+            },
+            {
+              "id": "tools",
+              "name": "@deepseek-ai/dsh-tools"
+            },
+            {
+              "id": "gstack861-guard",
+              "name": "gstack861-guard",
+              "config": {
+                "policyPath": "<fixtures>\\startup-tampered-skill-o6maeL\\private\\policy.json"
+              }
+            },
+            {
+              "id": "gstack861-skills",
+              "name": "gstack861-skills",
+              "config": {
+                "skillsDir": "<fixtures>\\startup-tampered-skill-o6maeL\\workspace with spaces Ω\\skills"
+              }
+            }
+          ],
+          "overlays": []
+        },
+        "registry": [
+          {
+            "name": "connect-chrome",
+            "expectedSha256": "d331e89662e0fbfd828eb88a0db4bc5c7dcaa64e1d8967cf04d7b3c42b45ecaa",
+            "actualSha256": "d331e89662e0fbfd828eb88a0db4bc5c7dcaa64e1d8967cf04d7b3c42b45ecaa",
+            "matches": true,
+            "manifestName": "connect-chrome",
+            "path": "<fixtures>\\startup-tampered-skill-o6maeL\\workspace with spaces Ω\\skills\\connect-chrome\\SKILL.md"
+          },
+          {
+            "name": "gstack",
+            "expectedSha256": "6f2b1c6217d4c96a9558f1ac7e129218341c5b8a191bf3bff37c95162f339f00",
+            "actualSha256": "6f2b1c6217d4c96a9558f1ac7e129218341c5b8a191bf3bff37c95162f339f00",
+            "matches": true,
+            "manifestName": "gstack",
+            "path": "<fixtures>\\startup-tampered-skill-o6maeL\\workspace with spaces Ω\\skills\\gstack\\SKILL.md"
+          },
+          {
+            "name": "open-gstack-browser",
+            "expectedSha256": "fc6fa5582adcb5bc50ff43fc70a17aa1a5a452738396a8df8109cbdeba94663a",
+            "actualSha256": "0222557d01aee0a402666c2f8caa0daf126d535fc91b3aa0da658ee2ca2091aa",
+            "matches": false,
+            "manifestName": "open-gstack-browser",
+            "path": "<fixtures>\\startup-tampered-skill-o6maeL\\workspace with spaces Ω\\skills\\open-gstack-browser\\SKILL.md"
+          }
+        ],
+        "services": {
+          "systemPrompt": true,
+          "tools": true,
+          "skills": false,
+          "llm": false,
+          "agents": false,
+          "credentials": false,
+          "sessionTelemetry": false
+        },
+        "acceptanceDispatchGate": {
+          "expectedIds": [
+            "system-prompt",
+            "tools",
+            "gstack861-guard",
+            "gstack861-skills"
+          ],
+          "allExpectedActive": false,
+          "dispatchPermitted": false
+        },
+        "authenticAdapters": {
+          "gstack861-guard": {
+            "namespacePresent": true,
+            "name": "gstack861-guard",
+            "applyIdentity": true,
+            "injectMatches": true
+          },
+          "gstack861-skills": {
+            "namespacePresent": true,
+            "name": "gstack861-skills",
+            "applyIdentity": true,
+            "injectMatches": true
+          }
+        },
+        "generatedProfileIntegrity": {
+          "before": {
+            "cordis.patch.yml": "0d56b46a5b2ec4a2b81ceb5fe220f13b90c35d18a577b8da904f480cc9283b5b",
+            "cordis.yml": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+            "package.json": "f4e45c1e3d78a05f4add815ca50dc6c69aecb53d1c817566aeb927d87276bbcb",
+            "plugins/gstack861-guard/index.mjs": "6aae261d62e336a39fee14f4cdc1f27095fdabb877f153aeec273b002e99b267",
+            "plugins/gstack861-guard/package.json": "a76f5d0d449a65fd3d4ebd446ff53507095340094b054fa795c7dc671ca9504b",
+            "plugins/gstack861-skills/index.mjs": "6ba8186fb7ce9f46d11d1f5ed78cbe54d8ee408e732b817985fe36079f08f30b",
+            "plugins/gstack861-skills/package.json": "d63dadeeee14428a6d86ef350798fe740fabe750f5a5957372aca8b4d54c2828",
+            "README.md": "910439ee4d5b46a9a8f83806d2fe1ed3564c7fdf2ae3b43c297bc9f71160e99d"
+          },
+          "after": {
+            "cordis.patch.yml": "0d56b46a5b2ec4a2b81ceb5fe220f13b90c35d18a577b8da904f480cc9283b5b",
+            "cordis.yml": "c300dcf2ebc5f02062d6591268d29d3db6fe45e0cb138f5467276fe2ba06076e",
+            "package.json": "f4e45c1e3d78a05f4add815ca50dc6c69aecb53d1c817566aeb927d87276bbcb",
+            "plugins/gstack861-guard/index.mjs": "6aae261d62e336a39fee14f4cdc1f27095fdabb877f153aeec273b002e99b267",
+            "plugins/gstack861-guard/package.json": "a76f5d0d449a65fd3d4ebd446ff53507095340094b054fa795c7dc671ca9504b",
+            "plugins/gstack861-skills/index.mjs": "6ba8186fb7ce9f46d11d1f5ed78cbe54d8ee408e732b817985fe36079f08f30b",
+            "plugins/gstack861-skills/package.json": "d63dadeeee14428a6d86ef350798fe740fabe750f5a5957372aca8b4d54c2828",
+            "README.md": "910439ee4d5b46a9a8f83806d2fe1ed3564c7fdf2ae3b43c297bc9f71160e99d"
+          },
+          "allowedHostRewrite": [
+            "cordis.yml"
+          ],
+          "packagePatchAndShimsUnchanged": true
+        },
+        "shutdown": "drained"
+      }
+    }
+  ],
+  "fixtureRoot": "<fixtures>",
+  "finalSourceFingerprint": "bf16abf5e6d555a859af8ad88d7d7aebc6606f58ca4463c4a20011b6de5e2b5d"
+}

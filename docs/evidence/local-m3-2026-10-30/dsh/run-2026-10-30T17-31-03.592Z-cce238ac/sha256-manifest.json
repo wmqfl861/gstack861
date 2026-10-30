@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "files": {
+    "clean-pipeline.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "clean-pipeline.stdout.log": "f4eb492e1bd29490f931c7b4082f0112504b9d9a8422cb3ea48c2334c73ff513",
+    "git-preparation.json": "bbf77ac10df433993b1f127158792499996dc1760c6be287513752e92989b9f4",
+    "run-result.json": "8a482615f9109c360c3bc0c87b10eb5c1aaccd1740f332cd76277ab05ba54a71",
+    "startup-corrupt-registry.stderr.log": "711602bfeb23dc15d636019c2abe6be2297994d619796602f13db19b63964eb7",
+    "startup-corrupt-registry.stdout.log": "fcdd55c5dd641cfb580b5ff5b95b7ff63835f8831a7db4d883c5a6d2824fdcf1",
+    "startup-invalid-policy.stderr.log": "2e0994921d38b7a7d2bf5fb685793bbfbc78a6d78c9fcdbf7effd0765b975eea",
+    "startup-invalid-policy.stdout.log": "82d73a4ad70c5c239caea22b8f59470edb09b5d5faf046ed7d0ef9d69b5f40f9",
+    "startup-no-system-prompt.stderr.log": "b7bb1d8cf209610e52e93bd5b4def16038dd0ecd62df31549345fd22d575c49b",
+    "startup-no-system-prompt.stdout.log": "34142177b49f59b65156cde55e8b20f24b6a45fc55e2e1eaefded93a8a1a8a11",
+    "startup-tampered-skill.stderr.log": "375e616d73726eadad2bdc7ec77798b01bf49d81e100babbb5ca573923f8691e",
+    "startup-tampered-skill.stdout.log": "0d45dacb11a7fd97be17d4c7ff1c1eca05e755ecd2cf1297d210c43793c16c1b",
+    "tested-source.json": "8205e98ae8db2f2588c90cfe214dabb8518534b55f37354dd683f2f5ee06dfef"
+  }
+}

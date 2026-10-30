@@ -1,0 +1,26 @@
+✔ R3 hook insertion refuses output above the accepted 1MiB boundary before mutation (50.5146ms)
+✔ R3 compact config whose pretty encoding exceeds 1MiB refuses before mutation (202.5809ms)
+✔ R3 below-limit config remains readable and supports uninstall recovery (388.825ms)
+✔ R3 oversized uninstall encoding preserves config and receipt until user data is reduced (411.5216ms)
+✔ R4 transient initial intent readback restores exact install inputs (107.8372ms)
+✔ R4 transient config readback restores exact install inputs (209.5821ms)
+✔ R4 transient final receipt readback restores exact install inputs (285.6698ms)
+✔ R4 transient initial intent readback restores exact install inputs with absent original config (66.4391ms)
+✔ R4 transient initial intent readback restores exact uninstall inputs (263.9257ms)
+✔ R4 transient config readback restores exact uninstall inputs (322.9587ms)
+✔ R4 transient config deletion readback restores exact uninstall inputs with absent original config (252.3858ms)
+✔ R4 transient receipt deletion readback restores exact uninstall inputs (344.6182ms)
+✔ R4 transient receipt deletion readback restores exact uninstall inputs with absent original config (353.686ms)
+✔ R4 finalized receipt readback plus rollback failure re-arms pending and blocks later planners (286.1212ms)
+✔ R4 config readback fault never rolls back a concurrent operator edit (119.1522ms)
+✔ R4 config readback fault never rolls back a concurrent operator replacement (108.0384ms)
+✔ R4 failure to re-arm finalized receipt reports committed state rather than false pending recovery (152.8341ms)
+✔ R4 finalized readback fault preserves operator drift and reports committed uncertainty (199.4161ms)
+ℹ tests 18
+ℹ suites 0
+ℹ pass 18
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4361.257

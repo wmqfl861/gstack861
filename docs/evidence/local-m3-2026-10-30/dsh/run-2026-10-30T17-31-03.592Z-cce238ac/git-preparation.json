@@ -1,0 +1,187 @@
+[
+  {
+    "label": "clean-pipeline",
+    "name": "init",
+    "executable": "C:\\Program Files\\Git\\ucrt64\\bin\\git.exe",
+    "args": [
+      "-c",
+      "init.templateDir=",
+      "-c",
+      "core.hooksPath=",
+      "init",
+      "--initial-branch=main",
+      "<fixtures>\\clean-pipeline-GUS7h9\\workspace with spaces Ω"
+    ],
+    "cwd": "<fixtures>\\clean-pipeline-GUS7h9\\cwd",
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "Initialized empty Git repository in <fixtures>/clean-pipeline-GUS7h9/workspace with spaces Ω/.git/\n",
+    "stderr": ""
+  },
+  {
+    "label": "clean-pipeline",
+    "name": "verify",
+    "executable": "C:\\Program Files\\Git\\ucrt64\\bin\\git.exe",
+    "args": [
+      "-C",
+      "<fixtures>\\clean-pipeline-GUS7h9\\workspace with spaces Ω",
+      "rev-parse",
+      "--is-inside-work-tree"
+    ],
+    "cwd": "<fixtures>\\clean-pipeline-GUS7h9\\cwd",
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "true\n",
+    "stderr": ""
+  },
+  {
+    "label": "startup-invalid-policy",
+    "name": "init",
+    "executable": "C:\\Program Files\\Git\\ucrt64\\bin\\git.exe",
+    "args": [
+      "-c",
+      "init.templateDir=",
+      "-c",
+      "core.hooksPath=",
+      "init",
+      "--initial-branch=main",
+      "<fixtures>\\startup-invalid-policy-h0Zzka\\workspace with spaces Ω"
+    ],
+    "cwd": "<fixtures>\\startup-invalid-policy-h0Zzka\\cwd",
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "Initialized empty Git repository in <fixtures>/startup-invalid-policy-h0Zzka/workspace with spaces Ω/.git/\n",
+    "stderr": ""
+  },
+  {
+    "label": "startup-invalid-policy",
+    "name": "verify",
+    "executable": "C:\\Program Files\\Git\\ucrt64\\bin\\git.exe",
+    "args": [
+      "-C",
+      "<fixtures>\\startup-invalid-policy-h0Zzka\\workspace with spaces Ω",
+      "rev-parse",
+      "--is-inside-work-tree"
+    ],
+    "cwd": "<fixtures>\\startup-invalid-policy-h0Zzka\\cwd",
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "true\n",
+    "stderr": ""
+  },
+  {
+    "label": "startup-no-system-prompt",
+    "name": "init",
+    "executable": "C:\\Program Files\\Git\\ucrt64\\bin\\git.exe",
+    "args": [
+      "-c",
+      "init.templateDir=",
+      "-c",
+      "core.hooksPath=",
+      "init",
+      "--initial-branch=main",
+      "<fixtures>\\startup-no-system-prompt-whQVlO\\workspace with spaces Ω"
+    ],
+    "cwd": "<fixtures>\\startup-no-system-prompt-whQVlO\\cwd",
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "Initialized empty Git repository in <fixtures>/startup-no-system-prompt-whQVlO/workspace with spaces Ω/.git/\n",
+    "stderr": ""
+  },
+  {
+    "label": "startup-no-system-prompt",
+    "name": "verify",
+    "executable": "C:\\Program Files\\Git\\ucrt64\\bin\\git.exe",
+    "args": [
+      "-C",
+      "<fixtures>\\startup-no-system-prompt-whQVlO\\workspace with spaces Ω",
+      "rev-parse",
+      "--is-inside-work-tree"
+    ],
+    "cwd": "<fixtures>\\startup-no-system-prompt-whQVlO\\cwd",
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "true\n",
+    "stderr": ""
+  },
+  {
+    "label": "startup-corrupt-registry",
+    "name": "init",
+    "executable": "C:\\Program Files\\Git\\ucrt64\\bin\\git.exe",
+    "args": [
+      "-c",
+      "init.templateDir=",
+      "-c",
+      "core.hooksPath=",
+      "init",
+      "--initial-branch=main",
+      "<fixtures>\\startup-corrupt-registry-wNcKwW\\workspace with spaces Ω"
+    ],
+    "cwd": "<fixtures>\\startup-corrupt-registry-wNcKwW\\cwd",
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "Initialized empty Git repository in <fixtures>/startup-corrupt-registry-wNcKwW/workspace with spaces Ω/.git/\n",
+    "stderr": ""
+  },
+  {
+    "label": "startup-corrupt-registry",
+    "name": "verify",
+    "executable": "C:\\Program Files\\Git\\ucrt64\\bin\\git.exe",
+    "args": [
+      "-C",
+      "<fixtures>\\startup-corrupt-registry-wNcKwW\\workspace with spaces Ω",
+      "rev-parse",
+      "--is-inside-work-tree"
+    ],
+    "cwd": "<fixtures>\\startup-corrupt-registry-wNcKwW\\cwd",
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "true\n",
+    "stderr": ""
+  },
+  {
+    "label": "startup-tampered-skill",
+    "name": "init",
+    "executable": "C:\\Program Files\\Git\\ucrt64\\bin\\git.exe",
+    "args": [
+      "-c",
+      "init.templateDir=",
+      "-c",
+      "core.hooksPath=",
+      "init",
+      "--initial-branch=main",
+      "<fixtures>\\startup-tampered-skill-o6maeL\\workspace with spaces Ω"
+    ],
+    "cwd": "<fixtures>\\startup-tampered-skill-o6maeL\\cwd",
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "Initialized empty Git repository in <fixtures>/startup-tampered-skill-o6maeL/workspace with spaces Ω/.git/\n",
+    "stderr": ""
+  },
+  {
+    "label": "startup-tampered-skill",
+    "name": "verify",
+    "executable": "C:\\Program Files\\Git\\ucrt64\\bin\\git.exe",
+    "args": [
+      "-C",
+      "<fixtures>\\startup-tampered-skill-o6maeL\\workspace with spaces Ω",
+      "rev-parse",
+      "--is-inside-work-tree"
+    ],
+    "cwd": "<fixtures>\\startup-tampered-skill-o6maeL\\cwd",
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "true\n",
+    "stderr": ""
+  }
+]
