@@ -30,7 +30,34 @@ test('generates DSH profile with complete dependency chain and local adapter shi
  assert.match(patch,/gstack861-skills/);
  const pkg=JSON.parse(fs.readFileSync(path.join(f.output,'package.json')));
  assert.equal(pkg.dependencies['gstack861-guard'],'file:./plugins/gstack861-guard');
- assert.ok(fs.readFileSync(path.join(f.output,'plugins/gstack861-guard/index.mjs'),'utf8').includes(new URL('file://'+f.adapter).href));
+ assert.ok(fs.readFileSync(path.join(f.output,'plugins/gstack861-guard/index.mjs'),'utf8').includes(pathToFileURL(f.adapter).href));
+});
+test('generated guard shim imports the real adapter from paths with spaces, #, %, and Unicode',async t=>{
+ const f=fixture(t),special=path.join(f.root,'adapter space # 50% 中文');
+ const sources=['adapters/dsh.mjs','policy.mjs','json.mjs'].map(relative=>({
+   target:path.join(special,'src',relative),
+   bytes:fs.readFileSync(new URL('../src/'+relative,import.meta.url)),
+ }));
+ for(const {target,bytes} of sources) {
+   fs.mkdirSync(path.dirname(target),{recursive:true});
+   fs.writeFileSync(target,bytes,{flag:'wx'});
+ }
+ const adapter=path.join(special,'src','adapters','dsh.mjs'),output=path.join(special,'profile');
+ const result=stageDshProfile({output,policyPath:f.policy,adapterPath:adapter,skillsDir:f.skills});
+ assert.equal(result.status,'scaffolded-not-host-verified');
+ const adapterUrl=pathToFileURL(adapter).href;
+ assert.equal(fileURLToPath(adapterUrl),adapter);
+ const realAdapter=await import(adapterUrl);
+ const shim=await import(pathToFileURL(path.join(output,'plugins/gstack861-guard/index.mjs')).href);
+ assert.equal(shim.name,guardPlugin.name);
+ assert.deepEqual(shim.inject,guardPlugin.inject);
+ assert.notEqual(realAdapter.apply,guardPlugin.apply,'the copied adapter has its own module identity');
+ assert.equal(shim.apply,realAdapter.apply,'shim must import the adapter at the exact special-character path');
+ for(const {target,bytes} of sources) {
+   const actual=fs.readFileSync(target);
+   assert.deepEqual(actual,bytes,'real adapter and transitive source bytes must remain intact');
+   assert.equal(textDigest(actual),textDigest(bytes));
+ }
 });
 test('refuses existing output without touching operator files',t=>{
  const f=fixture(t); fs.mkdirSync(f.output); fs.writeFileSync(path.join(f.output,'notes'),'keep');

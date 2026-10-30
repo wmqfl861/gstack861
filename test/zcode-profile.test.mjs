@@ -261,3 +261,75 @@ test('two processes with the same precomputed snapshot publish exactly one confi
  assert.equal(JSON.parse(fs.readFileSync(receiptFile(f))).entries.length,1);
  assert.deepEqual(fs.readdirSync(path.dirname(configFile(f))).sort(),['.gstack861-zcode-config.json','config.json']);
 });
+
+// Deterministic metadata-source injection, not a native Windows execution.
+// Node 22's Windows path API can return a 64-bit volume serial while the handle
+// API supplies its low 32 bits. All file operations still use actual temp files.
+function injectWindowsVolumeMetadata(t) {
+ const platform=Object.getOwnPropertyDescriptor(process,'platform'),lstat=fs.lstatSync,fstat=fs.fstatSync;
+ const state={high:0x1234567800000000n,pathHigh:new Map(),descriptor:stat=>stat};
+ const copy=(stat,changes)=>Object.assign(Object.create(Object.getPrototypeOf(stat)),stat,changes);
+ Object.defineProperty(process,'platform',{value:'win32'});
+ t.after(()=>Object.defineProperty(process,'platform',platform));
+ t.mock.method(fs,'lstatSync',(file,...args)=>{
+  const stat=lstat(file,...args);if(!stat||typeof stat.dev!=='bigint')return stat;
+  return copy(stat,{dev:(state.pathHigh.get(String(file))??state.high)|(stat.dev&0xffffffffn)});
+ });
+ t.mock.method(fs,'fstatSync',(fd,...args)=>{
+  const stat=fstat(fd,...args);if(typeof stat.dev!=='bigint')return stat;
+  return state.descriptor(copy(stat,{dev:stat.dev&0xffffffffn}));
+ });
+ return state;
+}
+test('injected Windows volume-serial sources preserve the complete config lifecycle',t=>{
+ const f=fixture(t),file=configFile(f);fs.writeFileSync(file,'{}\n');
+ const fd=fs.openSync(file,'r');
+ try {
+  const fields=stat=>Object.fromEntries(['dev','ino','size','mtimeNs','ctimeNs','mode','nlink'].map(key=>[key,String(stat[key])]));
+  t.diagnostic(JSON.stringify({actualPlatform:process.platform,node:process.version,path:fields(fs.lstatSync(file,{bigint:true})),descriptor:fields(fs.fstatSync(fd,{bigint:true}))}));
+ } finally {fs.closeSync(fd);}
+ injectWindowsVolumeMetadata(t);
+ const plan=planZcodeConfig(f);assert.equal(applyZcodeConfigPlan(plan).changed,true);
+ const installed=bytesIn(path.dirname(file));
+ assert.equal(applyZcodeConfigPlan(planZcodeConfig(f)).changed,false);assert.deepEqual(bytesIn(path.dirname(file)),installed);
+ assert.equal(applyZcodeConfigPlan(planZcodeUninstall(f)).changed,true);
+ assert.deepEqual(JSON.parse(fs.readFileSync(file)),{});
+ assert.deepEqual(fs.readdirSync(path.dirname(file)),['config.json']);
+});
+test('injected Windows volume serials still clean a partially written staged file',t=>{
+ const f=fixture(t,false);injectWindowsVolumeMetadata(t);const plan=planZcodeConfig(f),write=fs.writeFileSync;
+ t.mock.method(fs,'writeFileSync',(file,...args)=>{if(typeof file==='number'){fs.writeSync(file,'partial');throw new Error('INJECTED_PARTIAL_WRITE');}return write(file,...args);});
+ assert.throws(()=>applyZcodeConfigPlan(plan),/INJECTED_PARTIAL_WRITE/);
+ assert.equal(fs.existsSync(path.join(f.root,'.zcode')),false);
+});
+test('injected Windows path and handle binding rejects other identity and version differences',t=>{
+ const f=fixture(t),file=configFile(f);fs.writeFileSync(file,'{}\n');const state=injectWindowsVolumeMetadata(t);
+ const before=bytesIn(path.dirname(file));
+ for(const key of ['dev','ino','size','mtimeNs','ctimeNs','mode']) {
+  state.descriptor=stat=>Object.assign(Object.create(Object.getPrototypeOf(stat)),stat,{[key]:stat[key]+1n});
+  assert.throws(()=>planZcodeConfig(f),/ZCODE_CONFIG_(CHANGED|UNSAFE)/,key);
+  assert.deepEqual(bytesIn(path.dirname(file)),before,key);
+ }
+ state.descriptor=stat=>stat;Object.defineProperty(process,'platform',{value:'linux'});
+ assert.throws(()=>planZcodeConfig(f),/ZCODE_CONFIG_CHANGED/,'the device-width exception is Windows-only');
+});
+test('injected Windows snapshots retain the high volume bits in path CAS',t=>{
+ const f=fixture(t),file=configFile(f);fs.writeFileSync(file,'{}\n');const state=injectWindowsVolumeMetadata(t);
+ const plan=planZcodeConfig(f),before=bytesIn(path.dirname(file));
+ state.pathHigh.set(file,0x7654321000000000n);
+ assert.throws(()=>applyZcodeConfigPlan(plan),/ZCODE_CONFIG_CHANGED/);
+ assert.deepEqual(bytesIn(path.dirname(file)),before);
+});
+test('stage metadata binding closes its descriptor and preserves a foreign replacement',t=>{
+ const f=fixture(t,false),plan=planZcodeConfig(f),lstat=fs.lstatSync,open=fs.openSync,close=fs.closeSync;
+ const external='{ "foreign": "retain" }\n';let replaced,stageFd,closed=false;
+ t.mock.method(fs,'openSync',(file,flags,...args)=>{const fd=open(file,flags,...args);if(flags==='wx'&&stageFd===undefined)stageFd=fd;return fd;});
+ t.mock.method(fs,'closeSync',fd=>{if(fd===stageFd)closed=true;return close(fd);});
+ t.mock.method(fs,'lstatSync',(file,...args)=>{
+  if(String(file).endsWith('.tmp')&&!replaced){const other=file+'.external';fs.writeFileSync(other,external);fs.renameSync(other,file);replaced=String(file);}
+  return lstat(file,...args);
+ });
+ assert.throws(()=>applyZcodeConfigPlan(plan),/ZCODE_CONFIG_CHANGED/);
+ assert.ok(replaced);assert.equal(closed,true);assert.equal(fs.readFileSync(replaced,'utf8'),external);
+ assert.deepEqual(fs.readdirSync(path.join(f.root,'.zcode')),[path.basename(replaced)]);
+});

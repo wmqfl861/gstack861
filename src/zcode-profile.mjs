@@ -11,7 +11,18 @@ const LOCK = '.gstack861-zcode-config.lock';
 const plans = new WeakMap();
 const absolute = value => typeof value === 'string' && path.isAbsolute(value) && !/[\x00-\x1f]/.test(value);
 const identity = stat => `${stat.dev}/${stat.ino}`;
-const version = stat => `${identity(stat)}/${stat.size}/${stat.mtimeNs}/${stat.ctimeNs}/${stat.mode}`;
+const version = (stat, dev = stat.dev) => `${dev}/${stat.ino}/${stat.size}/${stat.mtimeNs}/${stat.ctimeNs}/${stat.mode}`;
+
+function descriptorMatches(stat, descriptor) {
+  // Node 22/libuv on Windows can obtain a 64-bit volume serial from the path
+  // API and a 32-bit serial from FileFsVolumeInformation for the open handle.
+  // Normalize only this cross-API comparison; path CAS retains every dev bit.
+  const device = descriptor.dev === stat.dev || (process.platform === 'win32' && descriptor.dev === (stat.dev & 0xffffffffn));
+  return device && version(stat) === version(descriptor, stat.dev);
+}
+function safeFile(stat, label) {
+  if (!stat.isFile() || stat.isSymbolicLink() || stat.nlink !== 1n || stat.size > 1024n * 1024n) fail(label + '_UNSAFE');
+}
 
 function directories(directory, code, missingLeaf = false) {
   const anchor = path.parse(directory).root;
@@ -44,25 +55,30 @@ function verifyDirectories(expected) {
 }
 function readExisting(file, label = 'ZCODE_CONFIG') {
   const stat = fs.lstatSync(file, { throwIfNoEntry: false, bigint: true });
-  if (!stat) return { config: {}, exists: false, bytes: null, version: null };
-  if (!stat.isFile() || stat.isSymbolicLink() || stat.nlink !== 1n || stat.size > 1024n * 1024n) fail(label + '_UNSAFE');
+  if (!stat) return { config: {}, exists: false, bytes: null, version: null, descriptorVersion: null };
+  safeFile(stat, label);
   let fd;
   try { fd = fs.openSync(file, fs.constants.O_RDONLY | (fs.constants.O_NOFOLLOW ?? 0) | (fs.constants.O_NONBLOCK ?? 0)); }
   catch { fail(label + '_UNSAFE'); }
   try {
-    if (version(fs.fstatSync(fd, { bigint: true })) !== version(stat)) fail(label + '_CHANGED');
+    const descriptor = fs.fstatSync(fd, { bigint: true }); safeFile(descriptor, label);
+    if (!descriptorMatches(stat, descriptor)) fail(label + '_CHANGED');
     const bytes = fs.readFileSync(fd);
-    if (bytes.length > 1024 * 1024 || version(fs.fstatSync(fd, { bigint: true })) !== version(stat)) fail(label + '_CHANGED');
+    const after = fs.fstatSync(fd, { bigint: true }); safeFile(after, label);
+    const current = fs.lstatSync(file, { throwIfNoEntry: false, bigint: true });
+    if (!current) fail(label + '_CHANGED');
+    safeFile(current, label);
+    if (bytes.length > 1024 * 1024 || version(after) !== version(descriptor) || version(current) !== version(stat)) fail(label + '_CHANGED');
     let config;
     try { config = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes)); }
     catch { fail(label + '_INVALID'); }
     if (!object(config)) fail(label + '_INVALID');
-    return { config, exists: true, bytes, version: version(stat) };
+    return { config, exists: true, bytes, version: version(stat), descriptorVersion: version(descriptor) };
   } finally { fs.closeSync(fd); }
 }
 function unchanged(file, expected, label = 'ZCODE_CONFIG') {
   const current = readExisting(file, label);
-  if (current.exists !== expected.exists || current.version !== expected.version ||
+  if (current.exists !== expected.exists || current.version !== expected.version || current.descriptorVersion !== expected.descriptorVersion ||
       (current.exists && !current.bytes.equals(expected.bytes))) fail(label + '_CHANGED');
   return current;
 }
@@ -181,8 +197,14 @@ export function applyZcodeConfigPlan(plan) {
   const stage = (file, bytes) => {
     const temp = path.join(location.zdir, path.basename(file) + '.' + randomUUID() + '.tmp');
     const fd = fs.openSync(temp, 'wx', 0o600);
-    const item = { temp, identity: identity(fs.fstatSync(fd, { bigint: true })) }; staged.push(item);
-    try { fs.writeFileSync(fd, bytes); fs.fsyncSync(fd); }
+    const item = { temp }; staged.push(item);
+    try {
+      const descriptor = fs.fstatSync(fd, { bigint: true }), stat = fs.lstatSync(temp, { bigint: true });
+      safeFile(descriptor, 'ZCODE_CONFIG'); safeFile(stat, 'ZCODE_CONFIG');
+      if (!descriptorMatches(stat, descriptor)) fail('ZCODE_CONFIG_CHANGED');
+      item.identity = identity(stat);
+      fs.writeFileSync(fd, bytes); fs.fsyncSync(fd);
+    }
     finally { fs.closeSync(fd); }
     return item;
   };
