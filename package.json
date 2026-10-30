@@ -33,7 +33,8 @@
     "./sealed-guard": "./src/sealed-guard.mjs",
     "./issue-links": "./src/issue-links.mjs",
     "./tracker-guard": "./src/tracker-guard.mjs",
-    "./aliases": "./src/aliases.mjs"
+    "./aliases": "./src/aliases.mjs",
+    "./dsh-profile": "./src/dsh-profile.mjs"
   },
   "scripts": {
     "test": "node --test test/*.test.mjs",
