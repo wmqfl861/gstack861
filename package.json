@@ -34,7 +34,8 @@
     "./issue-links": "./src/issue-links.mjs",
     "./tracker-guard": "./src/tracker-guard.mjs",
     "./aliases": "./src/aliases.mjs",
-    "./dsh-profile": "./src/dsh-profile.mjs"
+    "./dsh-profile": "./src/dsh-profile.mjs",
+    "./zcode-profile": "./src/zcode-profile.mjs"
   },
   "scripts": {
     "test": "node --test test/*.test.mjs",

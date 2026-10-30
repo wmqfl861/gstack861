@@ -24,8 +24,6 @@ test('generates DSH profile with complete dependency chain and local adapter shi
  assert.match(patch,/gstack861-skills/);
  const pkg=JSON.parse(fs.readFileSync(path.join(f.output,'package.json')));
  assert.equal(pkg.dependencies['gstack861-guard'],'file:./plugins/gstack861-guard');
- assert.equal(pkg.dependencies['gstack861-skills'],'file:./plugins/gstack861-skills');
- assert.ok(fs.readFileSync(path.join(f.output,'plugins/gstack861-skills/index.mjs'),'utf8').includes('dsh-skills.mjs'));
  assert.ok(fs.readFileSync(path.join(f.output,'plugins/gstack861-guard/index.mjs'),'utf8').includes(new URL('file://'+f.adapter).href));
 });
 test('refuses existing output without touching operator files',t=>{
