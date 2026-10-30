@@ -32,7 +32,8 @@
     "./fs-utils": "./src/fs-utils.mjs",
     "./sealed-guard": "./src/sealed-guard.mjs",
     "./issue-links": "./src/issue-links.mjs",
-    "./tracker-guard": "./src/tracker-guard.mjs"
+    "./tracker-guard": "./src/tracker-guard.mjs",
+    "./aliases": "./src/aliases.mjs"
   },
   "scripts": {
     "test": "node --test test/*.test.mjs",

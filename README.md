@@ -111,6 +111,15 @@ node bin/gstack861.mjs zcode-config --policy /absolute/private/policy.json
 - **0.3.1 破坏性变更（状态文件命名空间隔离）**：任务与审批记录分别改用 `task-<uuid>.json` 与 `approval-<uuid>.json` 文件名，两类存储从此可安全共用一个 `--state` 目录。0.3.0 写入的无前缀 `<uuid>.json` 记录升级后对 `list`/`get` 均不可见（等效丢失）——**0.4.18 起提供自动迁移**：`gstack861 migrate-state --state DIR [--dry-run]`（按内容分类 task/approval、歧义一律拒绝绝不猜、只改名不动字节、目标冲突拒绝；此前版本的人工改名路径仍可用）。文件名只划分命名空间，记录内容校验（含 id、状态机）仍是权威——伪装成对方前缀的记录一律 `INVALID_*_RECORD` 拒绝。
 - 不执行任何付费模型调用；后续功能必须使用显式网关配置，不回退官方端点。
 
+## 命令别名（M3 离线开发）
+
+固定上游包含向后兼容别名 `/connect-chrome` → `/open-gstack-browser`。`alias-stage` 从已校验的 canonical staging 生成独立副本，将 frontmatter `name` 改为 `connect-chrome`，复制并复验辅助文件摘要；它不使用 symlink，避免宿主因重复 frontmatter name 隐藏整个技能集。生成后可用现有 `install` 单独安装到目标技能目录，卸载仍由注册表所有权保护。命令不会自动改写用户宿主目录，也不声称真实宿主已拾取该别名。
+
+```sh
+node bin/gstack861.mjs alias-stage --staging /abs/canonical-staging --output /abs/alias-staging --host zcode
+node bin/gstack861.mjs install --staging /abs/alias-staging --target /abs/workspace/.zcode/skills
+```
+
 ## 后续开发入口
 
 先完成两侧真实宿主离线集成和工具身份/旁路验证，再接上技能生成、原生问答审批、子任务与恢复。随后逐项迁移上游工作流、浏览器 QA、发布、安全审计、记忆和专项能力。具体依赖与验收见蓝图；未验证功能保持 `planned` 或 `blocked`，不能标为 `full`。
