@@ -263,21 +263,22 @@ test('two processes with the same precomputed snapshot publish exactly one confi
 });
 
 // Deterministic metadata-source injection, not a native Windows execution.
-// Node 22's Windows path API can return a 64-bit volume serial while the handle
-// API supplies its low 32 bits. All file operations still use actual temp files.
+// The path API may return a wide serial or no serial (zero), while handles
+// report a volume serial. Both injected sources derive from one fixed serial,
+// independently of the machine's native lstat/fstat disagreement.
 function injectWindowsVolumeMetadata(t) {
  const platform=Object.getOwnPropertyDescriptor(process,'platform'),lstat=fs.lstatSync,fstat=fs.fstatSync;
- const state={high:0x1234567800000000n,pathHigh:new Map(),descriptor:stat=>stat};
+ const state={serial:782947067n,zero:false,high:0x1234567800000000n,pathHigh:new Map(),descriptor:stat=>stat};
  const copy=(stat,changes)=>Object.assign(Object.create(Object.getPrototypeOf(stat)),stat,changes);
  Object.defineProperty(process,'platform',{value:'win32'});
  t.after(()=>Object.defineProperty(process,'platform',platform));
  t.mock.method(fs,'lstatSync',(file,...args)=>{
   const stat=lstat(file,...args);if(!stat||typeof stat.dev!=='bigint')return stat;
-  return copy(stat,{dev:(state.pathHigh.get(String(file))??state.high)|(stat.dev&0xffffffffn)});
+  return copy(stat,{dev:state.zero?0n:(state.pathHigh.get(String(file))??state.high)|state.serial});
  });
  t.mock.method(fs,'fstatSync',(fd,...args)=>{
   const stat=fstat(fd,...args);if(typeof stat.dev!=='bigint')return stat;
-  return state.descriptor(copy(stat,{dev:stat.dev&0xffffffffn}));
+  return state.descriptor(copy(stat,{dev:state.serial}),fd);
  });
  return state;
 }
@@ -322,14 +323,87 @@ test('injected Windows snapshots retain the high volume bits in path CAS',t=>{
 });
 test('stage metadata binding closes its descriptor and preserves a foreign replacement',t=>{
  const f=fixture(t,false),plan=planZcodeConfig(f),lstat=fs.lstatSync,open=fs.openSync,close=fs.closeSync;
- const external='{ "foreign": "retain" }\n';let replaced,stageFd,closed=false;
+ const external='{ "foreign": "retain" }\n';let replaced,held,stageFd,closed=false;
  t.mock.method(fs,'openSync',(file,flags,...args)=>{const fd=open(file,flags,...args);if(flags==='wx'&&stageFd===undefined)stageFd=fd;return fd;});
  t.mock.method(fs,'closeSync',fd=>{if(fd===stageFd)closed=true;return close(fd);});
  t.mock.method(fs,'lstatSync',(file,...args)=>{
-  if(String(file).endsWith('.tmp')&&!replaced){const other=file+'.external';fs.writeFileSync(other,external);fs.renameSync(other,file);replaced=String(file);}
+  if(String(file).endsWith('.tmp')&&!replaced){held=file+'.held';fs.renameSync(file,held);fs.writeFileSync(file,external,{flag:'wx'});replaced=String(file);}
   return lstat(file,...args);
  });
  assert.throws(()=>applyZcodeConfigPlan(plan),/ZCODE_CONFIG_CHANGED/);
  assert.ok(replaced);assert.equal(closed,true);assert.equal(fs.readFileSync(replaced,'utf8'),external);
- assert.deepEqual(fs.readdirSync(path.join(f.root,'.zcode')),[path.basename(replaced)]);
+ assert.equal(fs.readFileSync(held,'utf8'),'');
+ assert.deepEqual(fs.readdirSync(path.join(f.root,'.zcode')).sort(),[path.basename(replaced),path.basename(held)].sort());
+});
+test('injected Windows zero path device supports witnessed config lifecycle',t=>{
+ const f=fixture(t),file=configFile(f);fs.writeFileSync(file,'{}\n');const state=injectWindowsVolumeMetadata(t);state.zero=true;
+ assert.equal(applyZcodeConfigPlan(planZcodeConfig(f)).changed,true);
+ const installed=bytesIn(path.dirname(file));
+ assert.equal(applyZcodeConfigPlan(planZcodeConfig(f)).changed,false);assert.deepEqual(bytesIn(path.dirname(file)),installed);
+ assert.equal(applyZcodeConfigPlan(planZcodeUninstall(f)).changed,true);
+ assert.deepEqual(JSON.parse(fs.readFileSync(file)),{});assert.deepEqual(fs.readdirSync(path.dirname(file)),['config.json']);
+});
+test('injected Windows zero path device cleans a proven partial staged write',t=>{
+ const f=fixture(t,false),state=injectWindowsVolumeMetadata(t);state.zero=true;const plan=planZcodeConfig(f),write=fs.writeFileSync;
+ t.mock.method(fs,'writeFileSync',(file,...args)=>{if(typeof file==='number'){fs.writeSync(file,'partial');throw new Error('INJECTED_PARTIAL_WRITE');}return write(file,...args);});
+ assert.throws(()=>applyZcodeConfigPlan(plan),/INJECTED_PARTIAL_WRITE/);
+ assert.equal(fs.existsSync(path.join(f.root,'.zcode')),false);
+});
+function watchDescriptors(t) {
+ const open=fs.openSync,close=fs.closeSync,state={paths:new Map(),opened:[]};
+ t.mock.method(fs,'openSync',(file,flags,...args)=>{
+  const fd=open(file,flags,...args),entry={file:String(file),flags,fd,closed:false};
+  state.paths.set(fd,entry);state.opened.push(entry);return fd;
+ });
+ t.mock.method(fs,'closeSync',fd=>{const entry=state.paths.get(fd);try{return close(fd);}finally{if(entry)entry.closed=true;state.paths.delete(fd);}});
+ return state;
+}
+const changedStat=(stat,key,value)=>Object.assign(Object.create(Object.getPrototypeOf(stat)),stat,{[key]:value});
+test('zero device binding rejects a different-volume witness with the same inode and bytes',t=>{
+ const f=fixture(t),file=configFile(f);fs.writeFileSync(file,'{}\n');const state=injectWindowsVolumeMetadata(t);state.zero=true;
+ const handles=watchDescriptors(t),before=bytesIn(path.dirname(file));
+ state.descriptor=(stat,fd)=>{
+  const reads=handles.opened.filter(entry=>entry.file===file&&typeof entry.flags==='number');
+  return reads.length===2&&fd===reads[1].fd?changedStat(stat,'dev',state.serial+1n):stat;
+ };
+ assert.throws(()=>planZcodeConfig(f),/ZCODE_CONFIG_CHANGED/);
+ const reads=handles.opened.filter(entry=>entry.file===file&&typeof entry.flags==='number');
+ assert.equal(reads.length,2);assert.notEqual(reads[0].fd,reads[1].fd);assert.equal(reads.every(entry=>entry.closed),true);
+ assert.deepEqual(bytesIn(path.dirname(file)),before);
+ state.descriptor=stat=>stat;Object.defineProperty(process,'platform',{value:'linux'});
+ assert.throws(()=>planZcodeConfig(f),/ZCODE_CONFIG_CHANGED/,'zero-device fallback is Windows-only');
+});
+test('zero device CAS rejects both file handles moving volumes after planning',t=>{
+ const f=fixture(t),file=configFile(f);fs.writeFileSync(file,'{}\n');const state=injectWindowsVolumeMetadata(t);state.zero=true;
+ const handles=watchDescriptors(t),plan=planZcodeConfig(f),before=bytesIn(path.dirname(file));
+ state.descriptor=(stat,fd)=>handles.paths.get(fd)?.file===file?changedStat(stat,'dev',state.serial+1n):stat;
+ assert.throws(()=>applyZcodeConfigPlan(plan),/ZCODE_CONFIG_CHANGED/);
+ assert.deepEqual(bytesIn(path.dirname(file)),before);
+});
+test('zero device directory snapshots reject changed handle volume before any apply writes',t=>{
+ const f=fixture(t,false),state=injectWindowsVolumeMetadata(t);state.zero=true;const plan=planZcodeConfig(f);
+ state.descriptor=stat=>stat.isDirectory()?changedStat(stat,'dev',state.serial+1n):stat;
+ assert.throws(()=>applyZcodeConfigPlan(plan),/ZCODE_CONFIG_DIR_UNSAFE/);
+ assert.deepEqual(fs.readdirSync(f.root),[]);
+});
+test('zero device lock checks preserve a lock whose handle volume changed',t=>{
+ const f=fixture(t),state=injectWindowsVolumeMetadata(t);state.zero=true;
+ const handles=watchDescriptors(t),plan=planZcodeConfig(f),write=fs.writeFileSync,lock=path.join(f.root,'.zcode','.gstack861-zcode-config.lock');let changed=false;
+ state.descriptor=(stat,fd)=>changed&&handles.paths.get(fd)?.file===lock?changedStat(stat,'dev',state.serial+1n):stat;
+ t.mock.method(fs,'writeFileSync',(file,...args)=>{const result=write(file,...args);if(typeof file==='number')changed=true;return result;});
+ assert.throws(()=>applyZcodeConfigPlan(plan),/ZCODE_CONFIG_BUSY/);
+ assert.equal(fs.statSync(lock).isDirectory(),true);
+ assert.deepEqual(fs.readdirSync(path.dirname(lock)),[path.basename(lock)]);
+});
+test('zero device cleanup refuses a staged path with a different current handle volume',t=>{
+ const f=fixture(t,false),state=injectWindowsVolumeMetadata(t);state.zero=true;
+ const handles=watchDescriptors(t),plan=planZcodeConfig(f),write=fs.writeFileSync;let changed=false;
+ state.descriptor=(stat,fd)=>changed&&handles.paths.get(fd)?.file.endsWith('.tmp')?changedStat(stat,'dev',state.serial+1n):stat;
+ t.mock.method(fs,'writeFileSync',(file,...args)=>{
+  if(typeof file==='number'){fs.writeSync(file,'partial');changed=true;throw new Error('INJECTED_PARTIAL_WRITE');}
+  return write(file,...args);
+ });
+ assert.throws(()=>applyZcodeConfigPlan(plan),/INJECTED_PARTIAL_WRITE/);
+ const zdir=path.join(f.root,'.zcode'),files=fs.readdirSync(zdir);assert.equal(files.length,1);assert.match(files[0],/\.tmp$/);
+ assert.equal(fs.readFileSync(path.join(zdir,files[0]),'utf8'),'partial');
 });

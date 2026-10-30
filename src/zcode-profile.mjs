@@ -12,16 +12,53 @@ const plans = new WeakMap();
 const absolute = value => typeof value === 'string' && path.isAbsolute(value) && !/[\x00-\x1f]/.test(value);
 const identity = stat => `${stat.dev}/${stat.ino}`;
 const version = (stat, dev = stat.dev) => `${dev}/${stat.ino}/${stat.size}/${stat.mtimeNs}/${stat.ctimeNs}/${stat.mode}`;
+const READ_FLAGS = fs.constants.O_RDONLY | (fs.constants.O_NOFOLLOW ?? 0) | (fs.constants.O_NONBLOCK ?? 0);
 
-function descriptorMatches(stat, descriptor) {
-  // Node 22/libuv on Windows can obtain a 64-bit volume serial from the path
-  // API and a 32-bit serial from FileFsVolumeInformation for the open handle.
-  // Normalize only this cross-API comparison; path CAS retains every dev bit.
+function bindDescriptor(file, stat, descriptor, label, directory = false) {
+  const sameMetadata = directory ? stat.ino === descriptor.ino && stat.mode === descriptor.mode : version(stat, descriptor.dev) === version(descriptor);
+  if (!sameMetadata) fail(label + '_CHANGED');
   const device = descriptor.dev === stat.dev || (process.platform === 'win32' && descriptor.dev === (stat.dev & 0xffffffffn));
-  return device && version(stat) === version(descriptor, stat.dev);
+  const missingDevice = process.platform === 'win32' && stat.dev === 0n;
+  if (device && !missingDevice) return;
+  if (!missingDevice) fail(label + '_CHANGED');
+  // Some Windows path queries report dev=0. Bind that path through a second,
+  // independent open instead of treating zero as an identity wildcard. Keep
+  // both original source versions; directory contents may change their times.
+  let witness;
+  try { witness = fs.openSync(file, READ_FLAGS); } catch { fail(label + '_UNSAFE'); }
+  try {
+    const observed = fs.fstatSync(witness, { bigint: true });
+    if (directory) {
+      if (!observed.isDirectory() || observed.isSymbolicLink() || identity(observed) !== identity(descriptor) || observed.mode !== descriptor.mode) fail(label + '_CHANGED');
+    } else {
+      safeFile(observed, label);
+      if (version(observed) !== version(descriptor)) fail(label + '_CHANGED');
+    }
+    const current = fs.lstatSync(file, { throwIfNoEntry: false, bigint: true });
+    if (!current || current.isSymbolicLink() || (directory ? !current.isDirectory() || identity(current) !== identity(stat) : version(current) !== version(stat))) fail(label + '_CHANGED');
+  } finally { fs.closeSync(witness); }
 }
 function safeFile(stat, label) {
   if (!stat.isFile() || stat.isSymbolicLink() || stat.nlink !== 1n || stat.size > 1024n * 1024n) fail(label + '_UNSAFE');
+}
+function captureIdentity(file, stat, label, directory = false) {
+  let fd;
+  try { fd = fs.openSync(file, READ_FLAGS); } catch { fail(label + '_UNSAFE'); }
+  try {
+    const descriptor = fs.fstatSync(fd, { bigint: true });
+    if (directory) {
+      if (!descriptor.isDirectory() || descriptor.isSymbolicLink()) fail(label + '_UNSAFE');
+    } else { safeFile(stat, label); safeFile(descriptor, label); }
+    bindDescriptor(file, stat, descriptor, label, directory);
+    const after = fs.fstatSync(fd, { bigint: true }), current = fs.lstatSync(file, { throwIfNoEntry: false, bigint: true });
+    if (!current || current.isSymbolicLink() || (directory ? !current.isDirectory() || identity(current) !== identity(stat) || identity(after) !== identity(descriptor) : version(current) !== version(stat) || version(after) !== version(descriptor))) fail(label + '_CHANGED');
+    return { path: identity(stat), descriptor: identity(descriptor) };
+  } finally { fs.closeSync(fd); }
+}
+function directoryIdentity(file, stat, code) {
+  if (process.platform !== 'win32' || stat.dev !== 0n) return { path: identity(stat), descriptor: null };
+  try { return captureIdentity(file, stat, 'ZCODE_CONFIG_DIR', true); }
+  catch { fail(code); }
 }
 
 function directories(directory, code, missingLeaf = false) {
@@ -33,7 +70,7 @@ function directories(directory, code, missingLeaf = false) {
     const stat = fs.lstatSync(current, { throwIfNoEntry: false, bigint: true });
     if (!stat && missingLeaf && current === directory) return result;
     if (!stat?.isDirectory() || stat.isSymbolicLink()) fail(code);
-    result.push([current, identity(stat)]);
+    result.push([current, directoryIdentity(current, stat, code)]);
   }
   return result;
 }
@@ -50,19 +87,20 @@ function locations(workspace) {
 function verifyDirectories(expected) {
   for (const [directory, id] of expected) {
     const stat = fs.lstatSync(directory, { throwIfNoEntry: false, bigint: true });
-    if (!stat?.isDirectory() || stat.isSymbolicLink() || identity(stat) !== id) fail('ZCODE_CONFIG_DIR_UNSAFE');
+    if (!stat?.isDirectory() || stat.isSymbolicLink() || identity(stat) !== id.path) fail('ZCODE_CONFIG_DIR_UNSAFE');
+    if (id.descriptor && directoryIdentity(directory, stat, 'ZCODE_CONFIG_DIR_UNSAFE').descriptor !== id.descriptor) fail('ZCODE_CONFIG_DIR_UNSAFE');
   }
 }
 function readExisting(file, label = 'ZCODE_CONFIG') {
   const stat = fs.lstatSync(file, { throwIfNoEntry: false, bigint: true });
-  if (!stat) return { config: {}, exists: false, bytes: null, version: null, descriptorVersion: null };
+  if (!stat) return { config: {}, exists: false, bytes: null, version: null, descriptorVersion: null, pathIdentity: null, descriptorIdentity: null };
   safeFile(stat, label);
   let fd;
-  try { fd = fs.openSync(file, fs.constants.O_RDONLY | (fs.constants.O_NOFOLLOW ?? 0) | (fs.constants.O_NONBLOCK ?? 0)); }
+  try { fd = fs.openSync(file, READ_FLAGS); }
   catch { fail(label + '_UNSAFE'); }
   try {
     const descriptor = fs.fstatSync(fd, { bigint: true }); safeFile(descriptor, label);
-    if (!descriptorMatches(stat, descriptor)) fail(label + '_CHANGED');
+    bindDescriptor(file, stat, descriptor, label);
     const bytes = fs.readFileSync(fd);
     const after = fs.fstatSync(fd, { bigint: true }); safeFile(after, label);
     const current = fs.lstatSync(file, { throwIfNoEntry: false, bigint: true });
@@ -73,7 +111,7 @@ function readExisting(file, label = 'ZCODE_CONFIG') {
     try { config = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes)); }
     catch { fail(label + '_INVALID'); }
     if (!object(config)) fail(label + '_INVALID');
-    return { config, exists: true, bytes, version: version(stat), descriptorVersion: version(descriptor) };
+    return { config, exists: true, bytes, version: version(stat), descriptorVersion: version(descriptor), pathIdentity: identity(stat), descriptorIdentity: identity(descriptor) };
   } finally { fs.closeSync(fd); }
 }
 function unchanged(file, expected, label = 'ZCODE_CONFIG') {
@@ -193,7 +231,13 @@ export function applyZcodeConfigPlan(plan) {
   const lock = path.join(location.zdir, LOCK);
   let locked = false, lockIdentity;
   const staged = [], published = [];
-  const samePath = (file, id) => { const st = fs.lstatSync(file, { throwIfNoEntry: false, bigint: true }); return st && identity(st) === id; };
+  const samePath = (file, id, directory = false) => {
+    const stat = fs.lstatSync(file, { throwIfNoEntry: false, bigint: true });
+    if (!stat || !id || stat.isSymbolicLink() || identity(stat) !== id.path || (directory ? !stat.isDirectory() : !stat.isFile())) return false;
+    if (!id.descriptor) return true;
+    const current = captureIdentity(file, stat, directory ? 'ZCODE_CONFIG_DIR' : 'ZCODE_CONFIG', directory);
+    return current.path === id.path && current.descriptor === id.descriptor;
+  };
   const stage = (file, bytes) => {
     const temp = path.join(location.zdir, path.basename(file) + '.' + randomUUID() + '.tmp');
     const fd = fs.openSync(temp, 'wx', 0o600);
@@ -201,8 +245,8 @@ export function applyZcodeConfigPlan(plan) {
     try {
       const descriptor = fs.fstatSync(fd, { bigint: true }), stat = fs.lstatSync(temp, { bigint: true });
       safeFile(descriptor, 'ZCODE_CONFIG'); safeFile(stat, 'ZCODE_CONFIG');
-      if (!descriptorMatches(stat, descriptor)) fail('ZCODE_CONFIG_CHANGED');
-      item.identity = identity(stat);
+      bindDescriptor(temp, stat, descriptor, 'ZCODE_CONFIG');
+      item.identity = { path: identity(stat), descriptor: identity(descriptor) };
       fs.writeFileSync(fd, bytes); fs.fsyncSync(fd);
     }
     finally { fs.closeSync(fd); }
@@ -211,7 +255,7 @@ export function applyZcodeConfigPlan(plan) {
   const written = change => {
     const snapshot = readExisting(change.file, change.label);
     if (snapshot.exists !== Boolean(change.bytes) || (change.bytes &&
-        (!snapshot.bytes.equals(change.bytes) || !samePath(change.file, change.identity)))) fail('ZCODE_CONFIG_ROLLBACK_CONFLICT');
+        (!snapshot.bytes.equals(change.bytes) || snapshot.pathIdentity !== change.identity.path || snapshot.descriptorIdentity !== change.identity.descriptor))) fail('ZCODE_CONFIG_ROLLBACK_CONFLICT');
     return snapshot;
   };
   try {
@@ -222,7 +266,7 @@ export function applyZcodeConfigPlan(plan) {
     chain = directories(location.zdir, 'ZCODE_CONFIG_DIR_UNSAFE');
     verifyDirectories(location.chain);
     try { fs.mkdirSync(lock, { mode: 0o700 }); } catch { fail('ZCODE_CONFIG_BUSY'); }
-    locked = true; lockIdentity = identity(fs.lstatSync(lock, { bigint: true }));
+    locked = true; lockIdentity = directoryIdentity(lock, fs.lstatSync(lock, { bigint: true }), 'ZCODE_CONFIG_DIR_UNSAFE');
     const changes = [];
     if (state.receiptChanged) changes.push({ file: location.receiptPath, prior: receipt, bytes: state.nextReceipt ? Buffer.from(JSON.stringify(state.nextReceipt, null, 2) + '\n') : null, label: 'ZCODE_RECEIPT' });
     if (plan.before !== plan.after) changes.push({ file: location.configPath, prior: current, bytes: Buffer.from(JSON.stringify(plan.config, null, 2) + '\n'), label: 'ZCODE_CONFIG' });
@@ -235,7 +279,7 @@ export function applyZcodeConfigPlan(plan) {
     unchanged(location.configPath, current); unchanged(location.receiptPath, receipt, 'ZCODE_RECEIPT');
     for (const change of changes) {
       verifyDirectories(chain);
-      if (!samePath(lock, lockIdentity)) fail('ZCODE_CONFIG_BUSY');
+      if (!samePath(lock, lockIdentity, true)) fail('ZCODE_CONFIG_BUSY');
       unchanged(change.file, change.prior, change.label);
       if (change.bytes) fs.renameSync(change.temp, change.file);
       else fs.unlinkSync(change.file);
@@ -266,7 +310,7 @@ export function applyZcodeConfigPlan(plan) {
     for (const item of staged) {
       if (item.identity && samePath(item.temp, item.identity)) fs.unlinkSync(item.temp);
     }
-    if (locked && samePath(lock, lockIdentity)) fs.rmdirSync(lock);
+    if (locked && samePath(lock, lockIdentity, true)) fs.rmdirSync(lock);
     if (createdDirectory) {
       try { verifyDirectories(chain); fs.rmdirSync(location.zdir); }
       catch (error) { if (!['ENOTEMPTY', 'EEXIST'].includes(error.code) && error.message !== 'ZCODE_CONFIG_DIR_UNSAFE') throw error; }
