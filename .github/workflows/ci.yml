@@ -21,14 +21,72 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '22.16.0'
-      - run: npm run check
-      - run: npm test
+      - name: Record native CI filesystem metadata
+        shell: bash
+        run: node scripts/ci-diagnostics.mjs metadata
+      - name: Check syntax
+        shell: bash
+        run: |
+          set +e
+          npm run check 2>&1 | tee ci-check.log
+          statuses=("${PIPESTATUS[@]}")
+          set -e
+          if (( statuses[0] != 0 )); then exit "${statuses[0]}"; fi
+          exit "${statuses[1]}"
+      - name: Run tests
+        shell: bash
+        run: |
+          set +e
+          npm test 2>&1 | tee ci-test.log
+          statuses=("${PIPESTATUS[@]}")
+          set -e
+          if (( statuses[0] != 0 )); then exit "${statuses[0]}"; fi
+          exit "${statuses[1]}"
       # Unified offline regression for the verify-* family (batch 17): keyed BLOCKED
       # smokes + the offline zcode workflow harness + model-review readiness (~7s).
-      - run: npm run verify-offline
-      - run: npm run doctor
+      - name: Verify offline workflows
+        shell: bash
+        run: |
+          set +e
+          npm run verify-offline 2>&1 | tee ci-verify-offline.log
+          statuses=("${PIPESTATUS[@]}")
+          set -e
+          if (( statuses[0] != 0 )); then exit "${statuses[0]}"; fi
+          exit "${statuses[1]}"
+      - name: Report doctor status
+        shell: bash
+        run: |
+          set +e
+          npm run doctor 2>&1 | tee ci-doctor.log
+          statuses=("${PIPESTATUS[@]}")
+          set -e
+          if (( statuses[0] != 0 )); then exit "${statuses[0]}"; fi
+          exit "${statuses[1]}"
       - name: Inventory pinned upstream without executing its code
-        run: node bin/gstack861.mjs inventory --upstream upstream/gstack
+        shell: bash
+        run: |
+          set +e
+          node bin/gstack861.mjs inventory --upstream upstream/gstack 2>&1 | tee ci-inventory.log
+          statuses=("${PIPESTATUS[@]}")
+          set -e
+          if (( statuses[0] != 0 )); then exit "${statuses[0]}"; fi
+          exit "${statuses[1]}"
+      - name: Annotate CI failure evidence
+        if: failure()
+        shell: bash
+        run: node scripts/ci-diagnostics.mjs report
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7 (same pin as render artifacts)
+        if: failure()
+        with:
+          name: offline-diagnostics-${{ matrix.os }}
+          path: |
+            ci-metadata.json
+            ci-check.log
+            ci-test.log
+            ci-verify-offline.log
+            ci-doctor.log
+            ci-inventory.log
+          retention-days: 7
   # CI-scoped upstream render (red-line relaxation R1): the orchestrator itself
   # fail-closes outside CI=true AND GSTACK861_RENDER=ci, so local runs refuse.
   # ubuntu only — the bun render is platform-independent (README notes this).
