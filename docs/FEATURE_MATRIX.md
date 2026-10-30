@@ -1,6 +1,6 @@
 # 功能与证据矩阵
 
-状态：2026-10-29，0.4.32：M2 前置 + 纵向批次 + 批次 2–32 + 批次 33（codex 审计整改：attemptToken 围栏、错误脱敏、网关并发封顶、开发证书收窄为非签发叶证书、banned-terms 真实路径边界恢复、URL 拼接规范化、审批/双进程测试补强、状态文档刷新）（状态目录命名空间、上游渲染 CI 复用 rendered-experimental、原生询问桥 approvals ask、apply-patch/参数 effect、approvals/tasks CLI 全量、ZCode 工作流层纵向流程已实证、渲染产物 stage-render→install→uninstall 装载链全链实测、宿主装载 runbook 实测回填、渲染技能宿主消费 15 例已实证 + 键控能力切片 8 技能（非方法论计数）、install --dry-run 零写入预检）；二进制离线余量已全部收口（OFFLINE-COMPLETE §二：批次 19–24——migrate-state/jsonl-merge/banned-terms/team-init/slug/redact+hook 子命令/redact-prepush/issue-links 均已 ported/mapped，无 deferred），唯一剩余离线余量为命令别名 1 项（蓝图 M3 生命周期组），其余受阻于用户解锁或环境（OFFLINE-COMPLETE 三分类）。两个宿主均未获得 `host_verified` 或 `full`。
+状态：2026-10-30，0.4.33 + M3 offline host-lifecycle implementation：M2 前置 + 纵向批次 + 批次 2–32 + 批次 33（codex 审计整改：attemptToken 围栏、错误脱敏、网关并发封顶、开发证书收窄为非签发叶证书、banned-terms 真实路径边界恢复、URL 拼接规范化、审批/双进程测试补强、状态文档刷新）（状态目录命名空间、上游渲染 CI 复用 rendered-experimental、原生询问桥 approvals ask、apply-patch/参数 effect、approvals/tasks CLI 全量、ZCode 工作流层纵向流程已实证、渲染产物 stage-render→install→uninstall 装载链全链实测、宿主装载 runbook 实测回填、渲染技能宿主消费 15 例已实证 + 键控能力切片 8 技能（非方法论计数）、install --dry-run 零写入预检）；二进制离线余量已全部收口（OFFLINE-COMPLETE §二：批次 19–24——migrate-state/jsonl-merge/banned-terms/team-init/slug/redact+hook 子命令/redact-prepush/issue-links 均已 ported/mapped，无 deferred），唯一剩余离线余量为命令别名 1 项（蓝图 M3 生命周期组），其余受阻于用户解锁或环境（OFFLINE-COMPLETE 三分类）。两个宿主均未获得 `host_verified` 或 `full`。
 
 | 范围 | ZCode | DSH | 已有证据 / 剩余工作 |
 |---|---|---|---|
@@ -14,7 +14,7 @@
 | 安装/卸载 dry-run 预检 | contract_tested | contract_tested | contract_tested（批次 6）：`install --dry-run` 校验+报告（wouldInstall/wouldSkip/wouldBackUp）结构性零写入，拒绝照常抛错；未接入真实宿主技能目录 |
 | 任务持久化/断点恢复 | contract_tested | contract_tested | 状态机、跨进程锁、防篡改；未接宿主执行器 |
 | 审批状态 | contract_tested | contract_tested | 真实文件与两个进程单次消费；CLI 操作员通道已接通，宿主内询问 UI 未接通 |
-| 自动安装/升级/卸载（宿主级） | planned | planned | ZCode 仅输出配置，不改用户文件；DSH 安装片段需含 system-prompt+tools 闭包（调研结论） |
+| 宿主配置生命周期（离线） | contract_tested | contract_tested | 新增 ZCode 工作区配置预览/显式 apply/精确卸载；DSH Cordis profile scaffold（system-prompt→tools→guard + skills index）；未执行 pnpm、未改用户 home，真实宿主激活仍待验收 |
 | 不可绕过的全宿主安全 | blocked | blocked | 多调用一致性已单次密钥实证（批次 13）；启动失败、工具替换、PTC、子 Agent、Shell/OS 隔离仍待；DSH apply() 抛错仅警告且退出码 0（实测），验收须解析警告 |
 | 相对路径/Session cwd | contract_tested | blocked | ZCode 用事件 cwd；DSH 暂只接受绝对路径（Session cwd 语义与继承待真实宿主事件源——环境受阻） |
 | 技能渲染（上游管线 CI 复用） | rendered-experimental | rendered-experimental | CI 渲染成功（run 40464085183）；0.4.1 起装载链接通：stage-render→install→uninstall 全链实测（多文件技能含 registry 锚定摘要）；0.4.2 fixture 工作区 `.zcode/skills` 装载实测（runbook §2.2/2.3/2.5 回填）；不宣称 conformance/full；新会话拾取：**工作区技能发现+Skill 装载已 host 级实证（批次 25 无头真实会话，标记逐字）**；上下文自动注入/UI 会话仍未验证 |
@@ -31,3 +31,11 @@
 | 真实模型质量对等 | not_run | not_run | 未调用模型，未使用预算 |
 
 `contract_tested` 不是 `host_verified`。源码盘点仅枚举顶层源技能，不涵盖全部命令选项、独立二进制和生命周期语义；`fullParity` 固定为 false，避免空集合或局部盘点误报完整支持。macOS 仍未运行，不声明通过；CI 结果以 GitHub Actions 实际运行为准。
+
+
+## 2026-10-30 M3 offline implementation delta
+
+- `connect-chrome` compatibility alias: `implemented` as a rewritten copy in `src/aliases.mjs`; `contract_tested` only after the current PR CI passes. It is not a symlink and is not host-verified.
+- DSH profile generation: `contract_tested` target; includes the actual skills index plugin dependency as well as the guard plugin. Activation still needs operator-side profile dependency installation and live DSH warning inspection.
+- ZCode workspace hook configuration: `contract_tested` target; preview is default, writes require `--apply`, uninstall removes only an exact matching hook and preserves unrelated config.
+- None of the above upgrades either host to `host_verified` or `full`.

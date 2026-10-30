@@ -131,3 +131,24 @@ node bin/gstack861.mjs install --staging /abs/alias-staging --target /abs/worksp
 ## 2026-10-29 二次复核
 
 在既有全库审核分支上修复网关等待/响应清理、安装误删临时项、渲染路径链接与大小写冲突，以及稀疏数组规范化碰撞。详见 [复核报告](docs/AUDIT-RECHECK-2026-10-29.md) 和 [测试摘要](docs/verification-2026-10-29-recheck.json)。安装器不再仅凭 `.gstack861-tmp-*` 前缀删除旧文件，历史临时项需操作员核对；只自动清理本次创建的临时目录。
+
+
+## 2026-10-30 M3 host lifecycle offline implementation
+
+Three offline-capable slices are now implemented in the work branch:
+
+1. **Compatibility alias staging**: `alias-stage` rewrites the pinned upstream `connect-chrome` alias as a separate frontmatter identity; it validates source and auxiliary digests and uses the existing install registry.
+2. **DSH profile scaffold**: `dsh-profile-stage` creates an isolated Cordis profile with the required `system-prompt → tools → guard` activation dependency chain and the skills index plugin. It creates local file-URL shims to the reviewed adapters; it does not run pnpm or modify `~/.dsh`.
+3. **ZCode workspace config lifecycle**: `zcode-config-install` previews by default and only writes with explicit `--apply`; `zcode-config-uninstall` removes only the exact hook bound to the same Node/CLI/policy paths. Existing unrelated settings/hooks are retained and optimistic concurrency prevents overwriting changes made after preview.
+
+Examples:
+
+```sh
+node bin/gstack861.mjs alias-stage --staging /abs/canonical-staging --output /abs/alias-staging --host zcode
+node bin/gstack861.mjs dsh-profile-stage --output /abs/dsh-profile --policy /abs/private/policy.json --adapter /abs/repo/src/adapters/dsh.mjs --skills /abs/workspace/.dsh/skills
+node bin/gstack861.mjs zcode-config-install --workspace /abs/workspace --policy /abs/private/policy.json
+node bin/gstack861.mjs zcode-config-install --workspace /abs/workspace --policy /abs/private/policy.json --apply
+node bin/gstack861.mjs zcode-config-uninstall --workspace /abs/workspace --policy /abs/private/policy.json --apply
+```
+
+All three are scaffolding/configuration operations. DSH still requires the operator to install profile dependencies and verify activation warnings; ZCode still requires trust digest review and a fresh real session. None of these commands certifies live-host behavior.

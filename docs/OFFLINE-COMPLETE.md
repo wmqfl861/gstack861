@@ -1,6 +1,6 @@
 # 蓝图剩余项终版逐项盘点（OFFLINE-COMPLETE）
 
-截至 2026-10-29（批次 33 / 0.4.32——codex 审计整改批；批次 18（0.4.17）为历史快照，其"进行中/deferred"表述已按当前仓库状态重写，历史批次结论以各批验证记录为准）对 BLUEPRINT 全部剩余项的逐项判定。**结论：第二节纯工具二进制移植已全部收口（slug/redact/issue-links/prepush 均 ported，批次 19–24），离线余量仅剩命令别名（蓝图 M3 生命周期组）1 项——本清单不宣称"离线已尽"。** 其余剩余项分两类：待用户解锁（第一节，每项给出精确触发方式）与环境受阻（第三节，每项一句"缺什么"）。已完成项的证据入口见文末交叉引用；本清单不新增任何"完成"宣称，一切分级以 `docs/FEATURE_MATRIX.md` 为准。
+截至 2026-10-29（批次 33 / 0.4.32——codex 审计整改批；批次 18（0.4.17）为历史快照，其"进行中/deferred"表述已按当前仓库状态重写，历史批次结论以各批验证记录为准）对 BLUEPRINT 全部剩余项的逐项判定。**结论（2026-10-30 更新）：纯工具二进制移植已收口；命令别名、DSH profile scaffold、ZCode workspace config 生命周期已在工作分支实现，待该分支 CI/审核通过。仍有宿主真实激活与设备/预算/远端依赖项，不宣称离线全项或完整宿主对等。** 其余剩余项分两类：待用户解锁（第一节，每项给出精确触发方式）与环境受阻（第三节，每项一句"缺什么"）。已完成项的证据入口见文末交叉引用；本清单不新增任何"完成"宣称，一切分级以 `docs/FEATURE_MATRIX.md` 为准。
 
 判定基线：BLUEPRINT M2–M4 + FEATURE_MATRIX 全部 planned/blocked 行 + README「离线边界」节 13 项 + 批次 18 审计划逐行复核补洞。上游事实以固定子模块 `upstream/gstack`（commit 5755601，v1.91.248.0）实测为准——`bin/` 目录已逐一检视（见第二节所列实际名字）。
 
@@ -87,3 +87,14 @@
 - 功能状态权威表：`docs/FEATURE_MATRIX.md`（本清单各项均标注对应行）；边界 13 项：README「离线边界」节。
 - 验证脚本总表：`docs/VERIFICATION-SCRIPTS.md`（10 脚本；三方一致性由 `test/verification-scripts.test.mjs` 钉死）。
 - 逐轮验证记录：`docs/VERIFICATION.md`（截至批次 32 共 42 轮；批次 33——codex 审计整改——为第四十三轮，合并后落盘）。
+
+
+## 2026-10-30 offline work branch update
+
+The following previously unimplemented offline lifecycle slices now have code in `work/m3-command-aliases-20261029`:
+
+- `alias-stage`: source-digest-verified rewritten compatibility alias.
+- `dsh-profile-stage`: isolated Cordis profile scaffold with system-prompt/tools/guard plus skills-index dependency closure; no package installation.
+- `zcode-config-install` / `zcode-config-uninstall`: preview-first, explicit apply, idempotent merge, exact-hook removal, optimistic concurrency and workspace-local lock.
+
+They remain **pending review/CI** until the current branch head passes. The older "single remaining offline alias" statement above is superseded by this update; no live-host activation is implied.
