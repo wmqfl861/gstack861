@@ -28,7 +28,7 @@ export function stageDshProfile({ output, profileName='gstack861', policyPath, a
   const plugin='gstack861-guard';
   const adapterUrl=pathToFileURL(adapterPath).href;
   const files = [
-    ['package.json', JSON.stringify({name:'gstack861-profile-'+profileName,private:true,version:'0.1.0',dependencies:{[plugin]:'file:./plugins/gstack861-guard'},dsh:{profile:{bundles:[]}}},null,2)+'\n'],
+    ['package.json', JSON.stringify({name:'gstack861-profile-'+profileName,private:true,version:'0.1.0',dependencies:{[plugin]:'file:./plugins/gstack861-guard','gstack861-skills':'file:./plugins/gstack861-skills'},dsh:{profile:{bundles:[]}}},null,2)+'\n'],
     ['cordis.yml','[]\n'],
     ['cordis.patch.yml', [
       '- insert:',
