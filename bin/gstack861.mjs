@@ -13,6 +13,8 @@ import { ApprovalStore, subjectDigest } from '../src/approvals.mjs';
 import { TaskStore } from '../src/tasks.mjs';
 import { migrateStateFiles } from '../src/migrate.mjs';
 import { stageCommandAliases } from '../src/aliases.mjs';
+import { stageDshProfile } from '../src/dsh-profile.mjs';
+import { planZcodeConfig, applyZcodeConfigPlan, planZcodeUninstall } from '../src/zcode-profile.mjs';
 
 const args = process.argv.slice(2);
 const print = value => process.stdout.write(JSON.stringify(value, null, 2) + '\n');
@@ -125,6 +127,25 @@ if (args[0] === 'hook') {
       const options = flags(args.slice(1), ['--staging', '--output', '--host']);
       for (const key of ['--staging', '--output', '--host']) if (options[key] === undefined) throw new Error('INVALID_ARGUMENTS');
       print(stageCommandAliases({ staging: absolute(options['--staging']), output: absolute(options['--output']), host: options['--host'] }));
+    } else if (args[0] === 'dsh-profile-stage') {
+      const options = flags(args.slice(1), ['--output', '--policy', '--adapter', '--skills', '--name']);
+      for (const key of ['--output', '--policy', '--adapter', '--skills']) if (options[key] === undefined) throw new Error('INVALID_ARGUMENTS');
+      print(stageDshProfile({ output:absolute(options['--output']), policyPath:absolute(options['--policy']),
+        adapterPath:absolute(options['--adapter']), skillsDir:absolute(options['--skills']), profileName:options['--name'] }));
+    } else if (args[0] === 'zcode-config-install') {
+      const options = flags(args.slice(1), ['--workspace', '--policy'], ['--apply']);
+      if (!options['--workspace'] || !options['--policy']) throw new Error('INVALID_ARGUMENTS');
+      const policyPath=absolute(options['--policy']); loadPolicy(policyPath);
+      const plan=planZcodeConfig({workspace:absolute(options['--workspace']),nodePath:process.execPath,
+        cliPath:fileURLToPath(import.meta.url),policyPath});
+      print(options['--apply'] ? applyZcodeConfigPlan(plan) : {changed:plan.changed,path:plan.configPath,preview:plan.config});
+    } else if (args[0] === 'zcode-config-uninstall') {
+      const options = flags(args.slice(1), ['--workspace', '--policy'], ['--apply']);
+      if (!options['--workspace'] || !options['--policy']) throw new Error('INVALID_ARGUMENTS');
+      const policyPath=absolute(options['--policy']);
+      const plan=planZcodeUninstall({workspace:absolute(options['--workspace']),nodePath:process.execPath,
+        cliPath:fileURLToPath(import.meta.url),policyPath});
+      print(options['--apply'] ? applyZcodeConfigPlan(plan) : {changed:plan.changed,path:plan.configPath,preview:plan.config});
     } else if (args[0] === 'generate') {
       const options = flags(args.slice(1), ['--upstream', '--staging', '--host']);
       // GSTACK861_TEST_COMMIT overrides the lock pin for fixtures only; production
