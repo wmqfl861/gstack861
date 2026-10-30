@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { object, canonical, freeze, textDigest } from './json.mjs';
-import { inspectPlainPath, assertPlainPathUnchanged, readPlainFile } from './fs-utils.mjs';
+import { inspectPlainPath, assertPlainPathUnchanged, assertPlainFileDescriptor, readPlainFile } from './fs-utils.mjs';
 
 const fail = code => { throw new Error(code); };
 const CONFIG_DIR = '.zcode';
@@ -64,7 +64,8 @@ function validateConfig(config) {
 }
 function workspaceIdentity(snapshot) {
   const entry = snapshot.entries.at(-1);
-  return {path:snapshot.realPath, dev:entry.dev, ino:entry.ino};
+  return {path:snapshot.realPath, dev:entry.dev, ino:entry.ino,
+    ...(entry.descriptor ? {descriptor:{dev:entry.descriptor.dev,ino:entry.descriptor.ino,kind:entry.descriptor.kind}} : {})};
 }
 function validateReceipt(bytes, state) {
   if (bytes === null) return null;
@@ -210,8 +211,8 @@ function readWritten(state, value) {
 // Only transplant the proven temp leaf; never rebase the saved ancestor identities.
 function writtenRecord(current, bytes, owned) {
   const snapshot = current.snapshot;
-  const entries = bytes === null ? snapshot.entries.slice(0,-1)
-    : [...owned.entries.slice(0,-1), {...owned.entries.at(-1),path:snapshot.path}];
+  const ancestors = snapshot.exists ? snapshot.entries.slice(0,-1) : snapshot.entries;
+  const entries = bytes === null ? ancestors : [...ancestors, {...owned.entries.at(-1),path:snapshot.path}];
   return {snapshot:freeze({...snapshot,exists:bytes !== null,entries,missing:bytes === null ? [snapshot.path] : []}),bytes};
 }
 function replaceRecord(state, key, bytes) {
@@ -231,8 +232,8 @@ function replaceRecord(state, key, bytes) {
     const fd = fs.openSync(temp,'wx',0o600);
     try {
       const candidate = inspectPlainPath(temp,{kind:'file'});
-      const stat = fs.fstatSync(fd,{bigint:true}), entry = candidate.entries.at(-1);
-      if (!stat.isFile() || stat.nlink !== 1n || String(stat.dev) !== entry.dev || String(stat.ino) !== entry.ino) fail('ZCODE_CONFIG_CHANGED');
+      try { assertPlainFileDescriptor(candidate,fd); }
+      catch { fail('ZCODE_CONFIG_CHANGED'); }
       owned = candidate;
     } finally { fs.closeSync(fd); }
     assertCurrent(state); assertPlainPathUnchanged(owned);

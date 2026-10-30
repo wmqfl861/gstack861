@@ -3,7 +3,7 @@ import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { object, textDigest } from './json.mjs';
 import { inside } from './policy.mjs';
-import { inspectPlainPath, assertPlainPathUnchanged, readPlainFile } from './fs-utils.mjs';
+import { inspectPlainPath, assertPlainPathUnchanged, assertPlainFileDescriptor, samePlainIdentity, readPlainFile } from './fs-utils.mjs';
 
 const GENERATOR = 'gstack861';
 const ALIAS = Object.freeze({ name: 'connect-chrome', canonical: 'open-gstack-browser' });
@@ -142,23 +142,20 @@ export function stageCommandAliases({ staging, output, host }) {
     try {
       unchanged({ ...previous, missing: [] }, 'STAGING_NOT_EMPTY');
       snapshot = inspect(filename, 'file', 'STAGING_NOT_EMPTY');
-      const actual = fs.fstatSync(fd, { bigint: true }), expected = snapshot.entries.at(-1);
-      if (!actual.isFile() || actual.nlink !== 1n || String(actual.dev) !== expected.dev || String(actual.ino) !== expected.ino) fail('STAGING_NOT_EMPTY');
+      try { assertPlainFileDescriptor(snapshot, fd); } catch { fail('STAGING_NOT_EMPTY'); }
       fs.writeFileSync(fd, bytes);
       unchanged(snapshot, 'STAGING_NOT_EMPTY');
       createdFiles.push({ snapshot, sha256: textDigest(bytes) });
     } catch (error) {
       if (snapshot) {
         try {
-          const actual = fs.fstatSync(fd, { bigint: true }), expected = snapshot.entries.at(-1);
-          if (actual.isFile() && actual.nlink === 1n && String(actual.dev) === expected.dev && String(actual.ino) === expected.ino) {
-            unchanged(snapshot, 'STAGING_NOT_EMPTY');
-            const partial = readPlainFile(snapshot);
-            // Only our expected prefix is attributable to a partial write;
-            // never adopt arbitrary bytes another writer put into the file.
-            if (partial.length <= bytes.length && partial.equals(bytes.subarray(0, partial.length))) {
-              createdFiles.push({ snapshot, sha256: textDigest(partial) });
-            }
+          assertPlainFileDescriptor(snapshot, fd);
+          unchanged(snapshot, 'STAGING_NOT_EMPTY');
+          const partial = readPlainFile(snapshot);
+          // Only our expected prefix is attributable to a partial write;
+          // never adopt arbitrary bytes another writer put into the file.
+          if (partial.length <= bytes.length && partial.equals(bytes.subarray(0, partial.length))) {
+            createdFiles.push({ snapshot, sha256: textDigest(partial) });
           }
         } catch { /* failed identity proof leaves the file for explicit recovery */ }
       }
@@ -192,7 +189,7 @@ export function stageCommandAliases({ staging, output, host }) {
           const entry = snapshot.entries.at(-1);
           const ours = createdDirectories.find(directory => {
             const known = directory.entries.at(-1);
-            return known.dev === entry.dev && known.ino === entry.ino && known.kind === entry.kind;
+            return samePlainIdentity(known, entry);
           });
           if (!ours) fail('STAGING_NOT_EMPTY');
           unchanged(ours, 'STAGING_NOT_EMPTY');

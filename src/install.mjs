@@ -121,8 +121,9 @@ function writeCreated(filename, bytes, guard, resources) {
 function movedPath(before, filename, guard) {
   const after = inspect(filename, before.entries.at(-1).kind, 'USER_FILE_REFUSED', false, guard);
   const expected = { ...before.entries.at(-1), path: after.path };
-  unchanged({ ...after, entries: [...after.entries.slice(0, -1), expected] }, 'USER_FILE_REFUSED', guard);
-  return before.expectedBytes === undefined ? after : { ...after, expectedBytes: before.expectedBytes };
+  const moved = { ...after, entries: [...after.entries.slice(0, -1), expected] };
+  unchanged(moved, 'USER_FILE_REFUSED', guard);
+  return before.expectedBytes === undefined ? moved : { ...moved, expectedBytes: before.expectedBytes };
 }
 
 /** Registry writes go through tmp + rename so readers never observe a torn file. */

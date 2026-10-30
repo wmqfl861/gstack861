@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { inside, loadPolicy } from './policy.mjs';
-import { inspectPlainPath, assertPlainPathUnchanged, readPlainFile } from './fs-utils.mjs';
+import { inspectPlainPath, assertPlainPathUnchanged, assertPlainFileDescriptor, readPlainFile } from './fs-utils.mjs';
 
 const fail = code => { throw new Error(code); };
 const validName = value => /^[a-z][a-z0-9-]{0,62}$/.test(value);
@@ -123,8 +123,7 @@ export function stageDshProfile({ output, profileName='gstack861', policyPath, a
       const fd=fs.openSync(target,'wx',0o644);
       try {
         const snapshot=createdPath(before,'file','OUTPUT_CHANGED');
-        const stat=fs.fstatSync(fd,{bigint:true}),entry=snapshot.entries.at(-1);
-        if (!stat.isFile() || stat.nlink!==1n || String(stat.dev)!==entry.dev || String(stat.ino)!==entry.ino) fail('OUTPUT_CHANGED');
+        checked('OUTPUT_CHANGED',()=>assertPlainFileDescriptor(snapshot,fd));
         owned.push(snapshot);
         expectedContents.set(snapshot,Buffer.alloc(0));
         verify();
