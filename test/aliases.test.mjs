@@ -31,7 +31,8 @@ test('refuses tampering, symlinks, malformed frontmatter and wrong host before o
  const f=fixture(t); fs.appendFileSync(path.join(f.dir,'SKILL.md'),'tamper');
  assert.throws(()=>stageCommandAliases({staging:f.staging,output:f.output,host:'zcode'}),/TAMPERED/);
  assert.equal(fs.existsSync(f.output),false);
- const g=fixture(t); fs.writeFileSync(path.join(g.dir,'SKILL.md'),'invalid');
+ const g=fixture(t); const invalid=Buffer.from('invalid'); fs.writeFileSync(path.join(g.dir,'SKILL.md'),invalid);
+ const manifestFile=path.join(g.dir,'manifest.json'); const manifest=JSON.parse(fs.readFileSync(manifestFile,'utf8')); manifest.sha256=textDigest(invalid); fs.writeFileSync(manifestFile,JSON.stringify(manifest));
  assert.throws(()=>stageCommandAliases({staging:g.staging,output:g.output,host:'zcode'}),/FRONTMATTER/);
  assert.equal(fs.existsSync(g.output),false);
  const h=fixture(t); assert.throws(()=>stageCommandAliases({staging:h.staging,output:h.output,host:'bad'}),/INVALID_HOST/);
