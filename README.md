@@ -111,6 +111,15 @@ node bin/gstack861.mjs zcode-config --policy /absolute/private/policy.json
 - **0.3.1 破坏性变更（状态文件命名空间隔离）**：任务与审批记录分别改用 `task-<uuid>.json` 与 `approval-<uuid>.json` 文件名，两类存储从此可安全共用一个 `--state` 目录。0.3.0 写入的无前缀 `<uuid>.json` 记录升级后对 `list`/`get` 均不可见（等效丢失）——**0.4.18 起提供自动迁移**：`gstack861 migrate-state --state DIR [--dry-run]`（按内容分类 task/approval、歧义一律拒绝绝不猜、只改名不动字节、目标冲突拒绝；此前版本的人工改名路径仍可用）。文件名只划分命名空间，记录内容校验（含 id、状态机）仍是权威——伪装成对方前缀的记录一律 `INVALID_*_RECORD` 拒绝。
 - 不执行任何付费模型调用；后续功能必须使用显式网关配置，不回退官方端点。
 
+## 命令别名（M3 离线开发）
+
+固定上游包含向后兼容别名 `/connect-chrome` → `/open-gstack-browser`。`alias-stage` 从已校验的 canonical staging 生成独立副本，将 frontmatter `name` 改为 `connect-chrome`，复制并复验辅助文件摘要；它不使用 symlink，避免宿主因重复 frontmatter name 隐藏整个技能集。生成后可用现有 `install` 单独安装到目标技能目录，卸载仍由注册表所有权保护。命令不会自动改写用户宿主目录，也不声称真实宿主已拾取该别名。
+
+```sh
+node bin/gstack861.mjs alias-stage --staging /abs/canonical-staging --output /abs/alias-staging --host zcode
+node bin/gstack861.mjs install --staging /abs/alias-staging --target /abs/workspace/.zcode/skills
+```
+
 ## 后续开发入口
 
 先完成两侧真实宿主离线集成和工具身份/旁路验证，再接上技能生成、原生问答审批、子任务与恢复。随后逐项迁移上游工作流、浏览器 QA、发布、安全审计、记忆和专项能力。具体依赖与验收见蓝图；未验证功能保持 `planned` 或 `blocked`，不能标为 `full`。
@@ -122,3 +131,24 @@ node bin/gstack861.mjs zcode-config --policy /absolute/private/policy.json
 ## 2026-10-29 二次复核
 
 在既有全库审核分支上修复网关等待/响应清理、安装误删临时项、渲染路径链接与大小写冲突，以及稀疏数组规范化碰撞。详见 [复核报告](docs/AUDIT-RECHECK-2026-10-29.md) 和 [测试摘要](docs/verification-2026-10-29-recheck.json)。安装器不再仅凭 `.gstack861-tmp-*` 前缀删除旧文件，历史临时项需操作员核对；只自动清理本次创建的临时目录。
+
+
+## 2026-10-30 M3 host lifecycle offline implementation
+
+Three offline-capable slices are now implemented in the work branch:
+
+1. **Compatibility alias staging**: `alias-stage` rewrites the pinned upstream `connect-chrome` alias as a separate frontmatter identity; it validates source and auxiliary digests and uses the existing install registry.
+2. **DSH profile scaffold**: `dsh-profile-stage` creates an isolated Cordis profile with the required `system-prompt → tools → guard` activation dependency chain and the skills index plugin. It creates local file-URL shims to the reviewed adapters; it does not run pnpm or modify `~/.dsh`.
+3. **ZCode workspace config lifecycle**: `zcode-config-install` previews by default and only writes with explicit `--apply`; `zcode-config-uninstall` removes only the exact hook bound to the same Node/CLI/policy paths. Existing unrelated settings/hooks are retained and optimistic concurrency prevents overwriting changes made after preview.
+
+Examples:
+
+```sh
+node bin/gstack861.mjs alias-stage --staging /abs/canonical-staging --output /abs/alias-staging --host zcode
+node bin/gstack861.mjs dsh-profile-stage --output /abs/dsh-profile --policy /abs/private/policy.json --adapter /abs/repo/src/adapters/dsh.mjs --skills /abs/workspace/.dsh/skills
+node bin/gstack861.mjs zcode-config-install --workspace /abs/workspace --policy /abs/private/policy.json
+node bin/gstack861.mjs zcode-config-install --workspace /abs/workspace --policy /abs/private/policy.json --apply
+node bin/gstack861.mjs zcode-config-uninstall --workspace /abs/workspace --policy /abs/private/policy.json --apply
+```
+
+All three are scaffolding/configuration operations. DSH still requires the operator to install profile dependencies and verify activation warnings; ZCode still requires trust digest review and a fresh real session. None of these commands certifies live-host behavior.

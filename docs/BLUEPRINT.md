@@ -128,3 +128,13 @@ DSH guard 只覆盖使用标准工具执行管线的执行器；自定义执行�
 ## 9. 2026-10-29 全库范围审计修复
 
 基线 15c32ae（0.4.32），修复交付 0.4.33。详见 [本轮审计](AUDIT-2026-10-29.md)。新增执行边界网关复验、输出脱敏/大小限制、备份清理内容证明、安装父目录链接拒绝、缓存校验及发布 hook 用户文件保护。此次是质量修复，不将任何未完成的 M2–M4 项提升为已验收。
+
+
+## 10. 2026-10-30 M3 offline host-lifecycle implementation
+
+The command-alias gap is implemented as a rewritten copy, not a symlink. Two additional offline-capable lifecycle components are added:
+
+- DSH profile scaffold generator: writes a disposable profile with the required Cordis dependency chain (`@deepseek-ai/dsh-system-prompt`, `@deepseek-ai/dsh-tools`, native guard, skills index). The local plugin packages re-export the repository adapters by file URL. It does not install packages or touch user DSH home.
+- ZCode workspace config planner/apply/uninstall: previews without mutation by default, merges while preserving unrelated config, uses a per-workspace lock and optimistic concurrency, and removes only the exact owned hook. CLI apply requires explicit `--apply`.
+
+These are contract-level offline implementations. They do not replace fresh-session trust/activation checks, and do not upgrade host certification. The work branch and PR must pass Linux/Windows CI and code review before the milestone is considered accepted.
