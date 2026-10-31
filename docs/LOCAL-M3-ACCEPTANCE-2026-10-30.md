@@ -145,3 +145,43 @@ DSH无模型执行使用已安装ASAR-aware Electron carrier加载DSH公开Profi
 | 合并决定 | 交由ChatGPT；仅推送独立验收分支供比对，不合并、不覆盖远端并行成果 |
 
 此结果不宣称完整gstack迁移、双宿主全功能对等、全宿主不可绕过安全或`host_verified`整体认证。实际提交SHA、推送与CI状态在完成后回传。
+
+## H. CI 后续：Windows 身份修复的实际托管结果与残余注入 seam 修复（2026-10-31 追加）
+
+### H.1 实际托管 CI（f4d1bd3，run 41131365406 attempt 1）
+
+| 任务 | 结果 |
+|---|---|
+| Ubuntu（离线契约/全量） | 成功 |
+| 上游渲染 | 成功 |
+| Windows | 失败——失败块从诊断轮的 256 缩小到 6 个故障注入用例（`ci-f4d1bd3-windows-annotations.json`） |
+
+### H.2 本地复现与根因（单一、共享）
+
+以 `preload-zero-device.mjs` 注入托管 runner 实测元数据分裂（路径 API `lstat` dev=0，句柄 API `fstat` dev 非零、ino/kind/nlink 相同），6/6 用例本地失败且错误文本与断言行号与托管注解逐字一致；零设备全量基线 1383/1357/6/20，失败集合恰为 CI 六例（协调者与独立审核代理分别跑出相同结果）。根因：dev=0 路径下每个生成文件在数据 fd 生命周期内新增只读 witness open/close 流量，旧注入 seam 按"文件名匹配的任意 close"或"lstat dev 与 fstat dev 相等"触发——注入在错误时机触发（witness close 时 wx fd 仍钉住目录，Windows 对含打开句柄目录的 rename 失败，注入半途而废）或永不触发（dev 0 恒不等于 fstat dev）。失败状态下产品行为全部为正确拒绝（STAGING_NOT_EMPTY / 保留 operator 数据 / fail-closed），属测试装置过时而非产品缺陷。
+
+### H.3 修复：仅测试注入 seam（计划获独立 APPROVE 后实施）
+
+| 文件 | 调整 | 不变项 |
+|---|---|---|
+| test/aliases.test.mjs（4 处 close 钩子） | descriptors 记录 `{name, flags}`，仅在生成写 fd（`'wx'`）关闭时触发注入——即用例名义时点"生成文件写入完成关闭后、下一生成写之前" | 全部断言（STAGING_NOT_EMPTY、operator 字节保留、目录仅 operator.txt、replaced/edited）逐字保留 |
+| test/fs-utils.test.mjs:259 | close 故障由 `readFailed` 门控，只在主读错误后的清理 close 抛出（该用例主题） | caught===denied EACCES、句柄全关断言不变 |
+| test/install.test.mjs:1708 | 原文件按 ino 匹配（去掉在设备分裂下恒为假的 dev 合取；temp 内仅一个文件） | EIO 主错误、temp 保留、字节/ino 保留、refused=true 及全部终态断言不变 |
+
+`src/` 零改动：五个冻结源码 SHA256（cbff271d/02eaf82f/131d1b21/4f098532/0c525632 前缀）修复前后逐字符相同。
+
+### H.4 验证（隔离串行）
+
+- 定向 6 例零设备：6/6 通过，exit 0。
+- 零设备全量：1383/1363/0 失败/20 跳过，exit 0。
+- 常规全量 Node 24.21.0 与锁定 Node 22.16.0：均 1383/1363/0/20，exit 0（Node 22 日志为 TAP 格式即真 22 运行的硬证据）。
+- Node 22.16.0 直跑 check（119 模块）/verify-offline（9/9）/doctor（自报 v22.16.0）：全部 exit 0。
+- 过载 flake 如实记录：三个全量并行首轮出现过载假失败（host-setup-cli 的 spawnSync 10s 超时×3、29 秒停滞下 NTFS 文件 ID 复用×1），均不在修改集、修复前单任务基线通过；并行日志保留为对照（`overload-flake-*.log`），隔离串行重跑与独立复审代理自跑均为零失败。
+
+### H.5 独立审核链与证据
+
+计划审核（agent_3966d0e5）APPROVE，含一项必改：witness close 故障分支（src/fs-utils.mjs `independentDescriptor` 的 `catch { if (!failed) fail(code) }`）在 `readFailed` 门控后失去全套件唯一（且属意外获得的）覆盖——该分支在绿色平台本就无覆盖、方向为 fail-closed，本次未移除任何有意覆盖；已列为后续独立用例候补并在此披露。成果复审 APPROVE（diff 与工作树逐字节一致、六处门控精确、断言/错误集合零变更、独立复跑全部零失败），其必改项（npm run 内 PATH 劫持导致三个 Node 22 辅助日志实跑于系统 Node 24）已在发布前以锁定二进制直跑重生成修正。证据：`ci-followup/residual-seam/`（18 文件，`copied-evidence.json` 逐文件 SHA256）。本地零设备注入是托管条件的本地复现，不冒充托管证据；本次推送后的三个托管任务为最终兼容门。
+
+### H.6 边界（维持 OPEN）
+
+已批准的线性 sweep 时序权衡（两次外层扫描间完全恢复的瞬时祖先替换可能失去内部观察机会）、witness close 故障分支覆盖缺口（上文）、ZC-07 最终 syscall 同用户替换竞态——均保持 OPEN，未因本次 seam 修复改变。

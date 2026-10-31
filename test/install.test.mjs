@@ -1721,7 +1721,10 @@ test('R2 cleanup preserves a completed file when its verified contents cannot be
   fs.readFileSync = function (filename, ...args) {
     if (original && typeof filename === 'number') {
       const stat = fs.fstatSync(filename, { bigint: true });
-      if (stat.dev === original.dev && stat.ino === original.ino) {
+      // The Windows runner splits path/handle devices (lstat 0 vs fstat nonzero),
+      // so the recorded original is identified by inode, the identity both APIs
+      // preserve; the temporary directory holds exactly this one file.
+      if (stat.ino === original.ino) {
         refused = true;
         throw Object.assign(new Error('EACCES'), { code: 'EACCES' });
       }

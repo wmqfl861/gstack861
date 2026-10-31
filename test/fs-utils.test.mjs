@@ -260,9 +260,12 @@ test('plain read cleanup never replaces the primary native read error', t => {
   const f = fixture(t), snapshot = helpers.inspectPlainPath(f.file, file);
   const denied = Object.assign(new Error('native read fault'), { code: 'EACCES', syscall: 'read' });
   const closeError = Object.assign(new Error('native close fault'), { code: 'EIO', syscall: 'close' });
+  // Witness closes happen before the data read under dev=0 paths; this case is
+  // about the cleanup close that follows the primary read fault.
+  let readFailed = false;
   metadataView({
-    read: fd => { if (typeof fd === 'number') throw denied; },
-    close: () => { throw closeError; },
+    read: fd => { if (typeof fd === 'number') { readFailed = true; throw denied; } },
+    close: () => { if (readFailed) throw closeError; },
   }, ({ opened }) => {
     assert.throws(() => helpers.readPlainFile(snapshot), error => error === denied && error.code === 'EACCES');
     assert.ok(opened.length > 0 && opened.every(handle => handle.closed));

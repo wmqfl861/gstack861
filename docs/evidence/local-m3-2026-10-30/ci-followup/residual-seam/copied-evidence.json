@@ -1,0 +1,98 @@
+{
+  "schemaVersion": 1,
+  "base": "f4d1bd3cdff5f5fa4588038f67b41d627775fb81",
+  "subject": "Residual Windows CI fault-injection seam repair (six reproduced cases)",
+  "note": "Preload-zero-device metadata injection is local reproduction of the recorded hosted-runner path/handle device split, not hosted evidence. Hosted CI on the pushed commit remains the final compatibility gate.",
+  "records": [
+    {
+      "name": "residual-seam-fix-plan.md",
+      "sha256": "2e9011766f16327e166c3be2a467a42bc90124ca94bbbcd67b3d47b5c7599cc8",
+      "bytes": 5962
+    },
+    {
+      "name": "residual-seam-plan-review.md",
+      "sha256": "6ee744e83b36e2aed7222f1e6cdb284dff24bb471f7a0a0191d0f4edc644f458",
+      "bytes": 5099
+    },
+    {
+      "name": "preload-zero-device.mjs",
+      "sha256": "ab82aac05e54435596f7082fbc4e269559cf73baa606bfe6848af8cf20d9db7a",
+      "bytes": 651
+    },
+    {
+      "name": "ci-f4d1bd3-windows-annotations.json",
+      "sha256": "a13edeb39ff4af2c727dc0bf05baeef60c05e0ab6cd7d13144c27edc68ad8773",
+      "bytes": 12568
+    },
+    {
+      "name": "ci-f4d1bd3-run-status.json",
+      "sha256": "83ce96828aaab7dbffd85c077f52e1d09ca1ff500e483628d5896dc3505a07e9",
+      "bytes": 12379
+    },
+    {
+      "name": "zero-device-full-baseline-red.log",
+      "sha256": "dfaea02cf6080af6d417a919b0f00642b5c2d4338b78af066eb5271365c6b298",
+      "bytes": 135138
+    },
+    {
+      "name": "zero-device-targeted-green.log",
+      "sha256": "e26d77416dfda35108fe11936f2d21923d27574643972bcf9e1e416bdd1a6990",
+      "bytes": 877
+    },
+    {
+      "name": "zero-device-full-green-isolated.log",
+      "sha256": "639b3d7406ed7765b51cb70dd05740c8acbd238d74687a26eb1fbcd913aa236b",
+      "bytes": 127399
+    },
+    {
+      "name": "regular-node24-full-isolated.log",
+      "sha256": "e85d3c5cef0e9e43b789f855931c624a1695733316cafe170dda2de7e88d8f88",
+      "bytes": 127221
+    },
+    {
+      "name": "regular-node22-full-isolated.log",
+      "sha256": "25bc25192faae3fbaddb45bde08edd5c63e686261b28d3f8acc032ce6b608ef3",
+      "bytes": 308960
+    },
+    {
+      "name": "regular-node22-check.log",
+      "sha256": "403c5bc99921b91d8417ac2f488b603f9f4abd45bbb45e3860ca02664758ae87",
+      "bytes": 143
+    },
+    {
+      "name": "regular-node22-offline.log",
+      "sha256": "bb4a102dce3f8b8bd2653b6788854c5da41a0dcdf65e695b1a164a8f7783a2c2",
+      "bytes": 1139
+    },
+    {
+      "name": "regular-node22-doctor.log",
+      "sha256": "35778d009106bc3bbd7ea3636d0894af13e54225da0fa725e21eb2ab5331e8e3",
+      "bytes": 4110
+    },
+    {
+      "name": "overload-flake-zero-device-parallel.log",
+      "sha256": "63f17e747c7cddf31ba16c6e490b2733caca1b9efb4def3e56fac939a0e4c3b5",
+      "bytes": 129530
+    },
+    {
+      "name": "overload-flake-node24-parallel.log",
+      "sha256": "1f7ae30b29d89f60bd66405c1fa29990dbe71497c0232aa30064e51a5ca960b8",
+      "bytes": 128506
+    },
+    {
+      "name": "overload-flake-node22-parallel.log",
+      "sha256": "15c2eebbef3d21cc4fa6d30a95389b66940d5a33507c20187c2e84a708e879d5",
+      "bytes": 310281
+    },
+    {
+      "name": "residual-seam-diff-review.diff",
+      "sha256": "8b79f57d9ac0b552693b4a69da3678eacb27522bf8cd308312b54824dbface41",
+      "bytes": 6551
+    },
+    {
+      "name": "residual-seam-result-review.md",
+      "sha256": "562e5bedd92d9f84e9fc5b4e8950d4a148c2ab19ec6e4e3698f87584dab7d74f",
+      "bytes": 5106
+    }
+  ]
+}
