@@ -1,0 +1,142 @@
+{
+  "schemaVersion": 1,
+  "recorded_at": "2026-10-31T00:15:51.878536+00:00",
+  "source_commit": "408ededd1764cd45e156a42e2c20b6bad17862bc",
+  "source_tree": "815c36c222c85233e68f903648ce4af2223346e0",
+  "scope": "Publication evidence only; all238 previously committed files unchanged before the three new delivery artifacts.",
+  "prior_committed_files_verified": 238,
+  "bundle": {
+    "path": "LOCAL-M3-ACCEPTANCE-2026-10-31-DELIVERY.evidence.jsonl",
+    "sha256": "0c5f872f8987b8a2b6eaa437023b4a4f9d9b4129950816f8fd64ad9815acc3f6",
+    "bytes": 7010244,
+    "records": 19
+  },
+  "records": [
+    {
+      "path": "publication/ci-41096155740-completed-summary.json",
+      "sha256": "8bd2599ca59a8ca8f150bef8910771f8575eda50f98f534b071688a15b0b34b6",
+      "bytes": 6871,
+      "encoding": "utf-8"
+    },
+    {
+      "path": "publication/ci-41096155740-full.log",
+      "sha256": "ea1aa3e0fcb6456f6eeaed1a78d63725c55cd7bd3977c4ba1844818df308ea35",
+      "bytes": 2049295,
+      "encoding": "utf-8"
+    },
+    {
+      "path": "publication/ci-41096155740-status-001.json",
+      "sha256": "f295eccd4193b28aad1d49be946f8bf740145185005be09ec20db9fe6be88771",
+      "bytes": 6850,
+      "encoding": "utf-8"
+    },
+    {
+      "path": "publication/ci-41096155740-status-002.json",
+      "sha256": "20b21ae82c81b636d122aa3bc31dff47a361d174acf687a9ce6c713f4b30a4bb",
+      "bytes": 6859,
+      "encoding": "utf-8"
+    },
+    {
+      "path": "publication/ci-41096155740-status-003.json",
+      "sha256": "7292e110099647901aa9bcaa92ca890b9d8ae090e139b3dee8ff039b313b3e76",
+      "bytes": 7062,
+      "encoding": "utf-8"
+    },
+    {
+      "path": "publication/ci-41096165326-completed-summary.json",
+      "sha256": "7f4138d49f277126de64f3d38b854946acd886a48a8417b1ff6caf6cb3a6ef18",
+      "bytes": 6879,
+      "encoding": "utf-8"
+    },
+    {
+      "path": "publication/ci-41096165326-full.log",
+      "sha256": "6666a6444c3d7bf2d53aed33194c914a9b8609b8097579ae0ff501911ae49152",
+      "bytes": 2056545,
+      "encoding": "utf-8"
+    },
+    {
+      "path": "publication/ci-41096165326-status-001.json",
+      "sha256": "84d46af4c1f17b55e2df08cc5eb05f389cf3e0659d70e6923f165d3d71347cc4",
+      "bytes": 6858,
+      "encoding": "utf-8"
+    },
+    {
+      "path": "publication/ci-41096165326-status-002.json",
+      "sha256": "84d46af4c1f17b55e2df08cc5eb05f389cf3e0659d70e6923f165d3d71347cc4",
+      "bytes": 6858,
+      "encoding": "utf-8"
+    },
+    {
+      "path": "publication/ci-41096165326-status-003.json",
+      "sha256": "3a39da4fd1eb3ef7b91c82b326a953c3316d8a8208b63d8ca38b2858bb2d7d37",
+      "bytes": 7070,
+      "encoding": "utf-8"
+    },
+    {
+      "path": "publication/delivery-20261031-remote-baseline.json",
+      "sha256": "cc10971ae81ee322c239c4ece4302047a58f61bbc20d85703c79ebb85f5c0e58",
+      "bytes": 689,
+      "encoding": "utf-8"
+    },
+    {
+      "path": "publication/final-m3-handoff.json",
+      "sha256": "bb5b6535287f0fd5793cbbc4e380640e76498ed4ab8a797c989832b9458251c2",
+      "bytes": 4742,
+      "encoding": "utf-8"
+    },
+    {
+      "path": "publication/windows-v2-commit-and-push.json",
+      "sha256": "dc069ef3919c4bbdccd0f19301d43b41f0892bcc40464e0e89581ef193d4e723",
+      "bytes": 2477,
+      "encoding": "utf-8"
+    },
+    {
+      "path": "publication/windows-v2-final-commit-snapshot.json",
+      "sha256": "5d3217170e0c7edc1d067aa9e3bec750aa0a4285cbf57f9294d7356e4371162c",
+      "bytes": 26559,
+      "encoding": "utf-8"
+    },
+    {
+      "path": "publication/windows-v2-final-precommit-validation.json",
+      "sha256": "2cb2b266660ab8fd84f8454a45e1ae2b4eb2c57faeb64a3693034bc251ffb58f",
+      "bytes": 2053,
+      "encoding": "utf-8"
+    },
+    {
+      "path": "publication/windows-v2-final-staged.diff",
+      "sha256": "89d03d345ed42146f776c2133793c679f7e60fab78f4d44365cbbd071fcec38d",
+      "bytes": 2572061,
+      "encoding": "utf-8"
+    },
+    {
+      "path": "capture-final-ci.py",
+      "sha256": "1829580f97bcf42d115a1b6e12c838d8eef920cfef5f293507c0cd05d4de9ef4",
+      "bytes": 2679,
+      "encoding": "utf-8"
+    },
+    {
+      "path": "evidence/delivery-20261031-check.json",
+      "sha256": "72dc9a41ae8aab3e45e610c5acec0f35de2e4b2537ad23987b0698449a59c191",
+      "bytes": 735,
+      "encoding": "utf-8"
+    },
+    {
+      "path": "evidence/delivery-20261031-check.log",
+      "sha256": "a139aa52b82e10ad721904f5e97f350704c5642de7e9dc61e92bbf3154df0efb",
+      "bytes": 232,
+      "encoding": "utf-8"
+    }
+  ],
+  "remaining_scope": "Archive remaining formal publication evidence for this development branch. No source/test/configuration/workflow changes; no integration or merge of the separate audit branch.",
+  "documentation_validation": {
+    "command": [
+      "npm",
+      "run",
+      "check"
+    ],
+    "exit_code": 0,
+    "seconds": 7.577616051072255,
+    "log_sha256": "a139aa52b82e10ad721904f5e97f350704c5642de7e9dc61e92bbf3154df0efb",
+    "records_reconstructed_and_hashed": true
+  }
+}
