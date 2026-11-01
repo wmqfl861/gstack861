@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "label": "fix-pinned-source",
+  "recordedAt": "2026-10-30T15:31:57.533Z",
+  "executable": "C:\\Program Files\\nodejs\\node.exe",
+  "args": [
+    "--test",
+    "C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/.superpowers/m3-local-acceptance/aliases/verify-fixed.test.mjs"
+  ],
+  "cwd": "C:\\Users\\Administrator\\.zcode\\workspace\\9c06bcdc-025c-4764-9ec1-da6db48d1f77\\gstack861-m3-audit",
+  "durationMs": 10048,
+  "exitCode": 0,
+  "signal": null,
+  "stdout": "✔ pinned source fixture zcode, auxiliary augmentation false (1934.2291ms)\n✔ pinned source fixture zcode, auxiliary augmentation true (3156.7229ms)\n✔ pinned source fixture dsh, auxiliary augmentation false (1842.2707ms)\n✔ pinned source fixture dsh, auxiliary augmentation true (2743.9408ms)\nℹ tests 4\nℹ suites 0\nℹ pass 4\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 9910.6829\n",
+  "stderr": "",
+  "error": null,
+  "files": {
+    "src/aliases.mjs": "604476ff26830262f044066ad0f63d7f4a04184aee7ba6a4e78c2d78d7852511",
+    "test/aliases.test.mjs": "6ff6d86a9c4a9352858a5bc1a507eb903896da8f1a1b0abb2a0ce741c5cd2ae2",
+    "src/fs-utils.mjs": "0009a296f19807230ec2cf91b3a8e1a391e47bd2d6f36539f5f5152428725c0f"
+  },
+  "environment": "noncredential allowlist; GSTACK861_MODEL_CALL=0; temp confined to assigned aliases scratch"
+}

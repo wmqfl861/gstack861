@@ -1,0 +1,191 @@
+✔ rewrites only frontmatter name and copies verified auxiliary files (33.6139ms)
+✔ supports DSH staging contract without claiming host installation (14.9808ms)
+✔ refuses tampering, symlinks, malformed frontmatter and wrong host before output (27.2043ms)
+✔ refuses output overlap and preserves non-empty operator output (11.7744ms)
+✖ generates DSH profile with complete dependency chain and local adapter shim (35.925ms)
+✔ refuses existing output without touching operator files (10.4312ms)
+✔ refuses workspace-contained policy, symlinked adapter and missing skills root (27.5381ms)
+✔ rejects invalid profile name and malformed policy before creating output (10.3129ms)
+✔ the plugin declares the pinned Cordis surface: single systemPrompt inject (3.506ms)
+✔ apply indexes installed skills as a gstack861:skills section and returns its disposer (33.9006ms)
+✔ apply refuses activation when ctx.systemPrompt.section is unavailable (23.8727ms)
+✔ apply refuses a missing, relative or nonexistent skillsDir (17.9881ms)
+✔ apply refuses a corrupt or missing registry with zero sections (16.5201ms)
+✔ apply refuses any single damaged skill with zero sections injected (85.0688ms)
+✖ dsh-profile-stage CLI creates scaffold and never runs package manager (173.7979ms)
+✖ zcode config CLI previews without writes then applies and uninstalls explicitly (322.2408ms)
+✔ zcode CLI refuses policy under workspace before config write (157.0876ms)
+✖ merges workspace hook config while preserving unrelated settings and existing hooks (7.3256ms)
+✖ apply is idempotent and uninstall removes only the exact owned hook (6.7627ms)
+✖ optimistic concurrency refuses config changes between plan and apply (3.3364ms)
+✖ refuses malformed, symlinked, hardlinked and disabled configs (5.5445ms)
+✖ refuses symlinked .zcode directory and preserves foreign hooks on uninstall (6.7088ms)
+ℹ tests 22
+ℹ suites 0
+ℹ pass 14
+ℹ fail 8
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 848.2306
+
+✖ failing tests:
+
+test at test\dsh-profile.test.mjs:18:1
+✖ generates DSH profile with complete dependency chain and local adapter shim (35.925ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(fs.readFileSync(path.join(f.output,'plugins/gstack861-guard/index.mjs'),'utf8').includes(new URL('file://'+f.adapter).href))
+  
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/dsh-profile.test.mjs:27:9)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at test\host-setup-cli.test.mjs:21:1
+✖ dsh-profile-stage CLI creates scaffold and never runs package manager (173.7979ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(fs.existsSync(path.join(out,'plugins/gstack861-skills/index.mjs')))
+  
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/host-setup-cli.test.mjs:26:9)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at test\host-setup-cli.test.mjs:28:1
+✖ zcode config CLI previews without writes then applies and uninstalls explicitly (322.2408ms)
+  AssertionError [ERR_ASSERTION]: gstack861: ZCODE_CONFIG_BUSY
+  
+  
+  1 !== 0
+  
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/host-setup-cli.test.mjs:33:9)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test\zcode-profile.test.mjs:13:1
+✖ merges workspace hook config while preserving unrelated settings and existing hooks (7.3256ms)
+  Error: ABSOLUTE_PATH_REQUIRED
+      at fail (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/src/zcode-profile.mjs:6:30)
+      at planZcodeConfig (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/src/zcode-profile.mjs:51:99)
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:17:13)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+
+test at test\zcode-profile.test.mjs:23:1
+✖ apply is idempotent and uninstall removes only the exact owned hook (6.7627ms)
+  Error: ABSOLUTE_PATH_REQUIRED
+      at fail (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/src/zcode-profile.mjs:6:30)
+      at planZcodeConfig (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/src/zcode-profile.mjs:51:99)
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:24:27)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)
+
+test at test\zcode-profile.test.mjs:30:1
+✖ optimistic concurrency refuses config changes between plan and apply (3.3364ms)
+  Error: ABSOLUTE_PATH_REQUIRED
+      at fail (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/src/zcode-profile.mjs:6:30)
+      at planZcodeConfig (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/src/zcode-profile.mjs:51:99)
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:31:26)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at test\zcode-profile.test.mjs:35:1
+✖ refuses malformed, symlinked, hardlinked and disabled configs (5.5445ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /ZCODE_CONFIG_INVALID/. Input:
+  
+  'Error: ABSOLUTE_PATH_REQUIRED'
+  
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:37:37)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: Error: ABSOLUTE_PATH_REQUIRED
+        at fail (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/src/zcode-profile.mjs:6:30)
+        at planZcodeConfig (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/src/zcode-profile.mjs:51:99)
+        at file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:37:48
+        at getActual (node:assert:611:5)
+        at strict.throws (node:assert:759:24)
+        at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:37:37)
+        at Test.runInAsyncScope (node:async_hooks:227:14)
+        at Test.run (node:internal/test_runner/test:1402:25)
+        at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+        at Test.postRun (node:internal/test_runner/test:1542:19),
+    expected: /ZCODE_CONFIG_INVALID/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at test\zcode-profile.test.mjs:43:1
+✖ refuses symlinked .zcode directory and preserves foreign hooks on uninstall (6.7088ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /ZCODE_CONFIG_DIR_UNSAFE/. Input:
+  
+  'Error: ABSOLUTE_PATH_REQUIRED'
+  
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:46:9)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: Error: ABSOLUTE_PATH_REQUIRED
+        at fail (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/src/zcode-profile.mjs:6:30)
+        at planZcodeConfig (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/src/zcode-profile.mjs:51:99)
+        at file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:46:20
+        at getActual (node:assert:611:5)
+        at strict.throws (node:assert:759:24)
+        at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:46:9)
+        at Test.runInAsyncScope (node:async_hooks:227:14)
+        at Test.run (node:internal/test_runner/test:1402:25)
+        at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+        at Test.postRun (node:internal/test_runner/test:1542:19),
+    expected: /ZCODE_CONFIG_DIR_UNSAFE/,
+    operator: 'throws',
+    diff: 'simple'
+  }

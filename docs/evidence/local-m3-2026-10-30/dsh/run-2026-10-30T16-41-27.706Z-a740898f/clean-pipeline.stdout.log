@@ -1,0 +1,1 @@
+{"label":"clean-pipeline","status":"passed","toolBodyInvocations":{"write":2,"read":2},"controls":["allow-write","allow-read","deny-outside-scope","deny-git-protected","deny-runtime-corrupt-policy","allow-after-policy-recovery","read-after-policy-recovery"],"warningCount":0}

@@ -1,0 +1,162 @@
+{
+  "observedAt": "2026-10-30T21:44:19.675Z",
+  "endpoint": "repos/wmqfl861/gstack861/check-runs/124322840865/annotations?per_page=100",
+  "data": [
+    {
+      "path": ".github",
+      "blob_href": "https://github.com/wmqfl861/gstack861/blob/f4d1bd3cdff5f5fa4588038f67b41d627775fb81/.github",
+      "start_line": 2,
+      "start_column": null,
+      "end_line": 2,
+      "end_column": null,
+      "annotation_level": "warning",
+      "title": "",
+      "message": "Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683, actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/",
+      "raw_details": ""
+    },
+    {
+      "path": ".github",
+      "blob_href": "https://github.com/wmqfl861/gstack861/blob/f4d1bd3cdff5f5fa4588038f67b41d627775fb81/.github",
+      "start_line": 134,
+      "start_column": null,
+      "end_line": 134,
+      "end_column": null,
+      "annotation_level": "notice",
+      "title": "",
+      "message": "CI native metadata: {\"node\":\"22.16.0\",\"platform\":\"win32\",\"observations\":[{\"name\":\"source-file\",\"lstat\":{\"dev\":\"0\",\"ino\":\"281474976711578\",\"nlink\":\"1\",\"mode\":\"33206\",\"size\":\"10785\"},\"fstat\":{\"dev\":\"1041761684\",\"ino\":\"281474976711578\",\"nlink\":\"1\",\"mode\":\"33206\",\"size\":\"10785\"},\"stat\":{\"dev\":\"0\",\"ino\":\"281474976711578\",\"nlink\":\"1\",\"mode\":\"33206\",\"size\":\"10785\"},\"numberInode\":\"281474976711578\",\"numberInodeSafe\":true},{\"name\":\"created-file\",\"lstat\":{\"dev\":\"0\",\"ino\":\"281474976719121\",\"nlink\":\"1\",\"mode\":\"33206\",\"size\":\"18\"},\"fstat\":{\"dev\":\"1041761684\",\"ino\":\"281474976719121\",\"nlink\":\"1\",\"mode\":\"33206\",\"size\":\"18\"},\"stat\":{\"dev\":\"0\",\"ino\":\"281474976719121\",\"nlink\":\"1\",\"mode\":\"33206\",\"size\":\"18\"},\"numberInode\":\"281474976719121\",\"numberInodeSafe\":true}],\"directory\":{\"dev\":\"0\",\"ino\":\"281474976719120\",\"nlink\":\"1\",\"mode\":\"16822\",\"size\":\"0\"},\"cleanup\":{\"file\":\"removed\",\"directory\":\"removed\"}}",
+      "raw_details": ""
+    },
+    {
+      "path": ".github",
+      "blob_href": "https://github.com/wmqfl861/gstack861/blob/f4d1bd3cdff5f5fa4588038f67b41d627775fb81/.github",
+      "start_line": 133,
+      "start_column": null,
+      "end_line": 133,
+      "end_column": null,
+      "annotation_level": "notice",
+      "title": "",
+      "message": "CI diagnostic unavailable for ci-inventory.log: no recognized failing test block; see complete logs.",
+      "raw_details": ""
+    },
+    {
+      "path": ".github",
+      "blob_href": "https://github.com/wmqfl861/gstack861/blob/f4d1bd3cdff5f5fa4588038f67b41d627775fb81/.github",
+      "start_line": 132,
+      "start_column": null,
+      "end_line": 132,
+      "end_column": null,
+      "annotation_level": "notice",
+      "title": "",
+      "message": "CI diagnostic unavailable for ci-doctor.log: no recognized failing test block; see complete logs.",
+      "raw_details": ""
+    },
+    {
+      "path": ".github",
+      "blob_href": "https://github.com/wmqfl861/gstack861/blob/f4d1bd3cdff5f5fa4588038f67b41d627775fb81/.github",
+      "start_line": 131,
+      "start_column": null,
+      "end_line": 131,
+      "end_column": null,
+      "annotation_level": "notice",
+      "title": "",
+      "message": "CI diagnostic unavailable for ci-verify-offline.log: no recognized failing test block; see complete logs.",
+      "raw_details": ""
+    },
+    {
+      "path": ".github",
+      "blob_href": "https://github.com/wmqfl861/gstack861/blob/f4d1bd3cdff5f5fa4588038f67b41d627775fb81/.github",
+      "start_line": 130,
+      "start_column": null,
+      "end_line": 130,
+      "end_column": null,
+      "annotation_level": "notice",
+      "title": "",
+      "message": "CI diagnostic unavailable for ci-check.log: no recognized failing test block; see complete logs.",
+      "raw_details": ""
+    },
+    {
+      "path": ".github",
+      "blob_href": "https://github.com/wmqfl861/gstack861/blob/f4d1bd3cdff5f5fa4588038f67b41d627775fb81/.github",
+      "start_line": 104,
+      "start_column": null,
+      "end_line": 104,
+      "end_column": null,
+      "annotation_level": "failure",
+      "title": "",
+      "message": "ci-test.log: not ok 454 - R2 cleanup preserves a completed file when its verified contents cannot be read\n  ---\n  duration_ms: 369.6594\n  type: 'test'\n  location: 'D:\\\\a\\\\gstack861\\\\gstack861\\\\test\\\\install.test.mjs:1708:1'\n  failureType: 'testCodeFailure'\n  error: |-\n    unreadable ownership evidence cannot authorize deletion\n    \n    false !== true\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected: true\n  actual: false\n  operator: 'strictEqual'\n  stack: |-\n    TestContext.<anonymous> (file:///D:/a/gstack861/gstack861/test/install.test.mjs:1734:10)\n    Test.runInAsyncScope (node:async_hooks:214:14)\n    Test.run (node:internal/test_runner/test:1047:25)\n    Test.processPendingSubtests (node:internal/test_runner/test:744:18)\n    Test.postRun (node:internal/test_runner/test:1173:19)\n    Test.run (node:internal/test_runner/test:1101:12)\n    process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)\n  ...",
+      "raw_details": ""
+    },
+    {
+      "path": ".github",
+      "blob_href": "https://github.com/wmqfl861/gstack861/blob/f4d1bd3cdff5f5fa4588038f67b41d627775fb81/.github",
+      "start_line": 79,
+      "start_column": null,
+      "end_line": 79,
+      "end_column": null,
+      "annotation_level": "failure",
+      "title": "",
+      "message": "ci-test.log: not ok 275 - plain read cleanup never replaces the primary native read error\n  ---\n  duration_ms: 9.4439\n  type: 'test'\n  location: 'D:\\\\a\\\\gstack861\\\\gstack861\\\\test\\\\fs-utils.test.mjs:259:1'\n  failureType: 'testCodeFailure'\n  error: |-\n    The validation function is expected to return \"true\". Received false\n    \n    Caught error:\n    \n    Error: PATH_CHANGED\n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  stack: |-\n    file:///D:/a/gstack861/gstack861/test/fs-utils.test.mjs:267:12\n    metadataView (file:///D:/a/gstack861/gstack861/test/fs-utils.test.mjs:151:16)\n    TestContext.<anonymous> (file:///D:/a/gstack861/gstack861/test/fs-utils.test.mjs:263:3)\n    Test.runInAsyncScope (node:async_hooks:214:14)\n    Test.run (node:internal/test_runner/test:1047:25)\n    Test.processPendingSubtests (node:internal/test_runner/test:744:18)\n    Test.postRun (node:internal/test_runner/test:1173:19)\n    Test.run (node:internal/test_runner/test:1101:12)\n    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)\n  ...",
+      "raw_details": ""
+    },
+    {
+      "path": ".github",
+      "blob_href": "https://github.com/wmqfl861/gstack861/blob/f4d1bd3cdff5f5fa4588038f67b41d627775fb81/.github",
+      "start_line": 59,
+      "start_column": null,
+      "end_line": 59,
+      "end_column": null,
+      "annotation_level": "failure",
+      "title": "",
+      "message": "ci-test.log: not ok 87 - refuses changed generated bytes before reporting successful staging\n  ---\n  duration_ms: 274.479\n  type: 'test'\n  location: 'D:\\\\a\\\\gstack861\\\\gstack861\\\\test\\\\aliases.test.mjs:369:1'\n  failureType: 'testCodeFailure'\n  error: 'Missing expected exception.'\n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected:\n  operator: 'throws'\n  stack: |-\n    TestContext.<anonymous> (file:///D:/a/gstack861/gstack861/test/aliases.test.mjs:381:9)\n    Test.runInAsyncScope (node:async_hooks:214:14)\n    Test.run (node:internal/test_runner/test:1047:25)\n    Test.processPendingSubtests (node:internal/test_runner/test:744:18)\n    Test.postRun (node:internal/test_runner/test:1173:19)\n    Test.run (node:internal/test_runner/test:1101:12)\n    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)\n  ...",
+      "raw_details": ""
+    },
+    {
+      "path": ".github",
+      "blob_href": "https://github.com/wmqfl861/gstack861/blob/f4d1bd3cdff5f5fa4588038f67b41d627775fb81/.github",
+      "start_line": 41,
+      "start_column": null,
+      "end_line": 41,
+      "end_column": null,
+      "annotation_level": "failure",
+      "title": "",
+      "message": "ci-test.log: not ok 78 - refuses an output directory replaced immediately after a generated file closes\n  ---\n  duration_ms: 145.3124\n  type: 'test'\n  location: 'D:\\\\a\\\\gstack861\\\\gstack861\\\\test\\\\aliases.test.mjs:298:1'\n  failureType: 'testCodeFailure'\n  error: \"ENOENT: no such file or directory, open 'C:\\\\Users\\\\RUNNER~1\\\\AppData\\\\Local\\\\Temp\\\\g861-alias-kaQ7zF\\\\output\\\\connect-chrome\\\\operator.txt'\"\n  code: 'ENOENT'\n  stack: |-\n    Object.readFileSync (node:fs:442:20)\n    TestContext.<anonymous> (file:///D:/a/gstack861/gstack861/test/aliases.test.mjs:316:18)\n    Test.runInAsyncScope (node:async_hooks:214:14)\n    Test.run (node:internal/test_runner/test:1047:25)\n    Test.processPendingSubtests (node:internal/test_runner/test:744:18)\n    Test.postRun (node:internal/test_runner/test:1173:19)\n    Test.run (node:internal/test_runner/test:1101:12)\n    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)\n  ...",
+      "raw_details": ""
+    },
+    {
+      "path": ".github",
+      "blob_href": "https://github.com/wmqfl861/gstack861/blob/f4d1bd3cdff5f5fa4588038f67b41d627775fb81/.github",
+      "start_line": 23,
+      "start_column": null,
+      "end_line": 23,
+      "end_column": null,
+      "annotation_level": "failure",
+      "title": "",
+      "message": "ci-test.log: not ok 77 - refuses a created auxiliary directory replacement before the next file\n  ---\n  duration_ms: 258.8023\n  type: 'test'\n  location: 'D:\\\\a\\\\gstack861\\\\gstack861\\\\test\\\\aliases.test.mjs:276:1'\n  failureType: 'testCodeFailure'\n  error: \"ENOENT: no such file or directory, open 'C:\\\\Users\\\\RUNNER~1\\\\AppData\\\\Local\\\\Temp\\\\g861-alias-dUWXMF\\\\output\\\\connect-chrome\\\\sections\\\\operator.txt'\"\n  code: 'ENOENT'\n  stack: |-\n    Object.readFileSync (node:fs:442:20)\n    TestContext.<anonymous> (file:///D:/a/gstack861/gstack861/test/aliases.test.mjs:295:18)\n    Test.runInAsyncScope (node:async_hooks:214:14)\n    Test.run (node:internal/test_runner/test:1047:25)\n    Test.processPendingSubtests (node:internal/test_runner/test:744:18)\n    Test.postRun (node:internal/test_runner/test:1173:19)\n    Test.run (node:internal/test_runner/test:1101:12)\n    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)\n  ...",
+      "raw_details": ""
+    },
+    {
+      "path": ".github",
+      "blob_href": "https://github.com/wmqfl861/gstack861/blob/f4d1bd3cdff5f5fa4588038f67b41d627775fb81/.github",
+      "start_line": 5,
+      "start_column": null,
+      "end_line": 5,
+      "end_column": null,
+      "annotation_level": "failure",
+      "title": "",
+      "message": "ci-test.log: not ok 76 - refuses an alias directory replacement between generated writes\n  ---\n  duration_ms: 153.0592\n  type: 'test'\n  location: 'D:\\\\a\\\\gstack861\\\\gstack861\\\\test\\\\aliases.test.mjs:252:1'\n  failureType: 'testCodeFailure'\n  error: \"ENOENT: no such file or directory, open 'C:\\\\Users\\\\RUNNER~1\\\\AppData\\\\Local\\\\Temp\\\\g861-alias-roSKHL\\\\output\\\\connect-chrome\\\\operator.txt'\"\n  code: 'ENOENT'\n  stack: |-\n    Object.readFileSync (node:fs:442:20)\n    TestContext.<anonymous> (file:///D:/a/gstack861/gstack861/test/aliases.test.mjs:273:18)\n    Test.runInAsyncScope (node:async_hooks:214:14)\n    Test.run (node:internal/test_runner/test:1047:25)\n    Test.processPendingSubtests (node:internal/test_runner/test:744:18)\n    Test.postRun (node:internal/test_runner/test:1173:19)\n    Test.run (node:internal/test_runner/test:1101:12)\n    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)\n  ...",
+      "raw_details": ""
+    },
+    {
+      "path": ".github",
+      "blob_href": "https://github.com/wmqfl861/gstack861/blob/f4d1bd3cdff5f5fa4588038f67b41d627775fb81/.github",
+      "start_line": 8991,
+      "start_column": null,
+      "end_line": 8991,
+      "end_column": null,
+      "annotation_level": "failure",
+      "title": "",
+      "message": "Process completed with exit code 1.",
+      "raw_details": ""
+    }
+  ]
+}

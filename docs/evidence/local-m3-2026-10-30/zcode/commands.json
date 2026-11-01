@@ -1,0 +1,1195 @@
+[
+  {
+    "name": "audit-head",
+    "executable": "git",
+    "args": [
+      "-C",
+      "<REPO>",
+      "rev-parse",
+      "HEAD"
+    ],
+    "cwd": "<REPO>",
+    "durationMs": 77,
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "680b2f19b2dbef8831e3be1fd996203589b5c41d\n",
+    "stderr": ""
+  },
+  {
+    "name": "focused-original-tests",
+    "executable": "<NODE>",
+    "args": [
+      "--test",
+      "--test-concurrency=1",
+      "--test-name-pattern=zcode|workspace hook|apply is|optimistic|refuses",
+      "<REPO>\\test\\zcode-profile.test.mjs",
+      "<REPO>\\test\\host-setup-cli.test.mjs"
+    ],
+    "cwd": "<REPO>",
+    "durationMs": 951,
+    "status": 1,
+    "signal": null,
+    "error": null,
+    "stdout": "✖ zcode config CLI previews without writes then applies and uninstalls explicitly (322.2491ms)\n✔ zcode CLI refuses policy under workspace before config write (145.8943ms)\n✖ merges workspace hook config while preserving unrelated settings and existing hooks (6.909ms)\n✖ apply is idempotent and uninstall removes only the exact owned hook (5.0394ms)\n✖ optimistic concurrency refuses config changes between plan and apply (2.7157ms)\n✖ refuses malformed, symlinked, hardlinked and disabled configs (5.5607ms)\n✖ refuses symlinked .zcode directory and preserves foreign hooks on uninstall (6.1461ms)\nℹ tests 7\nℹ suites 0\nℹ pass 1\nℹ fail 6\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 816.7141\n\n✖ failing tests:\n\ntest at test\\host-setup-cli.test.mjs:28:1\n✖ zcode config CLI previews without writes then applies and uninstalls explicitly (322.2491ms)\n  AssertionError [ERR_ASSERTION]: gstack861: ZCODE_CONFIG_BUSY\n  \n  \n  1 !== 0\n  \n      at TestContext.<anonymous> (file:///<REPO>/test/host-setup-cli.test.mjs:33:9)\n      at Test.runInAsyncScope (node:async_hooks:227:14)\n      at Test.run (node:internal/test_runner/test:1402:25)\n      at Test.start (node:internal/test_runner/test:1262:17)\n      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {\n    generatedMessage: false,\n    code: 'ERR_ASSERTION',\n    actual: 1,\n    expected: 0,\n    operator: 'strictEqual',\n    diff: 'simple'\n  }\n\ntest at test\\zcode-profile.test.mjs:13:1\n✖ merges workspace hook config while preserving unrelated settings and existing hooks (6.909ms)\n  Error: ABSOLUTE_PATH_REQUIRED\n      at fail (file:///<REPO>/src/zcode-profile.mjs:6:30)\n      at planZcodeConfig (file:///<REPO>/src/zcode-profile.mjs:51:99)\n      at TestContext.<anonymous> (file:///<REPO>/test/zcode-profile.test.mjs:17:13)\n      at Test.runInAsyncScope (node:async_hooks:227:14)\n      at Test.run (node:internal/test_runner/test:1402:25)\n      at Test.start (node:internal/test_runner/test:1262:17)\n      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)\n\ntest at test\\zcode-profile.test.mjs:23:1\n✖ apply is idempotent and uninstall removes only the exact owned hook (5.0394ms)\n  Error: ABSOLUTE_PATH_REQUIRED\n      at fail (file:///<REPO>/src/zcode-profile.mjs:6:30)\n      at planZcodeConfig (file:///<REPO>/src/zcode-profile.mjs:51:99)\n      at TestContext.<anonymous> (file:///<REPO>/test/zcode-profile.test.mjs:24:27)\n      at Test.runInAsyncScope (node:async_hooks:227:14)\n      at Test.run (node:internal/test_runner/test:1402:25)\n      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)\n      at Test.postRun (node:internal/test_runner/test:1542:19)\n      at Test.run (node:internal/test_runner/test:1467:12)\n      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)\n\ntest at test\\zcode-profile.test.mjs:30:1\n✖ optimistic concurrency refuses config changes between plan and apply (2.7157ms)\n  Error: ABSOLUTE_PATH_REQUIRED\n      at fail (file:///<REPO>/src/zcode-profile.mjs:6:30)\n      at planZcodeConfig (file:///<REPO>/src/zcode-profile.mjs:51:99)\n      at TestContext.<anonymous> (file:///<REPO>/test/zcode-profile.test.mjs:31:26)\n      at Test.runInAsyncScope (node:async_hooks:227:14)\n      at Test.run (node:internal/test_runner/test:1402:25)\n      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)\n      at Test.postRun (node:internal/test_runner/test:1542:19)\n      at Test.run (node:internal/test_runner/test:1467:12)\n      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)\n\ntest at test\\zcode-profile.test.mjs:35:1\n✖ refuses malformed, symlinked, hardlinked and disabled configs (5.5607ms)\n  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /ZCODE_CONFIG_INVALID/. Input:\n  \n  'Error: ABSOLUTE_PATH_REQUIRED'\n  \n      at TestContext.<anonymous> (file:///<REPO>/test/zcode-profile.test.mjs:37:37)\n      at Test.runInAsyncScope (node:async_hooks:227:14)\n      at Test.run (node:internal/test_runner/test:1402:25)\n      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)\n      at Test.postRun (node:internal/test_runner/test:1542:19)\n      at Test.run (node:internal/test_runner/test:1467:12)\n      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: Error: ABSOLUTE_PATH_REQUIRED\n        at fail (file:///<REPO>/src/zcode-profile.mjs:6:30)\n        at planZcodeConfig (file:///<REPO>/src/zcode-profile.mjs:51:99)\n        at file:///<REPO>/test/zcode-profile.test.mjs:37:48\n        at getActual (node:assert:611:5)\n        at strict.throws (node:assert:759:24)\n        at TestContext.<anonymous> (file:///<REPO>/test/zcode-profile.test.mjs:37:37)\n        at Test.runInAsyncScope (node:async_hooks:227:14)\n        at Test.run (node:internal/test_runner/test:1402:25)\n        at Test.processPendingSubtests (node:internal/test_runner/test:974:18)\n        at Test.postRun (node:internal/test_runner/test:1542:19),\n    expected: /ZCODE_CONFIG_INVALID/,\n    operator: 'throws',\n    diff: 'simple'\n  }\n\ntest at test\\zcode-profile.test.mjs:43:1\n✖ refuses symlinked .zcode directory and preserves foreign hooks on uninstall (6.1461ms)\n  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /ZCODE_CONFIG_DIR_UNSAFE/. Input:\n  \n  'Error: ABSOLUTE_PATH_REQUIRED'\n  \n      at TestContext.<anonymous> (file:///<REPO>/test/zcode-profile.test.mjs:46:9)\n      at Test.runInAsyncScope (node:async_hooks:227:14)\n      at Test.run (node:internal/test_runner/test:1402:25)\n      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)\n      at Test.postRun (node:internal/test_runner/test:1542:19)\n      at Test.run (node:internal/test_runner/test:1467:12)\n      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: Error: ABSOLUTE_PATH_REQUIRED\n        at fail (file:///<REPO>/src/zcode-profile.mjs:6:30)\n        at planZcodeConfig (file:///<REPO>/src/zcode-profile.mjs:51:99)\n        at file:///<REPO>/test/zcode-profile.test.mjs:46:20\n        at getActual (node:assert:611:5)\n        at strict.throws (node:assert:759:24)\n        at TestContext.<anonymous> (file:///<REPO>/test/zcode-profile.test.mjs:46:9)\n        at Test.runInAsyncScope (node:async_hooks:227:14)\n        at Test.run (node:internal/test_runner/test:1402:25)\n        at Test.processPendingSubtests (node:internal/test_runner/test:974:18)\n        at Test.postRun (node:internal/test_runner/test:1542:19),\n    expected: /ZCODE_CONFIG_DIR_UNSAFE/,\n    operator: 'throws',\n    diff: 'simple'\n  }\n",
+    "stderr": ""
+  },
+  {
+    "name": "fresh-cli-git-init",
+    "executable": "git",
+    "args": [
+      "-C",
+      "<RUN>\\fresh-cli\\workspace",
+      "init",
+      "--quiet"
+    ],
+    "cwd": "<REPO>",
+    "durationMs": 86,
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "name": "fresh-cli-install-preview",
+    "executable": "<NODE>",
+    "args": [
+      "<REPO>\\bin\\gstack861.mjs",
+      "zcode-config-install",
+      "--workspace",
+      "<RUN>\\fresh-cli\\workspace",
+      "--policy",
+      "<RUN>\\fresh-cli\\policy.json"
+    ],
+    "cwd": "<REPO>",
+    "durationMs": 197,
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "{\n  \"changed\": true,\n  \"path\": \"<RUN>\\\\fresh-cli\\\\workspace\\\\.zcode\\\\config.json\",\n  \"preview\": {\n    \"hooks\": {\n      \"enabled\": true,\n      \"events\": {\n        \"PreToolUse\": [\n          {\n            \"matcher\": \".*\",\n            \"hooks\": [\n              {\n                \"type\": \"process\",\n                \"command\": \"<NODE>\",\n                \"args\": [\n                  \"<REPO>\\\\bin\\\\gstack861.mjs\",\n                  \"hook\",\n                  \"zcode\",\n                  \"--policy\",\n                  \"<RUN>\\\\fresh-cli\\\\policy.json\"\n                ],\n                \"timeoutMs\": 10000\n              }\n            ]\n          }\n        ]\n      }\n    }\n  }\n}\n",
+    "stderr": ""
+  },
+  {
+    "name": "fresh-cli-install-apply",
+    "executable": "<NODE>",
+    "args": [
+      "<REPO>\\bin\\gstack861.mjs",
+      "zcode-config-install",
+      "--workspace",
+      "<RUN>\\fresh-cli\\workspace",
+      "--policy",
+      "<RUN>\\fresh-cli\\policy.json",
+      "--apply"
+    ],
+    "cwd": "<REPO>",
+    "durationMs": 199,
+    "status": 1,
+    "signal": null,
+    "error": null,
+    "stdout": "",
+    "stderr": "gstack861: ZCODE_CONFIG_BUSY\n"
+  },
+  {
+    "name": "existing-lifecycle-git-init",
+    "executable": "git",
+    "args": [
+      "-C",
+      "<RUN>\\existing-lifecycle\\workspace",
+      "init",
+      "--quiet"
+    ],
+    "cwd": "<REPO>",
+    "durationMs": 107,
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "name": "existing-lifecycle-install-preview",
+    "executable": "<NODE>",
+    "args": [
+      "<REPO>\\bin\\gstack861.mjs",
+      "zcode-config-install",
+      "--workspace",
+      "<RUN>\\existing-lifecycle\\workspace",
+      "--policy",
+      "<RUN>\\existing-lifecycle\\policy.json"
+    ],
+    "cwd": "<REPO>",
+    "durationMs": 156,
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "{\n  \"changed\": true,\n  \"path\": \"<RUN>\\\\existing-lifecycle\\\\workspace\\\\.zcode\\\\config.json\",\n  \"preview\": {\n    \"theme\": \"dark\",\n    \"nested\": {\n      \"retain\": [\n        \"x\",\n        2\n      ]\n    },\n    \"hooks\": {\n      \"enabled\": true,\n      \"events\": {\n        \"PreToolUse\": [\n          {\n            \"matcher\": \"Write\",\n            \"hooks\": [\n              {\n                \"type\": \"command\",\n                \"command\": \"foreign-hook-fixture\"\n              }\n            ]\n          },\n          {\n            \"matcher\": \".*\",\n            \"hooks\": [\n              {\n                \"type\": \"process\",\n                \"command\": \"<NODE>\",\n                \"args\": [\n                  \"<REPO>\\\\bin\\\\gstack861.mjs\",\n                  \"hook\",\n                  \"zcode\",\n                  \"--policy\",\n                  \"<RUN>\\\\existing-lifecycle\\\\policy.json\"\n                ],\n                \"timeoutMs\": 10000\n              }\n            ]\n          }\n        ],\n        \"Stop\": [\n          {\n            \"matcher\": \".*\",\n            \"hooks\": [\n              {\n                \"type\": \"command\",\n                \"command\": \"foreign-stop-fixture\"\n              }\n            ]\n          }\n        ]\n      }\n    }\n  }\n}\n",
+    "stderr": ""
+  },
+  {
+    "name": "existing-lifecycle-install-apply",
+    "executable": "<NODE>",
+    "args": [
+      "<REPO>\\bin\\gstack861.mjs",
+      "zcode-config-install",
+      "--workspace",
+      "<RUN>\\existing-lifecycle\\workspace",
+      "--policy",
+      "<RUN>\\existing-lifecycle\\policy.json",
+      "--apply"
+    ],
+    "cwd": "<REPO>",
+    "durationMs": 185,
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "{\n  \"changed\": true,\n  \"path\": \"<RUN>\\\\existing-lifecycle\\\\workspace\\\\.zcode\\\\config.json\"\n}\n",
+    "stderr": ""
+  },
+  {
+    "name": "existing-lifecycle-install-apply",
+    "executable": "<NODE>",
+    "args": [
+      "<REPO>\\bin\\gstack861.mjs",
+      "zcode-config-install",
+      "--workspace",
+      "<RUN>\\existing-lifecycle\\workspace",
+      "--policy",
+      "<RUN>\\existing-lifecycle\\policy.json",
+      "--apply"
+    ],
+    "cwd": "<REPO>",
+    "durationMs": 180,
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "{\n  \"changed\": false,\n  \"path\": \"<RUN>\\\\existing-lifecycle\\\\workspace\\\\.zcode\\\\config.json\"\n}\n",
+    "stderr": ""
+  },
+  {
+    "name": "existing-lifecycle-uninstall-preview",
+    "executable": "<NODE>",
+    "args": [
+      "<REPO>\\bin\\gstack861.mjs",
+      "zcode-config-uninstall",
+      "--workspace",
+      "<RUN>\\existing-lifecycle\\workspace",
+      "--policy",
+      "<RUN>\\existing-lifecycle\\policy.json"
+    ],
+    "cwd": "<REPO>",
+    "durationMs": 155,
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "{\n  \"changed\": true,\n  \"path\": \"<RUN>\\\\existing-lifecycle\\\\workspace\\\\.zcode\\\\config.json\",\n  \"preview\": {\n    \"theme\": \"dark\",\n    \"nested\": {\n      \"retain\": [\n        \"x\",\n        2\n      ]\n    },\n    \"hooks\": {\n      \"enabled\": true,\n      \"events\": {\n        \"PreToolUse\": [\n          {\n            \"matcher\": \"Write\",\n            \"hooks\": [\n              {\n                \"type\": \"command\",\n                \"command\": \"foreign-hook-fixture\"\n              }\n            ]\n          }\n        ],\n        \"Stop\": [\n          {\n            \"matcher\": \".*\",\n            \"hooks\": [\n              {\n                \"type\": \"command\",\n                \"command\": \"foreign-stop-fixture\"\n              }\n            ]\n          }\n        ]\n      }\n    }\n  }\n}\n",
+    "stderr": ""
+  },
+  {
+    "name": "existing-lifecycle-uninstall-apply",
+    "executable": "<NODE>",
+    "args": [
+      "<REPO>\\bin\\gstack861.mjs",
+      "zcode-config-uninstall",
+      "--workspace",
+      "<RUN>\\existing-lifecycle\\workspace",
+      "--policy",
+      "<RUN>\\existing-lifecycle\\policy.json",
+      "--apply"
+    ],
+    "cwd": "<REPO>",
+    "durationMs": 156,
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "{\n  \"changed\": true,\n  \"path\": \"<RUN>\\\\existing-lifecycle\\\\workspace\\\\.zcode\\\\config.json\"\n}\n",
+    "stderr": ""
+  },
+  {
+    "name": "enabled-ownership-no-hooks-git-init",
+    "executable": "git",
+    "args": [
+      "-C",
+      "<RUN>\\enabled-ownership-no-hooks\\workspace",
+      "init",
+      "--quiet"
+    ],
+    "cwd": "<REPO>",
+    "durationMs": 79,
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "name": "enabled-ownership-empty-hooks-git-init",
+    "executable": "git",
+    "args": [
+      "-C",
+      "<RUN>\\enabled-ownership-empty-hooks\\workspace",
+      "init",
+      "--quiet"
+    ],
+    "cwd": "<REPO>",
+    "durationMs": 81,
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "name": "enabled-ownership-enabled-true-git-init",
+    "executable": "git",
+    "args": [
+      "-C",
+      "<RUN>\\enabled-ownership-enabled-true\\workspace",
+      "init",
+      "--quiet"
+    ],
+    "cwd": "<REPO>",
+    "durationMs": 82,
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "name": "enabled-ownership-foreign-hook-no-enabled-git-init",
+    "executable": "git",
+    "args": [
+      "-C",
+      "<RUN>\\enabled-ownership-foreign-hook-no-enabled\\workspace",
+      "init",
+      "--quiet"
+    ],
+    "cwd": "<REPO>",
+    "durationMs": 85,
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "name": "fresh-precreated-zdir-lifecycle-git-init",
+    "executable": "git",
+    "args": [
+      "-C",
+      "<RUN>\\fresh-precreated-zdir-lifecycle\\workspace",
+      "init",
+      "--quiet"
+    ],
+    "cwd": "<REPO>",
+    "durationMs": 97,
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "name": "exact-entry-identity-git-init",
+    "executable": "git",
+    "args": [
+      "-C",
+      "<RUN>\\exact-entry-identity\\workspace",
+      "init",
+      "--quiet"
+    ],
+    "cwd": "<REPO>",
+    "durationMs": 92,
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "name": "preexisting-identical-hook-git-init",
+    "executable": "git",
+    "args": [
+      "-C",
+      "<RUN>\\preexisting-identical-hook\\workspace",
+      "init",
+      "--quiet"
+    ],
+    "cwd": "<REPO>",
+    "durationMs": 84,
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "name": "stale-semantic-edit-git-init",
+    "executable": "git",
+    "args": [
+      "-C",
+      "<RUN>\\stale-semantic-edit\\workspace",
+      "init",
+      "--quiet"
+    ],
+    "cwd": "<REPO>",
+    "durationMs": 94,
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "name": "stale-format-only-git-init",
+    "executable": "git",
+    "args": [
+      "-C",
+      "<RUN>\\stale-format-only\\workspace",
+      "init",
+      "--quiet"
+    ],
+    "cwd": "<REPO>",
+    "durationMs": 98,
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "name": "stale-delete-empty-git-init",
+    "executable": "git",
+    "args": [
+      "-C",
+      "<RUN>\\stale-delete-empty\\workspace",
+      "init",
+      "--quiet"
+    ],
+    "cwd": "<REPO>",
+    "durationMs": 84,
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "name": "stale-create-empty-git-init",
+    "executable": "git",
+    "args": [
+      "-C",
+      "<RUN>\\stale-create-empty\\workspace",
+      "init",
+      "--quiet"
+    ],
+    "cwd": "<REPO>",
+    "durationMs": 96,
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "name": "stale-replace-identical-git-init",
+    "executable": "git",
+    "args": [
+      "-C",
+      "<RUN>\\stale-replace-identical\\workspace",
+      "init",
+      "--quiet"
+    ],
+    "cwd": "<REPO>",
+    "durationMs": 100,
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "name": "bad-config-malformed-json-git-init",
+    "executable": "git",
+    "args": [
+      "-C",
+      "<RUN>\\bad-config-malformed-json\\workspace",
+      "init",
+      "--quiet"
+    ],
+    "cwd": "<REPO>",
+    "durationMs": 96,
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "name": "bad-config-array-config-git-init",
+    "executable": "git",
+    "args": [
+      "-C",
+      "<RUN>\\bad-config-array-config\\workspace",
+      "init",
+      "--quiet"
+    ],
+    "cwd": "<REPO>",
+    "durationMs": 94,
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "name": "bad-config-hooks-array-git-init",
+    "executable": "git",
+    "args": [
+      "-C",
+      "<RUN>\\bad-config-hooks-array\\workspace",
+      "init",
+      "--quiet"
+    ],
+    "cwd": "<REPO>",
+    "durationMs": 90,
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "name": "bad-config-disabled-git-init",
+    "executable": "git",
+    "args": [
+      "-C",
+      "<RUN>\\bad-config-disabled\\workspace",
+      "init",
+      "--quiet"
+    ],
+    "cwd": "<REPO>",
+    "durationMs": 106,
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "name": "bad-config-enabled-string-git-init",
+    "executable": "git",
+    "args": [
+      "-C",
+      "<RUN>\\bad-config-enabled-string\\workspace",
+      "init",
+      "--quiet"
+    ],
+    "cwd": "<REPO>",
+    "durationMs": 86,
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "name": "bad-config-enabled-null-git-init",
+    "executable": "git",
+    "args": [
+      "-C",
+      "<RUN>\\bad-config-enabled-null\\workspace",
+      "init",
+      "--quiet"
+    ],
+    "cwd": "<REPO>",
+    "durationMs": 88,
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "name": "bad-config-hooks-null-git-init",
+    "executable": "git",
+    "args": [
+      "-C",
+      "<RUN>\\bad-config-hooks-null\\workspace",
+      "init",
+      "--quiet"
+    ],
+    "cwd": "<REPO>",
+    "durationMs": 82,
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "name": "bad-config-events-null-git-init",
+    "executable": "git",
+    "args": [
+      "-C",
+      "<RUN>\\bad-config-events-null\\workspace",
+      "init",
+      "--quiet"
+    ],
+    "cwd": "<REPO>",
+    "durationMs": 94,
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "name": "bad-config-events-array-git-init",
+    "executable": "git",
+    "args": [
+      "-C",
+      "<RUN>\\bad-config-events-array\\workspace",
+      "init",
+      "--quiet"
+    ],
+    "cwd": "<REPO>",
+    "durationMs": 83,
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "name": "bad-config-pretooluse-object-git-init",
+    "executable": "git",
+    "args": [
+      "-C",
+      "<RUN>\\bad-config-pretooluse-object\\workspace",
+      "init",
+      "--quiet"
+    ],
+    "cwd": "<REPO>",
+    "durationMs": 87,
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "name": "bad-config-foreign-event-nonarray-git-init",
+    "executable": "git",
+    "args": [
+      "-C",
+      "<RUN>\\bad-config-foreign-event-nonarray\\workspace",
+      "init",
+      "--quiet"
+    ],
+    "cwd": "<REPO>",
+    "durationMs": 84,
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "name": "bad-config-invalid-entry-types-git-init",
+    "executable": "git",
+    "args": [
+      "-C",
+      "<RUN>\\bad-config-invalid-entry-types\\workspace",
+      "init",
+      "--quiet"
+    ],
+    "cwd": "<REPO>",
+    "durationMs": 80,
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "name": "config-hardlink-git-init",
+    "executable": "git",
+    "args": [
+      "-C",
+      "<RUN>\\config-hardlink\\workspace",
+      "init",
+      "--quiet"
+    ],
+    "cwd": "<REPO>",
+    "durationMs": 75,
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "name": "config-symlink-git-init",
+    "executable": "git",
+    "args": [
+      "-C",
+      "<RUN>\\config-symlink\\workspace",
+      "init",
+      "--quiet"
+    ],
+    "cwd": "<REPO>",
+    "durationMs": 80,
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "name": "config-hardlink-after-plan-git-init",
+    "executable": "git",
+    "args": [
+      "-C",
+      "<RUN>\\config-hardlink-after-plan\\workspace",
+      "init",
+      "--quiet"
+    ],
+    "cwd": "<REPO>",
+    "durationMs": 77,
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "name": "missing-workspace-uninstall-git-init",
+    "executable": "git",
+    "args": [
+      "-C",
+      "<RUN>\\missing-workspace-uninstall\\workspace",
+      "init",
+      "--quiet"
+    ],
+    "cwd": "<REPO>",
+    "durationMs": 82,
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "name": "missing-workspace-uninstall-uninstall-preview",
+    "executable": "<NODE>",
+    "args": [
+      "<REPO>\\bin\\gstack861.mjs",
+      "zcode-config-uninstall",
+      "--workspace",
+      "<RUN>\\missing-workspace-uninstall\\missing-workspace",
+      "--policy",
+      "<RUN>\\missing-workspace-uninstall\\policy.json"
+    ],
+    "cwd": "<REPO>",
+    "durationMs": 210,
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "{\n  \"changed\": false,\n  \"path\": \"<RUN>\\\\missing-workspace-uninstall\\\\missing-workspace\\\\.zcode\\\\config.json\",\n  \"preview\": {}\n}\n",
+    "stderr": ""
+  },
+  {
+    "name": "workspace-junction-uninstall-git-init",
+    "executable": "git",
+    "args": [
+      "-C",
+      "<RUN>\\workspace-junction-uninstall\\workspace",
+      "init",
+      "--quiet"
+    ],
+    "cwd": "<REPO>",
+    "durationMs": 85,
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "name": "zcode-junction-uninstall-git-init",
+    "executable": "git",
+    "args": [
+      "-C",
+      "<RUN>\\zcode-junction-uninstall\\workspace",
+      "init",
+      "--quiet"
+    ],
+    "cwd": "<REPO>",
+    "durationMs": 79,
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "name": "ancestor-junction-install-git-init",
+    "executable": "git",
+    "args": [
+      "-C",
+      "<RUN>\\ancestor-junction-install\\workspace",
+      "init",
+      "--quiet"
+    ],
+    "cwd": "<REPO>",
+    "durationMs": 80,
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "name": "workspace-swapped-after-plan-git-init",
+    "executable": "git",
+    "args": [
+      "-C",
+      "<RUN>\\workspace-swapped-after-plan\\workspace",
+      "init",
+      "--quiet"
+    ],
+    "cwd": "<REPO>",
+    "durationMs": 86,
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "name": "workspace-plain-replaced-after-plan-git-init",
+    "executable": "git",
+    "args": [
+      "-C",
+      "<RUN>\\workspace-plain-replaced-after-plan\\workspace",
+      "init",
+      "--quiet"
+    ],
+    "cwd": "<REPO>",
+    "durationMs": 88,
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "name": "zcode-swapped-after-plan-git-init",
+    "executable": "git",
+    "args": [
+      "-C",
+      "<RUN>\\zcode-swapped-after-plan\\workspace",
+      "init",
+      "--quiet"
+    ],
+    "cwd": "<REPO>",
+    "durationMs": 85,
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "name": "zcode-swapped-at-temp-write-git-init",
+    "executable": "git",
+    "args": [
+      "-C",
+      "<RUN>\\zcode-swapped-at-temp-write\\workspace",
+      "init",
+      "--quiet"
+    ],
+    "cwd": "<REPO>",
+    "durationMs": 86,
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "name": "mutable-plan-content-git-init",
+    "executable": "git",
+    "args": [
+      "-C",
+      "<RUN>\\mutable-plan-content\\workspace",
+      "init",
+      "--quiet"
+    ],
+    "cwd": "<REPO>",
+    "durationMs": 85,
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "name": "plan-path-outside-workspace-git-init",
+    "executable": "git",
+    "args": [
+      "-C",
+      "<RUN>\\plan-path-outside-workspace\\workspace",
+      "init",
+      "--quiet"
+    ],
+    "cwd": "<REPO>",
+    "durationMs": 86,
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "name": "io-read-eacces-git-init",
+    "executable": "git",
+    "args": [
+      "-C",
+      "<RUN>\\io-read-eacces\\workspace",
+      "init",
+      "--quiet"
+    ],
+    "cwd": "<REPO>",
+    "durationMs": 82,
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "name": "io-write-enospc-partial-git-init",
+    "executable": "git",
+    "args": [
+      "-C",
+      "<RUN>\\io-write-enospc-partial\\workspace",
+      "init",
+      "--quiet"
+    ],
+    "cwd": "<REPO>",
+    "durationMs": 98,
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "name": "io-rename-eacces-git-init",
+    "executable": "git",
+    "args": [
+      "-C",
+      "<RUN>\\io-rename-eacces\\workspace",
+      "init",
+      "--quiet"
+    ],
+    "cwd": "<REPO>",
+    "durationMs": 85,
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "name": "active-lock-git-init",
+    "executable": "git",
+    "args": [
+      "-C",
+      "<RUN>\\active-lock\\workspace",
+      "init",
+      "--quiet"
+    ],
+    "cwd": "<REPO>",
+    "durationMs": 110,
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "name": "cli-mismatched-policy-workspace-git-init",
+    "executable": "git",
+    "args": [
+      "-C",
+      "<RUN>\\cli-mismatched-policy-workspace\\workspace",
+      "init",
+      "--quiet"
+    ],
+    "cwd": "<REPO>",
+    "durationMs": 93,
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "name": "cli-mismatched-policy-workspace-install-preview",
+    "executable": "<NODE>",
+    "args": [
+      "<REPO>\\bin\\gstack861.mjs",
+      "zcode-config-install",
+      "--workspace",
+      "<RUN>\\cli-mismatched-policy-workspace\\workspace",
+      "--policy",
+      "<RUN>\\cli-mismatched-policy-workspace\\workspace\\foreign-workspace-policy.json"
+    ],
+    "cwd": "<REPO>",
+    "durationMs": 164,
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "{\n  \"changed\": true,\n  \"path\": \"<RUN>\\\\cli-mismatched-policy-workspace\\\\workspace\\\\.zcode\\\\config.json\",\n  \"preview\": {\n    \"hooks\": {\n      \"enabled\": true,\n      \"events\": {\n        \"PreToolUse\": [\n          {\n            \"matcher\": \".*\",\n            \"hooks\": [\n              {\n                \"type\": \"process\",\n                \"command\": \"<NODE>\",\n                \"args\": [\n                  \"<REPO>\\\\bin\\\\gstack861.mjs\",\n                  \"hook\",\n                  \"zcode\",\n                  \"--policy\",\n                  \"<RUN>\\\\cli-mismatched-policy-workspace\\\\workspace\\\\foreign-workspace-policy.json\"\n                ],\n                \"timeoutMs\": 10000\n              }\n            ]\n          }\n        ]\n      }\n    }\n  }\n}\n",
+    "stderr": ""
+  },
+  {
+    "name": "cli-mismatched-policy-workspace-install-apply",
+    "executable": "<NODE>",
+    "args": [
+      "<REPO>\\bin\\gstack861.mjs",
+      "zcode-config-install",
+      "--workspace",
+      "<RUN>\\cli-mismatched-policy-workspace\\workspace",
+      "--policy",
+      "<RUN>\\cli-mismatched-policy-workspace\\workspace\\foreign-workspace-policy.json",
+      "--apply"
+    ],
+    "cwd": "<REPO>",
+    "durationMs": 170,
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "{\n  \"changed\": true,\n  \"path\": \"<RUN>\\\\cli-mismatched-policy-workspace\\\\workspace\\\\.zcode\\\\config.json\"\n}\n",
+    "stderr": ""
+  },
+  {
+    "name": "cli-invalid-config-controls-git-init",
+    "executable": "git",
+    "args": [
+      "-C",
+      "<RUN>\\cli-invalid-config-controls\\workspace",
+      "init",
+      "--quiet"
+    ],
+    "cwd": "<REPO>",
+    "durationMs": 80,
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "name": "cli-invalid-config-controls-install-apply",
+    "executable": "<NODE>",
+    "args": [
+      "<REPO>\\bin\\gstack861.mjs",
+      "zcode-config-install",
+      "--workspace",
+      "<RUN>\\cli-invalid-config-controls\\workspace",
+      "--policy",
+      "<RUN>\\cli-invalid-config-controls\\policy.json",
+      "--apply"
+    ],
+    "cwd": "<REPO>",
+    "durationMs": 142,
+    "status": 1,
+    "signal": null,
+    "error": null,
+    "stdout": "",
+    "stderr": "gstack861: ZCODE_CONFIG_INVALID\n"
+  },
+  {
+    "name": "cli-invalid-config-controls-install-apply",
+    "executable": "<NODE>",
+    "args": [
+      "<REPO>\\bin\\gstack861.mjs",
+      "zcode-config-install",
+      "--workspace",
+      "<RUN>\\cli-invalid-config-controls\\workspace",
+      "--policy",
+      "<RUN>\\cli-invalid-config-controls\\workspace\\policy.json",
+      "--apply"
+    ],
+    "cwd": "<REPO>",
+    "durationMs": 153,
+    "status": 1,
+    "signal": null,
+    "error": null,
+    "stdout": "",
+    "stderr": "gstack861: POLICY_MUST_BE_OUTSIDE_WORKSPACE\n"
+  },
+  {
+    "name": "missing-uninstall-noop-git-init",
+    "executable": "git",
+    "args": [
+      "-C",
+      "<RUN>\\missing-uninstall-noop\\workspace",
+      "init",
+      "--quiet"
+    ],
+    "cwd": "<REPO>",
+    "durationMs": 86,
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "name": "missing-uninstall-noop-uninstall-preview",
+    "executable": "<NODE>",
+    "args": [
+      "<REPO>\\bin\\gstack861.mjs",
+      "zcode-config-uninstall",
+      "--workspace",
+      "<RUN>\\missing-uninstall-noop\\workspace",
+      "--policy",
+      "<RUN>\\missing-uninstall-noop\\policy.json"
+    ],
+    "cwd": "<REPO>",
+    "durationMs": 157,
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "{\n  \"changed\": false,\n  \"path\": \"<RUN>\\\\missing-uninstall-noop\\\\workspace\\\\.zcode\\\\config.json\",\n  \"preview\": {}\n}\n",
+    "stderr": ""
+  },
+  {
+    "name": "missing-uninstall-noop-uninstall-apply",
+    "executable": "<NODE>",
+    "args": [
+      "<REPO>\\bin\\gstack861.mjs",
+      "zcode-config-uninstall",
+      "--workspace",
+      "<RUN>\\missing-uninstall-noop\\workspace",
+      "--policy",
+      "<RUN>\\missing-uninstall-noop\\policy.json",
+      "--apply"
+    ],
+    "cwd": "<REPO>",
+    "durationMs": 178,
+    "status": 1,
+    "signal": null,
+    "error": null,
+    "stdout": "",
+    "stderr": "gstack861: ZCODE_CONFIG_BUSY\n"
+  },
+  {
+    "name": "preexisting-empty-events-git-init",
+    "executable": "git",
+    "args": [
+      "-C",
+      "<RUN>\\preexisting-empty-events\\workspace",
+      "init",
+      "--quiet"
+    ],
+    "cwd": "<REPO>",
+    "durationMs": 95,
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "name": "concurrent-uninstall-user-edit-git-init",
+    "executable": "git",
+    "args": [
+      "-C",
+      "<RUN>\\concurrent-uninstall-user-edit\\workspace",
+      "init",
+      "--quiet"
+    ],
+    "cwd": "<REPO>",
+    "durationMs": 80,
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "name": "stale-uninstall-plan-git-init",
+    "executable": "git",
+    "args": [
+      "-C",
+      "<RUN>\\stale-uninstall-plan\\workspace",
+      "init",
+      "--quiet"
+    ],
+    "cwd": "<REPO>",
+    "durationMs": 91,
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "name": "config-symlink-after-plan-git-init",
+    "executable": "git",
+    "args": [
+      "-C",
+      "<RUN>\\config-symlink-after-plan\\workspace",
+      "init",
+      "--quiet"
+    ],
+    "cwd": "<REPO>",
+    "durationMs": 99,
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "name": "io-mkdir-eacces-git-init",
+    "executable": "git",
+    "args": [
+      "-C",
+      "<RUN>\\io-mkdir-eacces\\workspace",
+      "init",
+      "--quiet"
+    ],
+    "cwd": "<REPO>",
+    "durationMs": 102,
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "name": "config-replaced-at-rename-git-init",
+    "executable": "git",
+    "args": [
+      "-C",
+      "<RUN>\\config-replaced-at-rename\\workspace",
+      "init",
+      "--quiet"
+    ],
+    "cwd": "<REPO>",
+    "durationMs": 87,
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": "",
+    "stderr": ""
+  }
+]

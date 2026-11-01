@@ -1,0 +1,492 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-10-30T14:43:46.587Z",
+  "lane": "aliases",
+  "auditComplete": true,
+  "repairStatus": "proposed only, production and tests read-only",
+  "repoHead": "680b2f19b2dbef8831e3be1fd996203589b5c41d",
+  "summary": {
+    "originalFixtureCases": 69,
+    "originalHarnessChildFailures": 0,
+    "supplementalCases": 11,
+    "supplementalFixtureConstructionBlocked": 1,
+    "aliasTestBaseline": {
+      "pass": 4,
+      "fail": 0,
+      "skip": 0
+    },
+    "cliLifecycleAllExitZero": true,
+    "renderStatus": "environment-blocked",
+    "actualRenderPerformed": false,
+    "actualHostDiscoveryPerformed": false,
+    "modelCalls": 0,
+    "networkCalls": 0
+  },
+  "limitations": [
+    "Pinned canonical SKILL.md source fixture, not actual ZCode/DSH host render.",
+    "Auxiliary lifecycle deliberately augments canonical source fixture with a real pinned browse/sections/command-list.md blob because canonical upstream has no aux files.",
+    "Bun executable unavailable to credential-stripped child environment; renderer requires 1.4.2 and was not executed.",
+    "Host discovery and user-visible slash-command execution not claimed. Another lane investigates no-model host interfaces.",
+    "Supplemental reserved file/directory prefix case cannot be constructed on native case-insensitive NTFS; original fixture-construction error preserved.",
+    "UNC share and drive mapping tests omitted because isolated local fixtures and no network were required."
+  ],
+  "issues": [
+    {
+      "id": "A1",
+      "severity": "high",
+      "title": "Linked ancestors and Windows aliases bypass physical path boundaries",
+      "cases": [
+        "source-ancestor-junction",
+        "source-ancestor-symlink",
+        "output-ancestor-junction",
+        "output-ancestor-symlink",
+        "overlap-through-junction",
+        "overlap-namespace",
+        "overlap-shortname",
+        "output-parent-swapped-at-first-create",
+        "source-parent-swapped-after-leaf-lstat"
+      ],
+      "source": "src/aliases.mjs:29-41,70-80",
+      "steps": [
+        "Create a valid canonical source fixture and a junction view that points to its staging directory.",
+        "Pass output=view/new-output while staging uses the physical name; alternatively use a mixed extended namespace or 8.3 spelling of staging/nested.",
+        "Call stageCommandAliases with host=zcode."
+      ],
+      "expected": "Refuse physical overlap and strict linked-ancestor paths before output mutation; reject detected identity swaps.",
+      "actual": "Accepted; connect-chrome/SKILL.md physically created under staging. Independent source/output ancestor links also accepted. Parent swap fault probes redirected reads/writes.",
+      "rootCause": "Overlap uses path.relative on lexical resolved names; only leaf lstat checks are performed. No realpath/native identity comparison or reusable full-ancestor snapshot is enforced.",
+      "impact": "Alias generation can mutate canonical staging or write through an ancestor link to an unexpected physical directory. Link-free namespace and 8.3 overlap bypasses also occur."
+    },
+    {
+      "id": "A2",
+      "severity": "high",
+      "title": "Failure cleanup deletes output and files that the invocation does not own",
+      "cases": [
+        "cleanup-preexisting-output",
+        "cleanup-concurrent-user-file",
+        "cleanup-on-mkdir-collision"
+      ],
+      "source": "src/aliases.mjs:70-80",
+      "steps": [
+        "Precreate an empty output directory.",
+        "Inject EIO on connect-chrome/manifest.json; optionally create operator.txt after the emptiness check.",
+        "Alternatively create operator-owned connect-chrome/operator.txt immediately before the invocation mkdir so mkdir raises EEXIST."
+      ],
+      "expected": "Preserve caller output and operator files; only remove a proven directory created by this invocation.",
+      "actual": "Output and operator files removed recursively, including the EEXIST collision directory the invocation never created.",
+      "rootCause": "Unconditional catch fs.rmSync(output,{recursive:true,force:true}) has no creation, identity or ownership boundary.",
+      "impact": "IO failure or concurrent creation can destroy operator recovery/user data."
+    },
+    {
+      "id": "A3",
+      "severity": "medium",
+      "title": "Reserved and case-colliding auxiliary keys reach the write phase",
+      "cases": [
+        "key-reserved-skill",
+        "key-reserved-skill-case",
+        "case-collision-aux",
+        "manifest-files-null"
+      ],
+      "source": "src/aliases.mjs:45-65",
+      "steps": [
+        "Add files[\"SKILL.md\"] or files[\"skill.md\"] equal to canonical digest; or add equal digests for sections/command-list.md and SECTIONS/COMMAND-LIST.md.",
+        "Precreate empty output and call stageCommandAliases.",
+        "For shape mismatch set source.files=null and compare alias staging to canonical installSkills preflight."
+      ],
+      "expected": "ALIAS_SOURCE_INVALID and zero writes; match shared installer manifest contract.",
+      "actual": "Reserved and duplicate-case files pass read validation, then fail EEXIST after output writes and trigger A2. files:null is accepted and normalized while shared canonical install refuses STAGING_INVALID.",
+      "rootCause": "The auxiliary check validates segment alphabet/depth but omits reserved names, digest types and casefold/prefix collisions; files??{} hides explicit null.",
+      "impact": "Malformed manifests cause partial mutations and destructive cleanup; validation drifts from shared install."
+    },
+    {
+      "id": "A4",
+      "severity": "low",
+      "title": "CRLF frontmatter rewrites more than the command name",
+      "cases": [
+        "crlf-only-name-byte-change"
+      ],
+      "source": "src/aliases.mjs:16-25",
+      "steps": [
+        "Use the pinned canonical body with CRLF line endings and update its source digest.",
+        "Call stageCommandAliases and compare alias bytes to an exact name-token-only replacement."
+      ],
+      "expected": "Preserve all bytes except the canonical name token if the name-only contract is retained.",
+      "actual": "Accepted and canonical untouched, but all frontmatter line endings normalized to LF. Body CRLF remains.",
+      "rootCause": "Frontmatter split and join rebuilds the whole block using LF.",
+      "impact": "Additional byte drift contradicts the current test name and requested exact rename contract; pinned LF source is unaffected."
+    },
+    {
+      "id": "I1",
+      "severity": "high",
+      "title": "Shared install/uninstall traverses a target linked ancestor",
+      "cases": [
+        "install-target-linked-ancestor"
+      ],
+      "source": "src/install.mjs:224-235,494-509",
+      "scope": "outside assigned aliases source/test ownership; coordinator must assign integration repair",
+      "steps": [
+        "Create physical directory and a junction view.",
+        "Use target=view/skills to install the canonical fixture.",
+        "Run uninstallSkills with the same target."
+      ],
+      "expected": "Apply the strict target ancestor policy consistently before mutation.",
+      "actual": "Canonical installed into physical/skills then removed via the linked ancestor.",
+      "rootCause": "validateTarget/uninstall check target leaf only.",
+      "impact": "New alias strict checks alone cannot establish strict filesystem behavior across shared install integration."
+    }
+  ],
+  "proposedOwnedChanges": [
+    {
+      "file": "src/aliases.mjs",
+      "changes": [
+        "Use coordinator-owned strict filesystem snapshot helpers for full staging/output/source/aux ancestors and rechecks before read/write/cleanup; compare normalized real paths and identities for physical overlap, including namespace/short-path forms.",
+        "Validate optional files only when undefined or a plain object; require SHA256 string values. Apply installer-compatible reserved top-level names, casefold equality and whole-segment file-prefix conflict validation before mkdir/read phase.",
+        "Track whether output and destination were actually created; after failures remove only the verified newly-created destination. Preserve preexisting output and concurrent sibling files; use nonrecursive rmdir for an invocation-created empty output.",
+        "Optionally use a byte-preserving token splice for the frontmatter name so CRLF and all other source bytes remain unchanged."
+      ]
+    },
+    {
+      "file": "test/aliases.test.mjs",
+      "changes": [
+        "Add red regressions for static directory-symlink/junction ancestors, mixed extended namespace and 8.3 physical overlap; assert no canonical tree mutations.",
+        "Add deterministic parent swap, mkdir EEXIST collision and EIO regressions that assert caller output and operator files survive; no global fs patches outside a restored test scope.",
+        "Table-test null files, reserved SKILL.md/manifest.json variants, case-equal and file-prefix collisions and digest types; assert byte-identical trees after preflight refusals.",
+        "Add pinned LF and CRLF name-only byte checks plus host-parametrized canonical+alias distinct files, digests/blob, shared registry install/repeat/uninstall and aux-byte-equality integration."
+      ]
+    }
+  ],
+  "proposedSharedHelper": {
+    "owner": "coordinator assigns existing src/fs-utils.mjs (preserve mkdirpSync)",
+    "api": [
+      "inspectPlainPath(absolute,{kind:\"file\"|\"directory\",allowMissing:false}) -> frozen {path,realPath,exists,entries:[{path,dev,ino,kind,nlink}]}",
+      "assertPlainPathUnchanged(snapshot) -> void",
+      "readPlainFile(snapshot) -> Buffer"
+    ],
+    "requirements": [
+      "Walk every absolute existing component with lstat; reject symlinks/junctions/specials and non-directory ancestors; file leaves must nlink=1.",
+      "Resolve existing native prefix and preserve missing suffix; reject drive-relative/control-character/traversal forms under agreed contract; preserve valid case/8.3 paths using native identity.",
+      "Snapshot dev/ino with bigint internally or exact strings; revalidate existing identities/types/links and expected absence before mutation and cleanup.",
+      "Open/fstat/read verified fd instead of leaf-stat then path-read; close in finally. Recheck full ancestry.",
+      "Path checks/rechecks are defense against deterministic swaps; do not claim Node path APIs create an atomic OS filesystem sandbox."
+    ],
+    "candidates": [
+      "src/stage.mjs:29 realOutput existing-prefix/native realpath",
+      "src/policy.mjs:10 inside component-aware containment",
+      "src/policy.mjs:58 existingIdentity dev/ino",
+      "src/install.mjs:55 stagingFile per-segment leaf checks",
+      "src/aliases.mjs:11 readRegular leaf file/nlink check"
+    ],
+    "excluded": "policy.targetPath intentionally follows links to implement policy semantics; do not change that behavior to implement strict output paths."
+  },
+  "finalVerification": {
+    "hashesEqualBaseline": true,
+    "hashes": {
+      "src/aliases.mjs": "4eddb72bcafe2c4eefe5e2710016860e6a4fa50b66d701c2af91cc3329745b80",
+      "test/aliases.test.mjs": "f25ed70d9ab311b66166a9c721bf6ab3b00f8cfd47550bff73dab89be27e215a",
+      "src/install.mjs": "f295c3b07252b1e6c0a4f3a65a012f99eefc39a9ab7fdc02cc7989e44e5dc6f8",
+      "src/policy.mjs": "f40b601b0560d6c8183637dd430d813f74684e284ba9525f1621e734a9830f5d"
+    },
+    "trackedOwnedAndIntegrationDiffEmpty": true,
+    "upstreamPristine": true,
+    "status": "?? docs/evidence/\n",
+    "commands": [
+      {
+        "label": "final-owned-and-integration-tracked-diff",
+        "executable": "git",
+        "args": [
+          "-C",
+          "<REPO>",
+          "diff",
+          "--exit-code",
+          "--",
+          "src/aliases.mjs",
+          "test/aliases.test.mjs",
+          "src/install.mjs",
+          "src/policy.mjs"
+        ],
+        "cwd": "<REPO>\\.superpowers\\m3-local-acceptance\\aliases",
+        "exitCode": 0,
+        "signal": null,
+        "durationMs": 75,
+        "stdout": "",
+        "stderr": "",
+        "error": null
+      },
+      {
+        "label": "final-checkout-head",
+        "executable": "git",
+        "args": [
+          "-C",
+          "<REPO>",
+          "rev-parse",
+          "HEAD"
+        ],
+        "cwd": "<REPO>\\.superpowers\\m3-local-acceptance\\aliases",
+        "exitCode": 0,
+        "signal": null,
+        "durationMs": 72,
+        "stdout": "680b2f19b2dbef8831e3be1fd996203589b5c41d\n",
+        "stderr": "",
+        "error": null
+      },
+      {
+        "label": "final-checkout-status",
+        "executable": "git",
+        "args": [
+          "-C",
+          "<REPO>",
+          "status",
+          "--short"
+        ],
+        "cwd": "<REPO>\\.superpowers\\m3-local-acceptance\\aliases",
+        "exitCode": 0,
+        "signal": null,
+        "durationMs": 140,
+        "stdout": "?? docs/evidence/\n",
+        "stderr": "",
+        "error": null
+      },
+      {
+        "label": "final-upstream-status",
+        "executable": "git",
+        "args": [
+          "-C",
+          "<REPO>\\upstream\\gstack",
+          "status",
+          "--porcelain",
+          "--untracked-files=normal"
+        ],
+        "cwd": "<REPO>\\.superpowers\\m3-local-acceptance\\aliases",
+        "exitCode": 0,
+        "signal": null,
+        "durationMs": 103,
+        "stdout": "",
+        "stderr": "",
+        "error": null
+      }
+    ]
+  },
+  "supplementalClassification": [
+    {
+      "id": "overlap-namespace",
+      "status": "observed",
+      "result": {
+        "accepted": true,
+        "result": {
+          "schemaVersion": 1,
+          "host": "zcode",
+          "output": "\\\\?\\<REPO>\\.superpowers\\m3-local-acceptance\\aliases\\supplement-7x4kLp\\overlap-namespace\\staging\\alias-child",
+          "aliases": [
+            {
+              "name": "connect-chrome",
+              "aliasOf": "open-gstack-browser",
+              "sha256": "cbba40de7234b029acc200131b98ee4557c038f8b9e1f053f95c0fdab19d0115"
+            }
+          ],
+          "note": "Rewritten copy, not symlink; install separately. Not host-verified."
+        },
+        "output": "\\\\?\\<REPO>\\.superpowers\\m3-local-acceptance\\aliases\\supplement-7x4kLp\\overlap-namespace\\staging\\alias-child",
+        "relativeComparison": "\\\\?\\<REPO>\\.superpowers\\m3-local-acceptance\\aliases\\supplement-7x4kLp\\overlap-namespace\\staging\\alias-child",
+        "sourceOutputCreated": true
+      }
+    },
+    {
+      "id": "overlap-shortname",
+      "status": "observed",
+      "result": {
+        "accepted": true,
+        "result": {
+          "schemaVersion": 1,
+          "host": "zcode",
+          "output": "<REPO>\\.superpowers\\m3-local-acceptance\\aliases\\supplement-7x4kLp\\overlap-shortname\\staging\\alias-child",
+          "aliases": [
+            {
+              "name": "connect-chrome",
+              "aliasOf": "open-gstack-browser",
+              "sha256": "cbba40de7234b029acc200131b98ee4557c038f8b9e1f053f95c0fdab19d0115"
+            }
+          ],
+          "note": "Rewritten copy, not symlink; install separately. Not host-verified."
+        },
+        "output": "<REPO>\\.superpowers\\m3-local-acceptance\\aliases\\supplement-7x4kLp\\overlap-shortname\\staging\\alias-child",
+        "shortIdentity": "<REPO>\\.superpowers\\m3-local-acceptance\\aliases\\supplement-7x4kLp\\overlap-shortname\\staging",
+        "relativeComparison": "..\\..\\..\\..\\..\\..\\..\\..\\..\\..\\..\\<USER-8DOT3>\\.zcode\\workspace\\<WORKSPACE-ID>\\gstack861-m3-audit\\.superpowers\\m3-local-acceptance\\aliases\\supplement-7x4kLp\\overlap-shortname\\staging\\alias-child",
+        "sourceOutputCreated": true
+      }
+    },
+    {
+      "id": "overlap-trailing-dot",
+      "status": "observed",
+      "result": {
+        "accepted": true,
+        "result": {
+          "schemaVersion": 1,
+          "host": "zcode",
+          "output": "<REPO>\\.superpowers\\m3-local-acceptance\\aliases\\supplement-7x4kLp\\overlap-trailing-dot\\staging.\\alias-child",
+          "aliases": [
+            {
+              "name": "connect-chrome",
+              "aliasOf": "open-gstack-browser",
+              "sha256": "cbba40de7234b029acc200131b98ee4557c038f8b9e1f053f95c0fdab19d0115"
+            }
+          ],
+          "note": "Rewritten copy, not symlink; install separately. Not host-verified."
+        },
+        "output": "<REPO>\\.superpowers\\m3-local-acceptance\\aliases\\supplement-7x4kLp\\overlap-trailing-dot\\staging.\\alias-child",
+        "relativeComparison": "..\\staging.\\alias-child",
+        "sourceOutputCreated": false
+      }
+    },
+    {
+      "id": "cleanup-on-mkdir-collision",
+      "status": "observed",
+      "result": {
+        "accepted": false,
+        "error": {
+          "name": "Error",
+          "message": "EEXIST: file already exists, mkdir '<REPO>\\.superpowers\\m3-local-acceptance\\aliases\\supplement-7x4kLp\\cleanup-on-mkdir-collision\\output\\connect-chrome'",
+          "code": "EEXIST",
+          "stack": "Error: EEXIST: file already exists, mkdir '<REPO>\\.superpowers\\m3-local-acceptance\\aliases\\supplement-7x4kLp\\cleanup-on-mkdir-collision\\output\\connect-chrome'\n    at Object.mkdirSync (node:fs:1410:26)\n    at fs.mkdirSync (file:///<REPO>/.superpowers/m3-local-acceptance/aliases/supplement.mjs:67:31)\n    at stageCommandAliases (file:///<REPO>/src/aliases.mjs:72:52)\n    at attempt (file:///<REPO>/.superpowers/m3-local-acceptance/aliases/supplement.mjs:30:42)\n    at file:///<REPO>/.superpowers/m3-local-acceptance/aliases/supplement.mjs:69:18\n    at runCase (file:///<REPO>/.superpowers/m3-local-acceptance/aliases/supplement.mjs:34:34)\n    at file:///<REPO>/.superpowers/m3-local-acceptance/aliases/supplement.mjs:58:1"
+        },
+        "injected": true,
+        "operatorDirectorySurvived": false,
+        "outputSurvived": false
+      }
+    },
+    {
+      "id": "output-parent-swapped-at-first-create",
+      "status": "observed",
+      "result": {
+        "accepted": true,
+        "result": {
+          "schemaVersion": 1,
+          "host": "zcode",
+          "output": "<REPO>\\.superpowers\\m3-local-acceptance\\aliases\\supplement-7x4kLp\\output-parent-swapped-at-first-create\\parent\\output",
+          "aliases": [
+            {
+              "name": "connect-chrome",
+              "aliasOf": "open-gstack-browser",
+              "sha256": "cbba40de7234b029acc200131b98ee4557c038f8b9e1f053f95c0fdab19d0115"
+            }
+          ],
+          "note": "Rewritten copy, not symlink; install separately. Not host-verified."
+        },
+        "injected": true,
+        "output": "<REPO>\\.superpowers\\m3-local-acceptance\\aliases\\supplement-7x4kLp\\output-parent-swapped-at-first-create\\parent\\output",
+        "linkTarget": "<REPO>\\.superpowers\\m3-local-acceptance\\aliases\\supplement-7x4kLp\\output-parent-swapped-at-first-create\\physical",
+        "unexpectedPhysicalOutputCreated": true
+      }
+    },
+    {
+      "id": "source-parent-swapped-after-leaf-lstat",
+      "status": "observed",
+      "result": {
+        "accepted": true,
+        "result": {
+          "schemaVersion": 1,
+          "host": "zcode",
+          "output": "<REPO>\\.superpowers\\m3-local-acceptance\\aliases\\supplement-7x4kLp\\source-parent-swapped-after-leaf-lstat\\output",
+          "aliases": [
+            {
+              "name": "connect-chrome",
+              "aliasOf": "open-gstack-browser",
+              "sha256": "cbba40de7234b029acc200131b98ee4557c038f8b9e1f053f95c0fdab19d0115"
+            }
+          ],
+          "note": "Rewritten copy, not symlink; install separately. Not host-verified."
+        },
+        "injected": true,
+        "canonicalDirNowLink": true,
+        "aliasProducedFromLinkedSource": true
+      }
+    },
+    {
+      "id": "reserved-file-directory-prefix",
+      "status": "environment-blocked",
+      "reason": "NTFS cannot materialize a directory case-equivalent to existing SKILL.md; fixture construction failed before production call",
+      "originalHarnessError": {
+        "name": "Error",
+        "message": "EEXIST: file already exists, mkdir '<REPO>\\.superpowers\\m3-local-acceptance\\aliases\\supplement-7x4kLp\\reserved-file-directory-prefix\\staging\\open-gstack-browser\\skill.md'",
+        "code": "EEXIST",
+        "stack": "Error: EEXIST: file already exists, mkdir '<REPO>\\.superpowers\\m3-local-acceptance\\aliases\\supplement-7x4kLp\\reserved-file-directory-prefix\\staging\\open-gstack-browser\\skill.md'\n    at Object.mkdirSync (node:fs:1410:26)\n    at file:///<REPO>/.superpowers/m3-local-acceptance/aliases/supplement.mjs:100:12\n    at runCase (file:///<REPO>/.superpowers/m3-local-acceptance/aliases/supplement.mjs:34:34)\n    at file:///<REPO>/.superpowers/m3-local-acceptance/aliases/supplement.mjs:99:1"
+      }
+    },
+    {
+      "id": "reserved-trailing-dot-skill-key",
+      "status": "observed",
+      "result": {
+        "accepted": false,
+        "error": {
+          "name": "Error",
+          "message": "ALIAS_SOURCE_UNSAFE",
+          "code": null,
+          "stack": "Error: ALIAS_SOURCE_UNSAFE\n    at fail (file:///<REPO>/src/aliases.mjs:8:30)\n    at stageCommandAliases (file:///<REPO>/src/aliases.mjs:60:113)\n    at attempt (file:///<REPO>/.superpowers/m3-local-acceptance/aliases/supplement.mjs:30:42)\n    at file:///<REPO>/.superpowers/m3-local-acceptance/aliases/supplement.mjs:109:18\n    at runCase (file:///<REPO>/.superpowers/m3-local-acceptance/aliases/supplement.mjs:34:34)\n    at file:///<REPO>/.superpowers/m3-local-acceptance/aliases/supplement.mjs:106:1"
+        },
+        "outputSurvived": true
+      }
+    },
+    {
+      "id": "aux-invalid-digest",
+      "status": "observed",
+      "result": {
+        "accepted": false,
+        "error": {
+          "name": "Error",
+          "message": "ALIAS_SOURCE_TAMPERED",
+          "code": null,
+          "stack": "Error: ALIAS_SOURCE_TAMPERED\n    at fail (file:///<REPO>/src/aliases.mjs:8:30)\n    at stageCommandAliases (file:///<REPO>/src/aliases.mjs:63:41)\n    at attempt (file:///<REPO>/.superpowers/m3-local-acceptance/aliases/supplement.mjs:30:42)\n    at file:///<REPO>/.superpowers/m3-local-acceptance/aliases/supplement.mjs:116:10\n    at runCase (file:///<REPO>/.superpowers/m3-local-acceptance/aliases/supplement.mjs:34:34)\n    at file:///<REPO>/.superpowers/m3-local-acceptance/aliases/supplement.mjs:112:1"
+        }
+      }
+    },
+    {
+      "id": "crlf-only-name-byte-change",
+      "status": "observed",
+      "result": {
+        "accepted": true,
+        "result": {
+          "schemaVersion": 1,
+          "host": "zcode",
+          "output": "<REPO>\\.superpowers\\m3-local-acceptance\\aliases\\supplement-7x4kLp\\crlf-only-name-byte-change\\output",
+          "aliases": [
+            {
+              "name": "connect-chrome",
+              "aliasOf": "open-gstack-browser",
+              "sha256": "030ec4b6b7ffcbef6353b1adee521a4da58946992e1483cb46b04655e14a3514"
+            }
+          ],
+          "note": "Rewritten copy, not symlink; install separately. Not host-verified."
+        },
+        "inputBytes": 19057,
+        "actualBytes": 19037,
+        "expectedOnlyNameBytes": 19052,
+        "inputSha256": "b8c465456dfb36b0b6ef18ddfd940d482c3cb931caecd51bbfda449dbe753e5a",
+        "aliasSha256": "030ec4b6b7ffcbef6353b1adee521a4da58946992e1483cb46b04655e14a3514",
+        "expectedOnlyNameSha256": "1edfb654ccf1ea0808182defcf2404a0a000a54c5ceedd4cce24b8403cf9c303",
+        "onlyNameChanged": false,
+        "canonicalUnchanged": true
+      }
+    },
+    {
+      "id": "install-target-linked-ancestor",
+      "status": "observed",
+      "result": {
+        "install": {
+          "installed": [
+            "open-gstack-browser"
+          ],
+          "skipped": [],
+          "backedUp": []
+        },
+        "physicalSkillExisted": true,
+        "uninstall": {
+          "uninstalled": [
+            "open-gstack-browser"
+          ],
+          "backupsRemoved": 0
+        },
+        "physicalSkillRemoved": true,
+        "scope": "shared install integration finding outside owned aliases/test files"
+      }
+    }
+  ]
+}

@@ -2,7 +2,7 @@
 
 本轮修复了真实 Windows CI 暴露的 ZCode 路径设备号为零兼容问题，并完成冻结源码上的本地全量验证与非作者复核。**本报告生成时尚未推送本轮提交，其远端 Windows CI 仍待实际执行；不提前声明 CI 或完整宿主验收通过。** 两轮此前失败、原始基线红例及所有旧报告保留。
 
-本记录接续 [首次验收报告](LOCAL-M3-ACCEPTANCE-2026-10-30.md) 与 [第一轮 Windows 整改报告](LOCAL-M3-ACCEPTANCE-2026-10-30-WINDOWS-CI-ADDENDUM.md)。最初接手基线是 `680b2f19b2dbef8831e3be1fd996203589b5c41d`，首次修复是 `3b4ee5b989781b8dd207e238c3ca02d121623411`，本轮修改基于 `9acc27885d5cbe5e379873dace26b4700e05d937`。开发分支仍为 `work/m3-command-aliases-20261029`；[PR #3](https://github.com/wmqfl861/gstack861/pull/3) 的目标分支是 `audit/full-review-20261029`。本批不推送 main、不强推、不合并 PR。
+本记录接续 [首次验收报告](LOCAL-M3-ACCEPTANCE-2026-10-30-LINUX.md) 与 [第一轮 Windows 整改报告](LOCAL-M3-ACCEPTANCE-2026-10-30-WINDOWS-CI-ADDENDUM.md)。最初接手基线是 `680b2f19b2dbef8831e3be1fd996203589b5c41d`，首次修复是 `3b4ee5b989781b8dd207e238c3ca02d121623411`，本轮修改基于 `9acc27885d5cbe5e379873dace26b4700e05d937`。开发分支仍为 `work/m3-command-aliases-20261029`；[PR #3](https://github.com/wmqfl861/gstack861/pull/3) 的目标分支是 `audit/full-review-20261029`。本批不推送 main、不强推、不合并 PR。
 
 ## A. 环境与输入身份
 

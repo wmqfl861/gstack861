@@ -1,0 +1,29 @@
+{
+  "head": "680b2f19b2dbef8831e3be1fd996203589b5c41d",
+  "files": [
+    {
+      "file": "audit-results.json",
+      "sha256": "5d9802bac6277aef9d82a939bd769fdad787a2cfad51ca1e356f8c86fd5f5eb7"
+    },
+    {
+      "file": "case-index.log",
+      "sha256": "a25b92afd6f0ea5e4eac0aa168e014e46d50901074fa7b339cfdce261215e8ee"
+    },
+    {
+      "file": "commands.json",
+      "sha256": "de6fcfdd7ecf4478eaf2b7638c23e32d7a184b07c27aa0ba674301e054a3b110"
+    },
+    {
+      "file": "findings.json",
+      "sha256": "f06b5f16c72851a68666c3ee39871cc4e63bfa2bd57468c6b133095c87595eba"
+    },
+    {
+      "file": "focused-original-tests.log",
+      "sha256": "dbb8e2b80b727d93562c1e0a1680f8bc97bdff82e918c8b0d9c519a3b8948c79"
+    },
+    {
+      "file": "reproduce.mjs",
+      "sha256": "0bfa7fc26747a7c1eb36c119d309c423636e8f6430c3de619675dbe52322d8bf"
+    }
+  ]
+}

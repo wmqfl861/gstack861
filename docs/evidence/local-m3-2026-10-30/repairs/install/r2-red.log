@@ -1,0 +1,163 @@
+✔ installSkills installs every staged skill into an empty target and writes the registry (526.693ms)
+✔ installSkills skips identical reinstalls without touching existing files (868.9575ms)
+✔ installSkills refuses a foreign target entry and writes nothing at all (108.5507ms)
+✔ installSkills refuses tampered staging with zero writes (36.9011ms)
+✔ installSkills backs up version drift and installs the new content (657.5742ms)
+✔ installSkills merges successive installs into one registry (853.3217ms)
+✔ installSkills refuses empty staging and malformed staging entries (69.5296ms)
+✔ installSkills refuses invalid staging and target paths (12.114ms)
+✔ installSkills refuses staging with mixed hosts or commits and writes nothing (71.933ms)
+✔ installSkills refuses staging manifests carrying an illegal host value (38.6413ms)
+✔ installSkills preserves unproven temporary-prefix entries and touches nothing else (230.7818ms)
+✔ uninstallSkills removes only registry skills and keeps foreign directories (806.7206ms)
+✔ uninstallSkills purge removes backup directories and reports the count (1078.4855ms)
+✔ uninstallSkills aborts with zero deletions when the registry names a foreign directory (315.4365ms)
+✔ uninstallSkills returns empty results without a registry (11.8494ms)
+✔ uninstallSkills refuses a user-modified SKILL.md and deletes nothing anywhere (533.025ms)
+✔ uninstallSkills refuses an extra user file inside a skill directory (338.3322ms)
+✔ uninstallSkills refuses a forged registry even with a bare generator marker manifest (386.3846ms)
+✔ installSkills refuses a junction at the backups path and writes nothing outside the target (350.2801ms)
+✔ installSkills refuses a directory at the registry path with zero writes (25.6627ms)
+✔ a stale install lock fails closed with INSTALL_BUSY and is never auto-cleared (297.477ms)
+✔ two real processes racing one install: exactly one wins, the other gets INSTALL_BUSY (1205.6469ms)
+✔ uninstallSkills purge keeps user entries that do not match the backup naming scheme (1162.0764ms)
+✔ uninstallSkills purge keeps user directories whose suffix is not a 13-digit timestamp (966.8106ms)
+✔ uninstallSkills purge keeps timestamp-named backups whose manifest is not verifiably ours (1212.3932ms)
+✔ uninstallSkills tolerates a registered skill the user already deleted (645.2123ms)
+✔ installSkills refuses to move a user-edited skill into purgeable backups (313.6006ms)
+✔ installSkills writes every listed file, records the files map in the registry, and uninstall removes it all (1253.442ms)
+✔ installSkills refuses a tampered or missing listed file in staging with zero writes (69.8528ms)
+✔ a user-modified listed file refuses both uninstall and reinstall (845.2188ms)
+✔ uninstallSkills refuses an unlisted extra file inside a multi-file skill directory (495.9831ms)
+✔ uninstallSkills refuses a forged registry.files that disagrees with the target (526.8822ms)
+✔ installSkills does not skip a re-render that changed only listed files (1282.7811ms)
+✔ installSkills skips an identical multi-file reinstall byte-for-byte (873.6305ms)
+✔ installSkills rejects reserved top-level names as files keys (75.3037ms)
+✔ installSkills rejects malformed files maps, keys, and values (270.0532ms)
+✔ installSkills refuses files keys that collide case-insensitively with zero writes (17.2821ms)
+✔ installSkills refuses a files key that collides as a directory prefix of another (66.574ms)
+✔ installSkills installs files keys that share a bare string prefix but no segment (373.2382ms)
+✔ uninstallSkills refuses a legacy files-less registry record over a files-bearing target (460.8598ms)
+✔ uninstallSkills refuses when a listed file is missing from the target (635.8195ms)
+✔ an I/O failure mid-install leaves every skill whole and the target recoverable (1870.3288ms)
+✔ registry lost + a user-added file refuses takeover; a pristine directory still recovers (audit #2) (1099.7477ms)
+✔ registry lost + user-added file refuses takeover for files-LESS skills too (audit #2, round 3) (687.7875ms)
+✔ a fault at the new-dir rename restores the moved backup and leaves the registry untouched (audit #3a) (1051.7351ms)
+✔ a fault at the registry commit rolls the skill directory back too (audit #3b) (1794.0351ms)
+✔ a combined fault (commit fails AND the rollback delete fails) keeps the old version in the backup (audit #15) (664.6527ms)
+✔ multi-segment listed files survive the reinstall and uninstall lifecycle (audit #4) (2778.0866ms)
+✔ installSkills dry-run reports a fresh install (multi-file skill included) and writes nothing (788.4889ms)
+✔ installSkills dry-run over an installed target reports wouldSkip and writes nothing (701.899ms)
+✔ installSkills dry-run reports drift as wouldBackUp plus wouldInstall without writing (485.1728ms)
+✔ installSkills dry-run still throws TAMPERED_STAGING and writes nothing (25.1727ms)
+✔ installSkills dry-run takes no lock, so a held one never reports INSTALL_BUSY (23.9906ms)
+✔ installSkills dry-run refuses a junction target with INVALID_TARGET and writes nothing through it (5.3824ms)
+✔ installSkills dry-run refuses a junction at the backups root without creating anything (355.2071ms)
+✔ install --dry-run prints the report and creates nothing (171.4148ms)
+✔ install --dry-run keeps ABSOLUTE_PATH_REQUIRED for a relative target (180.1176ms)
+✔ uninstallSkills dry-run reports the full uninstall set and mutates nothing (1053.8705ms)
+✔ uninstallSkills dry-run counts a registered skill whose directory is already gone (513.3077ms)
+✔ uninstallSkills dry-run refuses drift exactly like the real run and removes nothing (466.7752ms)
+✔ uninstallSkills dry-run with purge lists the drift backup and the emptied root (750.2587ms)
+✔ uninstallSkills dry-run with purge leaves user archives and unverifiable backups unlisted and in place (778.0726ms)
+✔ uninstallSkills dry-run on an absent target returns the empty report without throwing (2.9739ms)
+✔ uninstallSkills dry-run without a registry returns the empty report without inventing one (6.0505ms)
+✔ uninstallSkills dry-run takes no lock, so a stale one never reports INSTALL_BUSY (367.9182ms)
+✔ uninstallSkills dry-run refuses a junction target with INVALID_TARGET and writes nothing through it (287.308ms)
+✔ uninstall --dry-run prints the report and removes nothing (438.9143ms)
+✔ uninstall --dry-run --purge prints the combined report without touching anything (912.5067ms)
+✔ I1 install refuses a linked ancestor above a missing target before any writes (8.1954ms)
+✔ I1 install refuses a linked ancestor above a present target before any writes (265.5955ms)
+✔ I1 install dry-run refuses a linked ancestor above a missing target before any writes (7.0398ms)
+✔ I1 install dry-run refuses a linked ancestor above a present target before any writes (266.7507ms)
+✔ I1 uninstall refuses a linked ancestor above a missing target before any writes (7.1157ms)
+✔ I1 uninstall refuses a linked ancestor above a present target before any writes (274.5974ms)
+✔ I1 uninstall dry-run refuses a linked ancestor above a missing target before any writes (7.6658ms)
+✔ I1 uninstall dry-run refuses a linked ancestor above a present target before any writes (250.0472ms)
+✔ I1 extended namespace spelling cannot hide a target ancestor junction (26.7192ms)
+✔ I1 plain extended namespace paths retain the normal install and uninstall lifecycle (424.4275ms)
+✔ I1 install refuses a staging ancestor directory link (11.0909ms)
+✔ I1 install refuses a staging root directory link (9.9228ms)
+✔ I1 install refuses a staging skill directory link (12.0884ms)
+✔ I1 install refuses a staging auxiliary directory link (27.5489ms)
+✔ I1 install refuses a multiply linked staging manifest.json (19.9591ms)
+✔ I1 install refuses a multiply linked staging SKILL.md (21.7464ms)
+✔ I1 install refuses a multiply linked staging sections/scope.md (32.629ms)
+✔ I1 install dry-run refuses a staging ancestor directory link (9.7141ms)
+✔ I1 install dry-run refuses a staging root directory link (11.6222ms)
+✔ I1 install dry-run refuses a staging skill directory link (14.1167ms)
+✔ I1 install dry-run refuses a staging auxiliary directory link (29.854ms)
+✔ I1 install dry-run refuses a multiply linked staging manifest.json (19.5829ms)
+✔ I1 install dry-run refuses a multiply linked staging SKILL.md (23.3665ms)
+✔ I1 install dry-run refuses a multiply linked staging sections/scope.md (30.9109ms)
+✔ I1 missing target suffix previews write nothing and a real multi-file lifecycle still succeeds (1533.8969ms)
+✔ I1 install rejects a junction target ancestor replacement observed during staging reads (11.8922ms)
+✔ I1 uninstall rejects a junction ancestor replacement observed during ownership reads (317.7608ms)
+✔ I1 install dry-run rejects a junction target ancestor replacement observed during staging reads (9.0035ms)
+✔ I1 uninstall dry-run rejects a junction ancestor replacement observed during ownership reads (353.9925ms)
+✔ I1 install rejects a plain target ancestor replacement observed during staging reads (13.837ms)
+✔ I1 uninstall rejects a plain ancestor replacement observed during ownership reads (317.4184ms)
+✔ I1 install dry-run rejects a plain target ancestor replacement observed during staging reads (9.6806ms)
+✔ I1 uninstall dry-run rejects a plain ancestor replacement observed during ownership reads (309.9863ms)
+✔ I1 target creation must not refresh away an existing ancestor replacement (25.7385ms)
+✔ I1 an ancestor swap after lock creation preserves the replacement lock and target (26.6577ms)
+✔ I1 staging ancestor replacement during a manifest read refuses before target creation (25.7261ms)
+✔ I1 failed temp mkdir preserves a colliding operator directory (55.6207ms)
+✔ I1 failed temp write cleans only invocation-owned files and preserves an operator sibling (101.0268ms)
+✔ R2 manifest write failure cleans the unchanged generated SKILL.md (92.8412ms)
+✖ R2 manifest write failure preserves an in-place operator edit to SKILL.md (118.4533ms)
+✖ R2 cleanup preserves a completed file when its verified contents cannot be read (116.2607ms)
+ℹ tests 109
+ℹ suites 0
+ℹ pass 107
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 44115.9962
+
+✖ failing tests:
+
+test at gstack861-m3-audit\test\install.test.mjs:1667:3
+✖ R2 manifest write failure preserves an in-place operator edit to SKILL.md (118.4533ms)
+  AssertionError [ERR_ASSERTION]: retain the nonempty parent of operator data
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/install.test.mjs:1691:14)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at gstack861-m3-audit\test\install.test.mjs:1708:1
+✖ R2 cleanup preserves a completed file when its verified contents cannot be read (116.2607ms)
+  AssertionError [ERR_ASSERTION]: unreadable ownership evidence cannot authorize deletion
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/install.test.mjs:1734:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

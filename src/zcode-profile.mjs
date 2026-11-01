@@ -1,319 +1,330 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
-import { object, canonical, digest, freeze } from './json.mjs';
+import { object, canonical, freeze, textDigest } from './json.mjs';
+import { inspectPlainPath, assertPlainPathUnchanged, assertPlainFileDescriptor, readPlainFile } from './fs-utils.mjs';
 
 const fail = code => { throw new Error(code); };
 const CONFIG_DIR = '.zcode';
 const CONFIG_FILE = 'config.json';
-const RECEIPT = '.gstack861-zcode-config.json';
+const MAX_CONFIG_BYTES = 1024 * 1024;
 const LOCK = '.gstack861-zcode-config.lock';
+export const ZCODE_RECEIPT_FILE = '.gstack861-zcode-receipt.json';
 const plans = new WeakMap();
-const absolute = value => typeof value === 'string' && path.isAbsolute(value) && !/[\x00-\x1f]/.test(value);
-const identity = stat => `${stat.dev}/${stat.ino}`;
-const version = (stat, dev = stat.dev) => `${dev}/${stat.ino}/${stat.size}/${stat.mtimeNs}/${stat.ctimeNs}/${stat.mode}`;
-const READ_FLAGS = fs.constants.O_RDONLY | (fs.constants.O_NOFOLLOW ?? 0) | (fs.constants.O_NONBLOCK ?? 0);
-
-function bindDescriptor(file, stat, descriptor, label, directory = false) {
-  const sameMetadata = directory ? stat.ino === descriptor.ino && stat.mode === descriptor.mode : version(stat, descriptor.dev) === version(descriptor);
-  if (!sameMetadata) fail(label + '_CHANGED');
-  const device = descriptor.dev === stat.dev || (process.platform === 'win32' && descriptor.dev === (stat.dev & 0xffffffffn));
-  const missingDevice = process.platform === 'win32' && stat.dev === 0n;
-  if (device && !missingDevice) return;
-  if (!missingDevice) fail(label + '_CHANGED');
-  // Some Windows path queries report dev=0. Bind that path through a second,
-  // independent open instead of treating zero as an identity wildcard. Keep
-  // both original source versions; directory contents may change their times.
-  let witness;
-  try { witness = fs.openSync(file, READ_FLAGS); } catch { fail(label + '_UNSAFE'); }
-  try {
-    const observed = fs.fstatSync(witness, { bigint: true });
-    if (directory) {
-      if (!observed.isDirectory() || observed.isSymbolicLink() || identity(observed) !== identity(descriptor) || observed.mode !== descriptor.mode) fail(label + '_CHANGED');
-    } else {
-      safeFile(observed, label);
-      if (version(observed) !== version(descriptor)) fail(label + '_CHANGED');
-    }
-    const current = fs.lstatSync(file, { throwIfNoEntry: false, bigint: true });
-    if (!current || current.isSymbolicLink() || (directory ? !current.isDirectory() || identity(current) !== identity(stat) : version(current) !== version(stat))) fail(label + '_CHANGED');
-  } finally { fs.closeSync(witness); }
+const has = (value, key) => Object.hasOwn(value, key);
+const encode = value => Buffer.from(JSON.stringify(value, null, 2) + '\n');
+const sameBytes = (a, b) => a === null ? b === null : b !== null && a.equals(b);
+const entryIdentity = entry => canonical(entry);
+const ownedHook = ({nodePath, cliPath, policyPath}) => ({matcher:'.*', hooks:[{type:'process', command:nodePath, args:[cliPath,'hook','zcode','--policy',policyPath], timeoutMs:10000}]});
+const ioCode = error => /^[A-Z][A-Z0-9_]*$/.test(error?.code) ? error.code
+  : /^[A-Z][A-Z0-9_]*$/.test(error?.message) ? error.message : 'ZCODE_CONFIG_IO_ERROR';
+function inspect(file, kind, allowMissing, code) {
+  try { return inspectPlainPath(file, {kind, allowMissing}); }
+  catch (error) {
+    if (['PATH_UNSAFE','PATH_CHANGED','ABSOLUTE_PATH_REQUIRED'].includes(error.message)) fail(code);
+    fail(ioCode(error));
+  }
 }
-function safeFile(stat, label) {
-  if (!stat.isFile() || stat.isSymbolicLink() || stat.nlink !== 1n || stat.size > 1024n * 1024n) fail(label + '_UNSAFE');
+function record(file, code) {
+  const snapshot = inspect(file, 'file', true, code);
+  if (!snapshot.exists) return {snapshot, bytes:null};
+  let bytes;
+  try { bytes = readPlainFile(snapshot); }
+  catch (error) { fail(['PATH_UNSAFE','PATH_CHANGED'].includes(error.message) ? code : ioCode(error)); }
+  if (bytes.length > (code === 'ZCODE_RECEIPT_UNSAFE' ? 4 * MAX_CONFIG_BYTES : MAX_CONFIG_BYTES)) fail(code);
+  return {snapshot, bytes};
 }
-function captureIdentity(file, stat, label, directory = false) {
-  let fd;
-  try { fd = fs.openSync(file, READ_FLAGS); } catch { fail(label + '_UNSAFE'); }
-  try {
-    const descriptor = fs.fstatSync(fd, { bigint: true });
-    if (directory) {
-      if (!descriptor.isDirectory() || descriptor.isSymbolicLink()) fail(label + '_UNSAFE');
-    } else { safeFile(stat, label); safeFile(descriptor, label); }
-    bindDescriptor(file, stat, descriptor, label, directory);
-    const after = fs.fstatSync(fd, { bigint: true }), current = fs.lstatSync(file, { throwIfNoEntry: false, bigint: true });
-    if (!current || current.isSymbolicLink() || (directory ? !current.isDirectory() || identity(current) !== identity(stat) || identity(after) !== identity(descriptor) : version(current) !== version(stat) || version(after) !== version(descriptor))) fail(label + '_CHANGED');
-    return { path: identity(stat), descriptor: identity(descriptor) };
-  } finally { fs.closeSync(fd); }
-}
-function directoryIdentity(file, stat, code) {
-  if (process.platform !== 'win32' || stat.dev !== 0n) return { path: identity(stat), descriptor: null };
-  try { return captureIdentity(file, stat, 'ZCODE_CONFIG_DIR', true); }
+function json(bytes, code) {
+  if (bytes === null) return {};
+  try { const value = JSON.parse(bytes.toString('utf8')); if (!object(value)) fail(code); return value; }
   catch { fail(code); }
 }
-
-function directories(directory, code, missingLeaf = false) {
-  const anchor = path.parse(directory).root;
-  let current = anchor;
-  const result = [];
-  for (const segment of ['', ...path.relative(anchor, directory).split(path.sep).filter(Boolean)]) {
-    current = segment ? path.join(current, segment) : current;
-    const stat = fs.lstatSync(current, { throwIfNoEntry: false, bigint: true });
-    if (!stat && missingLeaf && current === directory) return result;
-    if (!stat?.isDirectory() || stat.isSymbolicLink()) fail(code);
-    result.push([current, directoryIdentity(current, stat, code)]);
-  }
-  return result;
-}
-function locations(workspace) {
-  if (!absolute(workspace)) fail('ABSOLUTE_PATH_REQUIRED');
-  if (workspace.split(path.sep).includes('..')) fail('WORKSPACE_INVALID');
-  const root = path.resolve(workspace);
-  if (root === path.parse(root).root) fail('WORKSPACE_INVALID');
-  const roots = directories(root, 'WORKSPACE_INVALID');
-  const zdir = path.join(root, CONFIG_DIR);
-  const chain = directories(zdir, 'ZCODE_CONFIG_DIR_UNSAFE', true);
-  return { root, zdir, configPath: path.join(zdir, CONFIG_FILE), receiptPath: path.join(zdir, RECEIPT), roots, chain };
-}
-function verifyDirectories(expected) {
-  for (const [directory, id] of expected) {
-    const stat = fs.lstatSync(directory, { throwIfNoEntry: false, bigint: true });
-    if (!stat?.isDirectory() || stat.isSymbolicLink() || identity(stat) !== id.path) fail('ZCODE_CONFIG_DIR_UNSAFE');
-    if (id.descriptor && directoryIdentity(directory, stat, 'ZCODE_CONFIG_DIR_UNSAFE').descriptor !== id.descriptor) fail('ZCODE_CONFIG_DIR_UNSAFE');
-  }
-}
-function readExisting(file, label = 'ZCODE_CONFIG') {
-  const stat = fs.lstatSync(file, { throwIfNoEntry: false, bigint: true });
-  if (!stat) return { config: {}, exists: false, bytes: null, version: null, descriptorVersion: null, pathIdentity: null, descriptorIdentity: null };
-  safeFile(stat, label);
-  let fd;
-  try { fd = fs.openSync(file, READ_FLAGS); }
-  catch { fail(label + '_UNSAFE'); }
-  try {
-    const descriptor = fs.fstatSync(fd, { bigint: true }); safeFile(descriptor, label);
-    bindDescriptor(file, stat, descriptor, label);
-    const bytes = fs.readFileSync(fd);
-    const after = fs.fstatSync(fd, { bigint: true }); safeFile(after, label);
-    const current = fs.lstatSync(file, { throwIfNoEntry: false, bigint: true });
-    if (!current) fail(label + '_CHANGED');
-    safeFile(current, label);
-    if (bytes.length > 1024 * 1024 || version(after) !== version(descriptor) || version(current) !== version(stat)) fail(label + '_CHANGED');
-    let config;
-    try { config = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes)); }
-    catch { fail(label + '_INVALID'); }
-    if (!object(config)) fail(label + '_INVALID');
-    return { config, exists: true, bytes, version: version(stat), descriptorVersion: version(descriptor), pathIdentity: identity(stat), descriptorIdentity: identity(descriptor) };
-  } finally { fs.closeSync(fd); }
-}
-function unchanged(file, expected, label = 'ZCODE_CONFIG') {
-  const current = readExisting(file, label);
-  if (current.exists !== expected.exists || current.version !== expected.version || current.descriptorVersion !== expected.descriptorVersion ||
-      (current.exists && !current.bytes.equals(expected.bytes))) fail(label + '_CHANGED');
-  return current;
-}
-function validateHooks(config) {
-  if (!Object.hasOwn(config, 'hooks')) return;
-  if (!object(config.hooks) || (Object.hasOwn(config.hooks, 'enabled') && typeof config.hooks.enabled !== 'boolean')) fail('ZCODE_HOOKS_INVALID');
-  if (!Object.hasOwn(config.hooks, 'events')) return;
-  if (!object(config.hooks.events)) fail('ZCODE_EVENTS_INVALID');
-  for (const entries of Object.values(config.hooks.events)) {
-    if (!Array.isArray(entries) || entries.some(entry => !object(entry) || !Array.isArray(entry.hooks) ||
-        entry.hooks.some(hook => !object(hook)))) fail('ZCODE_EVENTS_INVALID');
-  }
-}
-function hookIdentity(entry) { return canonical(entry); }
-function ownedHook(nodePath, cliPath, policyPath) {
-  return { matcher: '.*', hooks: [{ type: 'process', command: nodePath, args: [cliPath, 'hook', 'zcode', '--policy', policyPath], timeoutMs: 10000 }] };
-}
-function ownership(location) {
-  const snapshot = readExisting(location.receiptPath, 'ZCODE_RECEIPT');
-  if (!snapshot.exists) return { snapshot, record: null };
-  const { sha256, ...record } = snapshot.config;
-  if (Object.keys(record).sort().join(',') !== 'enabledCreated,entries,eventsCreated,hooksCreated,preToolUseCreated,schemaVersion,workspace' ||
-      record.schemaVersion !== 1 || record.workspace !== location.root || !Array.isArray(record.entries) || !record.entries.length ||
-      ['hooksCreated', 'enabledCreated', 'eventsCreated', 'preToolUseCreated'].some(key => typeof record[key] !== 'boolean') || digest(record) !== sha256) fail('ZCODE_RECEIPT_INVALID');
-  for (const entry of record.entries) {
-    const hook = entry?.hooks?.[0], args = hook?.args;
-    if (!Array.isArray(args) || args.length !== 5 || ![hook.command, args[0], args[4]].every(absolute) ||
-        canonical(entry) !== canonical(ownedHook(hook.command, args[0], args[4]))) fail('ZCODE_RECEIPT_INVALID');
-  }
-  if (new Set(record.entries.map(hookIdentity)).size !== record.entries.length) fail('ZCODE_RECEIPT_INVALID');
-  return { snapshot, record };
-}
-function plan(location, current, receipt, config, next, nextReceipt) {
-  const before = canonical(config), after = canonical(next);
-  const receiptConfig = nextReceipt ? { ...nextReceipt, sha256: digest(nextReceipt) } : null;
-  const receiptChanged = canonical(receipt.snapshot.exists ? receipt.snapshot.config : null) !== canonical(receiptConfig);
-  const result = freeze({ workspace: location.root, configPath: location.configPath, existed: current.exists,
-    before, after, config: next, changed: before !== after || receiptChanged });
-  plans.set(result, { location, current, receipt: receipt.snapshot, nextReceipt: receiptConfig, receiptChanged });
-  return result;
-}
-
-/** Read-only merge plan. Ownership stays outside the host's configuration schema. */
-export function planZcodeConfig({ workspace, nodePath, cliPath, policyPath, existingConfig }) {
-  if (![workspace, nodePath, cliPath, policyPath].every(absolute)) fail('ABSOLUTE_PATH_REQUIRED');
-  const location = locations(workspace), current = readExisting(location.configPath), receipt = ownership(location);
-  const config = existingConfig === undefined ? current.config : existingConfig;
+function validateConfig(config) {
   if (!object(config)) fail('ZCODE_CONFIG_INVALID');
-  validateHooks(current.config); validateHooks(config);
-  if (config.hooks?.enabled === false) fail('ZCODE_HOOKS_DISABLED');
-  const next = structuredClone(config), addition = ownedHook(nodePath, cliPath, policyPath);
-  next.hooks ??= {};
-  next.hooks.enabled = true;
-  next.hooks.events ??= {};
-  next.hooks.events.PreToolUse ??= [];
-  const present = next.hooks.events.PreToolUse.some(entry => hookIdentity(entry) === hookIdentity(addition));
-  let record = receipt.record ? structuredClone(receipt.record) : null;
-  if (!present) {
-    next.hooks.events.PreToolUse.push(addition);
-    record ??= { schemaVersion: 1, workspace: location.root, hooksCreated: !Object.hasOwn(config, 'hooks'),
-      enabledCreated: !Object.hasOwn(config.hooks ?? {}, 'enabled'), eventsCreated: !Object.hasOwn(config.hooks ?? {}, 'events'),
-      preToolUseCreated: !Object.hasOwn(config.hooks?.events ?? {}, 'PreToolUse'), entries: [] };
-    if (!record.entries.some(entry => hookIdentity(entry) === hookIdentity(addition))) record.entries.push(addition);
-  }
-  return plan(location, current, receipt, config, next, record);
-}
-
-/** Remove exact entries; only a verified receipt permits removal of created scaffolding. */
-export function planZcodeUninstall({ workspace, nodePath, cliPath, policyPath }) {
-  if (![workspace, nodePath, cliPath, policyPath].every(absolute)) fail('ABSOLUTE_PATH_REQUIRED');
-  const location = locations(workspace), current = readExisting(location.configPath), receipt = ownership(location);
-  const config = current.config; validateHooks(config);
-  const next = structuredClone(config), expected = hookIdentity(ownedHook(nodePath, cliPath, policyPath));
-  const entries = next.hooks?.events?.PreToolUse;
-  let record = receipt.record ? structuredClone(receipt.record) : null;
-  if (entries?.some(entry => hookIdentity(entry) === expected)) {
-    next.hooks.events.PreToolUse = entries.filter(entry => hookIdentity(entry) !== expected);
-    if (record?.preToolUseCreated && !next.hooks.events.PreToolUse.length) delete next.hooks.events.PreToolUse;
-  }
-  if (record) {
-    record.entries = record.entries.filter(entry => hookIdentity(entry) !== expected);
-    if (!record.entries.length) {
-      if (record.eventsCreated && next.hooks?.events && !Object.keys(next.hooks.events).length) delete next.hooks.events;
-      const hooks = next.hooks;
-      const foreign = hooks && (Object.keys(hooks).some(key => !['enabled', 'events'].includes(key)) ||
-        Object.values(hooks.events ?? {}).some(value => value.length));
-      if (record.enabledCreated && hooks?.enabled === true && !foreign) delete hooks.enabled;
-      if (record.hooksCreated && hooks && !Object.keys(hooks).length) delete next.hooks;
-      record = null;
-    }
-  }
-  return plan(location, current, receipt, config, next, record);
-}
-
-/**
- * Explicit apply under a cooperative workspace-local lock. Rechecks exact bytes and
- * identities before publication. The two files are rolled back on ordinary failure;
- * portable filesystem APIs do not make this pair crash-atomic or fence writers that
- * ignore the lock and race the final rename. A leftover lock requires inspection.
- */
-export function applyZcodeConfigPlan(plan) {
-  const state = plans.get(plan);
-  if (!state || canonical(plan.config) !== plan.after) fail('INVALID_PLAN');
-  const { location, current, receipt } = state;
-  verifyDirectories(location.chain);
-  locations(plan.workspace);
-  unchanged(location.configPath, current);
-  unchanged(location.receiptPath, receipt, 'ZCODE_RECEIPT');
-  if (canonical(current.config) !== plan.before) fail('ZCODE_CONFIG_CHANGED');
-  if (!plan.changed) return { changed: false, path: plan.configPath };
-  let createdDirectory = false, chain = location.chain;
-  const lock = path.join(location.zdir, LOCK);
-  let locked = false, lockIdentity;
-  const staged = [], published = [];
-  const samePath = (file, id, directory = false) => {
-    const stat = fs.lstatSync(file, { throwIfNoEntry: false, bigint: true });
-    if (!stat || !id || stat.isSymbolicLink() || identity(stat) !== id.path || (directory ? !stat.isDirectory() : !stat.isFile())) return false;
-    if (!id.descriptor) return true;
-    const current = captureIdentity(file, stat, directory ? 'ZCODE_CONFIG_DIR' : 'ZCODE_CONFIG', directory);
-    return current.path === id.path && current.descriptor === id.descriptor;
-  };
-  const stage = (file, bytes) => {
-    const temp = path.join(location.zdir, path.basename(file) + '.' + randomUUID() + '.tmp');
-    const fd = fs.openSync(temp, 'wx', 0o600);
-    const item = { temp }; staged.push(item);
-    try {
-      const descriptor = fs.fstatSync(fd, { bigint: true }), stat = fs.lstatSync(temp, { bigint: true });
-      safeFile(descriptor, 'ZCODE_CONFIG'); safeFile(stat, 'ZCODE_CONFIG');
-      bindDescriptor(temp, stat, descriptor, 'ZCODE_CONFIG');
-      item.identity = { path: identity(stat), descriptor: identity(descriptor) };
-      fs.writeFileSync(fd, bytes); fs.fsyncSync(fd);
-    }
-    finally { fs.closeSync(fd); }
-    return item;
-  };
-  const written = change => {
-    const snapshot = readExisting(change.file, change.label);
-    if (snapshot.exists !== Boolean(change.bytes) || (change.bytes &&
-        (!snapshot.bytes.equals(change.bytes) || snapshot.pathIdentity !== change.identity.path || snapshot.descriptorIdentity !== change.identity.descriptor))) fail('ZCODE_CONFIG_ROLLBACK_CONFLICT');
-    return snapshot;
-  };
-  try {
-    if (!fs.lstatSync(location.zdir, { throwIfNoEntry: false })) {
-      try { fs.mkdirSync(location.zdir, { mode: 0o755 }); createdDirectory = true; }
-      catch (error) { if (error.code !== 'EEXIST') throw error; }
-    }
-    chain = directories(location.zdir, 'ZCODE_CONFIG_DIR_UNSAFE');
-    verifyDirectories(location.chain);
-    try { fs.mkdirSync(lock, { mode: 0o700 }); } catch { fail('ZCODE_CONFIG_BUSY'); }
-    locked = true; lockIdentity = directoryIdentity(lock, fs.lstatSync(lock, { bigint: true }), 'ZCODE_CONFIG_DIR_UNSAFE');
-    const changes = [];
-    if (state.receiptChanged) changes.push({ file: location.receiptPath, prior: receipt, bytes: state.nextReceipt ? Buffer.from(JSON.stringify(state.nextReceipt, null, 2) + '\n') : null, label: 'ZCODE_RECEIPT' });
-    if (plan.before !== plan.after) changes.push({ file: location.configPath, prior: current, bytes: Buffer.from(JSON.stringify(plan.config, null, 2) + '\n'), label: 'ZCODE_CONFIG' });
-    for (const change of changes) {
-      if (change.bytes) {
-        const item = stage(change.file, change.bytes); change.temp = item.temp; change.identity = item.identity;
+  if (!has(config,'hooks')) return;
+  const hooks = config.hooks;
+  if (!object(hooks)) fail('ZCODE_HOOKS_INVALID');
+  if (has(hooks,'enabled') && typeof hooks.enabled !== 'boolean') fail('ZCODE_HOOKS_INVALID');
+  if (!has(hooks,'events')) return;
+  if (!object(hooks.events)) fail('ZCODE_EVENTS_INVALID');
+  for (const entries of Object.values(hooks.events)) {
+    if (!Array.isArray(entries)) fail('ZCODE_EVENTS_INVALID');
+    for (const entry of entries) {
+      if (!object(entry) || typeof entry.matcher !== 'string' || !Array.isArray(entry.hooks)) fail('ZCODE_EVENTS_INVALID');
+      for (const hook of entry.hooks) {
+        if (!object(hook) || typeof hook.type !== 'string' || !hook.type
+          || (has(hook,'command') && (typeof hook.command !== 'string' || !hook.command))
+          || (['process','command'].includes(hook.type) && typeof hook.command !== 'string')
+          || (has(hook,'args') && (!Array.isArray(hook.args) || hook.args.some(arg => typeof arg !== 'string')))
+          || (has(hook,'timeoutMs') && (!Number.isFinite(hook.timeoutMs) || hook.timeoutMs <= 0))) fail('ZCODE_EVENTS_INVALID');
       }
     }
-    verifyDirectories(chain);
-    unchanged(location.configPath, current); unchanged(location.receiptPath, receipt, 'ZCODE_RECEIPT');
-    for (const change of changes) {
-      verifyDirectories(chain);
-      if (!samePath(lock, lockIdentity, true)) fail('ZCODE_CONFIG_BUSY');
-      unchanged(change.file, change.prior, change.label);
-      if (change.bytes) fs.renameSync(change.temp, change.file);
-      else fs.unlinkSync(change.file);
-      // Track the completed mutation before any fallible readback. If that read
-      // fails, rollback can retry only after proving these are still our bytes
-      // and the staged inode; it never adopts an external writer's version.
-      const publication = { ...change }; published.push(publication);
-      publication.installed = written(change);
-    }
-    for (const change of published) unchanged(change.file, change.installed, change.label);
-    verifyDirectories(chain);
-    return { changed: true, path: plan.configPath };
-  } catch (error) {
-    for (const change of published.reverse()) {
-      try {
-        verifyDirectories(chain);
-        const installed = change.installed ?? written(change);
-        unchanged(change.file, installed, change.label);
-        if (!change.prior.exists) fs.unlinkSync(change.file);
-        else {
-          const item = stage(change.file, change.prior.bytes);
-          unchanged(change.file, installed, change.label); fs.renameSync(item.temp, change.file);
-        }
-      } catch { fail('ZCODE_CONFIG_ROLLBACK_CONFLICT'); }
-    }
-    throw error;
+  }
+  canonical(config);
+}
+function workspaceIdentity(snapshot) {
+  const entry = snapshot.entries.at(-1);
+  return {path:snapshot.realPath, dev:entry.dev, ino:entry.ino,
+    ...(entry.descriptor ? {descriptor:{dev:entry.descriptor.dev,ino:entry.descriptor.ino,kind:entry.descriptor.kind}} : {})};
+}
+function validateReceipt(bytes, state) {
+  if (bytes === null) return null;
+  const receipt = json(bytes, 'ZCODE_RECEIPT_INVALID');
+  if (receipt.schemaVersion !== 1 || receipt.owner !== 'gstack861') fail('ZCODE_RECEIPT_INVALID');
+  if (receipt.status === 'pending') fail('ZCODE_CONFIG_RECOVERY_REQUIRED');
+  if (receipt.status !== 'committed' || !object(receipt.workspace) || !object(receipt.identity)
+    || !object(receipt.original) || !object(receipt.entry)) fail('ZCODE_RECEIPT_INVALID');
+  if (Object.keys(receipt).some(key => !['schemaVersion','owner','status','workspace','identity','entry','original'].includes(key))) fail('ZCODE_RECEIPT_INVALID');
+  if (canonical(receipt.workspace) !== canonical(workspaceIdentity(state.workspace))) fail('ZCODE_RECEIPT_CONFLICT');
+  for (const key of ['nodePath','cliPath','policyPath']) {
+    if (typeof receipt.identity[key] !== 'string' || !path.isAbsolute(receipt.identity[key])) fail('ZCODE_RECEIPT_INVALID');
+  }
+  if (Object.keys(receipt.identity).length !== 3 || entryIdentity(receipt.entry) !== entryIdentity(ownedHook(receipt.identity))) fail('ZCODE_RECEIPT_INVALID');
+  const flags = ['configExisted','hooksPresent','eventsPresent','preToolUsePresent','enabledPresent'];
+  if (Object.keys(receipt.original).length !== flags.length || flags.some(key => typeof receipt.original[key] !== 'boolean')
+    || (!receipt.original.hooksPresent && (receipt.original.eventsPresent || receipt.original.enabledPresent))
+    || (!receipt.original.eventsPresent && receipt.original.preToolUsePresent)) fail('ZCODE_RECEIPT_INVALID');
+  if (canonical(receipt.identity) !== canonical(state.identity)) fail('ZCODE_RECEIPT_CONFLICT');
+  return receipt;
+}
+function inspectState(options) {
+  const {workspace,nodePath,cliPath,policyPath} = options;
+  if (![workspace,nodePath,cliPath,policyPath].every(p => typeof p === 'string' && path.isAbsolute(p) && !/[\x00-\x1f]/.test(p))) fail('ABSOLUTE_PATH_REQUIRED');
+  const root = inspect(workspace, 'directory', false, 'WORKSPACE_INVALID');
+  const dirPath = path.join(root.path, CONFIG_DIR), dir = inspect(dirPath, 'directory', true, 'ZCODE_CONFIG_DIR_UNSAFE');
+  const state = {workspace:root, dir, identity:{nodePath,cliPath,policyPath}, configPath:path.join(dirPath,CONFIG_FILE), receiptPath:path.join(dirPath,ZCODE_RECEIPT_FILE)};
+  state.configRecord = record(state.configPath, 'ZCODE_CONFIG_UNSAFE');
+  state.receiptRecord = record(state.receiptPath, 'ZCODE_RECEIPT_UNSAFE');
+  state.config = json(state.configRecord.bytes, 'ZCODE_CONFIG_INVALID');
+  validateConfig(state.config);
+  state.receipt = validateReceipt(state.receiptRecord.bytes, state);
+  return state;
+}
+function assertRecord(value) {
+  assertPlainPathUnchanged(value.snapshot);
+  if (value.bytes !== null && !sameBytes(readPlainFile(value.snapshot), value.bytes)) fail('ZCODE_CONFIG_CHANGED');
+}
+function assertDirectories(state) {
+  assertPlainPathUnchanged(state.workspace);
+  assertPlainPathUnchanged(state.dir);
+  if (state.lock) assertPlainPathUnchanged(state.lock);
+}
+function assertCurrent(state) {
+  try { assertDirectories(state); assertRecord(state.configRecord); assertRecord(state.receiptRecord); }
+  catch (error) {
+    fail(['PATH_UNSAFE','PATH_CHANGED','ABSOLUTE_PATH_REQUIRED'].includes(error.message) ? 'ZCODE_CONFIG_CHANGED' : ioCode(error));
+  }
+}
+function makePlan(state, config, receipt, operation, applicable = true) {
+  const nextBytes = canonical(config) === canonical(state.config) ? state.configRecord.bytes : encode(config);
+  const removeConfig = operation === 'uninstall' && state.receipt && !state.receipt.original.configExisted && Object.keys(config).length === 0;
+  const desiredConfig = removeConfig ? null : nextBytes;
+  if (desiredConfig !== null && desiredConfig.length > MAX_CONFIG_BYTES) fail('ZCODE_CONFIG_UNSAFE');
+  const desiredReceipt = receipt === state.receipt ? state.receiptRecord.bytes : receipt === null ? null : encode(receipt);
+  const changed = !sameBytes(desiredConfig,state.configRecord.bytes) || !sameBytes(desiredReceipt,state.receiptRecord.bytes);
+  const plan = freeze({workspace:state.workspace.path, configPath:state.configPath, existed:state.configRecord.bytes !== null,
+    before:canonical(state.config), after:canonical(config), config:structuredClone(config), changed});
+  plans.set(plan, {...state, desiredConfig, desiredReceipt, operation, applicable});
+  return plan;
+}
+
+/** Read-only, immutable plan bound to the exact file bytes and plain-path identities. */
+export function planZcodeConfig(options) {
+  const state = inspectState(options);
+  let config = state.config, applicable = true;
+  if (options.existingConfig !== undefined) {
+    validateConfig(options.existingConfig);
+    applicable = canonical(options.existingConfig) === canonical(config);
+    config = structuredClone(options.existingConfig);
+  }
+  if (config.hooks?.enabled === false) fail('ZCODE_HOOKS_DISABLED');
+  const entry = ownedHook(state.identity), entries = config.hooks?.events?.PreToolUse ?? [];
+  if (entries.some(item => entryIdentity(item) === entryIdentity(entry))) {
+    // An already present hook is user-owned unless an existing receipt proves otherwise.
+    // In particular, do not add enabled:true or create flag-only ownership.
+    return makePlan(state, config, state.receipt, 'install', applicable);
+  }
+  if (state.receipt) fail('ZCODE_RECEIPT_CONFLICT');
+  const result = structuredClone(config), original = {configExisted:state.configRecord.bytes !== null,
+    hooksPresent:has(config,'hooks'), eventsPresent:has(config.hooks ?? {},'events'),
+    preToolUsePresent:has(config.hooks?.events ?? {},'PreToolUse'), enabledPresent:has(config.hooks ?? {},'enabled')};
+  result.hooks ??= {}; result.hooks.enabled = true; result.hooks.events ??= {};
+  result.hooks.events.PreToolUse ??= []; result.hooks.events.PreToolUse.push(entry);
+  const receipt = {schemaVersion:1, owner:'gstack861', status:'committed', workspace:workspaceIdentity(state.workspace), identity:state.identity, entry, original};
+  return makePlan(state, result, receipt, 'install', applicable);
+}
+
+/** Remove at most one receipt-proven full entry; a missing receipt never grants ownership. */
+export function planZcodeUninstall(options) {
+  const state = inspectState(options);
+  if (!state.receipt) return makePlan(state, state.config, null, 'uninstall');
+  const result = structuredClone(state.config), receipt = state.receipt;
+  const entries = result.hooks?.events?.PreToolUse;
+  const index = entries?.findIndex(entry => entryIdentity(entry) === entryIdentity(receipt.entry)) ?? -1;
+  if (index !== -1) entries.splice(index,1);
+  if (result.hooks) {
+    if (!receipt.original.preToolUsePresent && entries?.length === 0) delete result.hooks.events.PreToolUse;
+    if (!receipt.original.eventsPresent && result.hooks.events && !Object.keys(result.hooks.events).length) delete result.hooks.events;
+    if (!receipt.original.enabledPresent && result.hooks.enabled === true) delete result.hooks.enabled;
+    if (!receipt.original.hooksPresent && !Object.keys(result.hooks).length) delete result.hooks;
+  }
+  return makePlan(state, result, null, 'uninstall');
+}
+
+// After expected creation, retain every saved ancestor identity before capturing the
+// new suffix. Dropping missing entries is never permission to rebase old ancestors.
+function assertExisting(snapshot) {
+  assertPlainPathUnchanged({...snapshot, missing:[]});
+}
+function prepareDirectory(state) {
+  if (state.dir.exists) return false;
+  const old = state.dir;
+  assertCurrent(state);
+  fs.mkdirSync(old.path, {mode:0o755});
+  assertExisting(old);
+  assertExisting(state.configRecord.snapshot); assertExisting(state.receiptRecord.snapshot);
+  state.dir = inspectPlainPath(old.path, {kind:'directory'});
+  for (const key of ['configRecord','receiptRecord']) {
+    const value = state[key], snapshot = inspectPlainPath(value.snapshot.path, {kind:'file',allowMissing:true});
+    if (snapshot.exists) fail('ZCODE_CONFIG_CHANGED');
+    state[key] = {snapshot,bytes:null};
+  }
+  return true;
+}
+function fingerprint(value) {
+  return {exists:value !== null, sha256:value === null ? null : textDigest(value)};
+}
+function pendingIntent(state) {
+  return encode({schemaVersion:1, owner:'gstack861', status:'pending', operation:state.operation, transactionId:randomUUID(),
+    workspace:workspaceIdentity(state.workspace), identity:state.identity,
+    ownership:state.desiredReceipt === null ? state.receipt : json(state.desiredReceipt,'ZCODE_RECEIPT_INVALID'),
+    before:{config:{...fingerprint(state.configRecord.bytes), bytesBase64:state.configRecord.bytes?.toString('base64') ?? null},
+      receipt:{...fingerprint(state.receiptRecord.bytes), bytesBase64:state.receiptRecord.bytes?.toString('base64') ?? null}},
+    after:{config:fingerprint(state.desiredConfig),receipt:fingerprint(state.desiredReceipt)}});
+}
+function readWritten(state, value) {
+  assertDirectories(state);
+  if (value.bytes === null && inspectPlainPath(value.snapshot.path,{kind:'file',allowMissing:true}).exists) fail('ZCODE_CONFIG_CHANGED');
+  assertRecord(value);
+}
+// A successful syscall advances the expected state before fallible verification.
+// Only transplant the proven temp leaf; never rebase the saved ancestor identities.
+function writtenRecord(current, bytes, owned) {
+  const snapshot = current.snapshot;
+  const ancestors = snapshot.exists ? snapshot.entries.slice(0,-1) : snapshot.entries;
+  const entries = bytes === null ? ancestors : [...ancestors, {...owned.entries.at(-1),path:snapshot.path}];
+  return {snapshot:freeze({...snapshot,exists:bytes !== null,entries,missing:bytes === null ? [snapshot.path] : []}),bytes};
+}
+function replaceRecord(state, key, bytes) {
+  assertCurrent(state);
+  const current = state[key], filename = current.snapshot.path;
+  if (sameBytes(current.bytes,bytes)) return;
+  if (bytes === null) {
+    fs.unlinkSync(filename);
+    state[key] = writtenRecord(current,null);
+    readWritten(state,state[key]);
+    return;
+  }
+  const temp = filename + '.' + randomUUID() + '.tmp';
+  let owned = null, moved = false, cleanupBytes = Buffer.alloc(0);
+  try {
+    // Exclusive creation gives cleanup an identity before a potentially partial write.
+    const fd = fs.openSync(temp,'wx',0o600);
+    try {
+      const candidate = inspectPlainPath(temp,{kind:'file'});
+      try { assertPlainFileDescriptor(candidate,fd); }
+      catch { fail('ZCODE_CONFIG_CHANGED'); }
+      owned = candidate;
+    } finally { fs.closeSync(fd); }
+    assertCurrent(state); assertPlainPathUnchanged(owned);
+    const intendedBytes = Buffer.from(bytes);
+    fs.writeFileSync(temp,bytes,{flag:'r+',mode:0o600});
+    cleanupBytes = intendedBytes;
+    assertCurrent(state); assertPlainPathUnchanged(owned);
+    if (!sameBytes(readPlainFile(owned),bytes)) fail('ZCODE_CONFIG_CHANGED');
+    // These pathname checks detect observed changes; they cannot make rename OS-atomic
+    // against a hostile same-user swap inside its final syscall (ZC-07 remains open).
+    assertCurrent(state); assertPlainPathUnchanged(owned);
+    fs.renameSync(temp,filename); moved = true;
+    state[key] = writtenRecord(current,bytes,owned);
+    readWritten(state,state[key]);
   } finally {
-    for (const item of staged) {
-      if (item.identity && samePath(item.temp, item.identity)) fs.unlinkSync(item.temp);
-    }
-    if (locked && samePath(lock, lockIdentity, true)) fs.rmdirSync(lock);
-    if (createdDirectory) {
-      try { verifyDirectories(chain); fs.rmdirSync(location.zdir); }
-      catch (error) { if (!['ENOTEMPTY', 'EEXIST'].includes(error.code) && error.message !== 'ZCODE_CONFIG_DIR_UNSAFE') throw error; }
+    if (owned && !moved) {
+      try {
+        assertDirectories(state); assertPlainPathUnchanged(owned);
+        if (readPlainFile(owned).equals(cleanupBytes)) fs.unlinkSync(temp);
+      } catch { /* Retain unproven recovery data and preserve the primary failure. */ }
     }
   }
+}
+function rollback(state, originalConfig, originalReceipt) {
+  // Unexpected user edits or identity changes invalidate the current write proof;
+  // retain the pending receipt rather than overwrite those edits during recovery.
+  assertCurrent(state);
+  replaceRecord(state,'configRecord',originalConfig);
+  replaceRecord(state,'receiptRecord',originalReceipt);
+}
+
+/** Explicit apply of an authentic plan. Cooperative lock + recoverable intent, not an OS sandbox. */
+export function applyZcodeConfigPlan(plan) {
+  const saved = plan && plans.get(plan);
+  if (!saved) fail('INVALID_PLAN');
+  if (!saved.applicable) fail('ZCODE_CONFIG_CHANGED');
+  const state = {...saved};
+  assertCurrent(state);
+  if (!plan.changed) return {changed:false,path:plan.configPath};
+  let createdDirectory = false, committed = false, failure = null;
+  try {
+    createdDirectory = prepareDirectory(state);
+    assertCurrent(state);
+    const lockPath = path.join(state.dir.path,LOCK);
+    try { fs.mkdirSync(lockPath,{mode:0o700}); }
+    catch (error) { fail(error.code === 'EEXIST' ? 'ZCODE_CONFIG_BUSY' : ioCode(error)); }
+    state.lock = inspectPlainPath(lockPath,{kind:'directory'});
+    assertCurrent(state);
+    const originalConfig = state.configRecord.bytes, originalReceipt = state.receiptRecord.bytes;
+    const originalReceiptRecord = state.receiptRecord, intent = pendingIntent(state);
+    try {
+      replaceRecord(state,'receiptRecord',intent);
+      replaceRecord(state,'configRecord',state.desiredConfig);
+      replaceRecord(state,'receiptRecord',state.desiredReceipt);
+      committed = true;
+    } catch (error) {
+      // The initial intent may already be published even if its readback threw.
+      if (state.receiptRecord !== originalReceiptRecord) {
+        const finalized = sameBytes(state.receiptRecord.bytes,state.desiredReceipt);
+        try {
+          // Final receipt promotion/deletion removed the blocking intent. Restore
+          // it before config rollback so a second fault cannot appear committed.
+          if (finalized) replaceRecord(state,'receiptRecord',intent);
+          rollback(state,originalConfig,originalReceipt);
+        } catch {
+          try { assertDirectories(state); assertRecord(state.receiptRecord); }
+          catch { fail('ZCODE_CONFIG_RECOVERY_UNCERTAIN'); }
+          fail(sameBytes(state.receiptRecord.bytes,intent) ? 'ZCODE_CONFIG_RECOVERY_REQUIRED'
+            : finalized ? 'ZCODE_CONFIG_COMMITTED_RECOVERY_FAILED' : 'ZCODE_CONFIG_RECOVERY_UNCERTAIN');
+        }
+      }
+      fail(ioCode(error));
+    }
+  } catch (error) { failure = error; }
+  finally {
+    if (state.lock) {
+      try { assertDirectories(state); fs.rmdirSync(state.lock.path); }
+      catch (error) {
+        failure ??= new Error(committed ? 'ZCODE_CONFIG_COMMITTED_CLEANUP_FAILED' : 'ZCODE_CONFIG_RECOVERY_REQUIRED');
+        failure.cleanupCode = ioCode(error);
+      }
+      state.lock = null;
+    }
+    if (failure && createdDirectory) {
+      try {
+        assertPlainPathUnchanged(state.workspace); assertPlainPathUnchanged(state.dir);
+        // Nonrecursive removal only; concurrent foreign entries remain untouched.
+        if (fs.readdirSync(state.dir.path).length === 0) fs.rmdirSync(state.dir.path);
+      } catch { /* Preserve nonempty, replaced or otherwise unproven resources. */ }
+    }
+  }
+  if (failure) throw failure;
+  return {changed:true,path:plan.configPath};
 }

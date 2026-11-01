@@ -1,0 +1,609 @@
+✔ installSkills installs every staged skill into an empty target and writes the registry (61.7741ms)
+✔ installSkills skips identical reinstalls without touching existing files (29.4308ms)
+✔ installSkills refuses a foreign target entry and writes nothing at all (19.8999ms)
+✔ installSkills refuses tampered staging with zero writes (7.4456ms)
+✔ installSkills backs up version drift and installs the new content (21.2531ms)
+✔ installSkills merges successive installs into one registry (39.7553ms)
+✔ installSkills refuses empty staging and malformed staging entries (18.0749ms)
+✔ installSkills refuses invalid staging and target paths (7.7914ms)
+✔ installSkills refuses staging with mixed hosts or commits and writes nothing (14.1499ms)
+✔ installSkills refuses staging manifests carrying an illegal host value (14.3461ms)
+✔ installSkills preserves unproven temporary-prefix entries and touches nothing else (27.3036ms)
+✔ uninstallSkills removes only registry skills and keeps foreign directories (21.5555ms)
+✔ uninstallSkills purge removes backup directories and reports the count (24.0014ms)
+✔ uninstallSkills aborts with zero deletions when the registry names a foreign directory (14.2929ms)
+✔ uninstallSkills returns empty results without a registry (5.1262ms)
+✔ uninstallSkills refuses a user-modified SKILL.md and deletes nothing anywhere (21.1244ms)
+✔ uninstallSkills refuses an extra user file inside a skill directory (11.8185ms)
+✔ uninstallSkills refuses a forged registry even with a bare generator marker manifest (16.6373ms)
+✔ installSkills refuses a junction at the backups path and writes nothing outside the target (17.1978ms)
+✔ installSkills refuses a directory at the registry path with zero writes (6.3468ms)
+✔ a stale install lock fails closed with INSTALL_BUSY and is never auto-cleared (10.1707ms)
+✔ two real processes racing one install: exactly one wins, the other gets INSTALL_BUSY (305.5911ms)
+✔ uninstallSkills purge keeps user entries that do not match the backup naming scheme (24.1676ms)
+✔ uninstallSkills purge keeps user directories whose suffix is not a 13-digit timestamp (25.277ms)
+✔ uninstallSkills purge keeps timestamp-named backups whose manifest is not verifiably ours (28.2493ms)
+✔ uninstallSkills tolerates a registered skill the user already deleted (17.2681ms)
+✔ installSkills refuses to move a user-edited skill into purgeable backups (12.3695ms)
+✔ installSkills writes every listed file, records the files map in the registry, and uninstall removes it all (30.6352ms)
+✔ installSkills refuses a tampered or missing listed file in staging with zero writes (9.1174ms)
+✔ a user-modified listed file refuses both uninstall and reinstall (27.9623ms)
+✔ uninstallSkills refuses an unlisted extra file inside a multi-file skill directory (15.7728ms)
+✔ uninstallSkills refuses a forged registry.files that disagrees with the target (20.8321ms)
+✔ installSkills does not skip a re-render that changed only listed files (35.4522ms)
+✔ installSkills skips an identical multi-file reinstall byte-for-byte (27.857ms)
+✔ installSkills rejects reserved top-level names as files keys (16.4113ms)
+✔ installSkills rejects malformed files maps, keys, and values (77.1093ms)
+✔ installSkills refuses files keys that collide case-insensitively with zero writes (6.7091ms)
+✔ installSkills refuses a files key that collides as a directory prefix of another (12.0239ms)
+✔ installSkills installs files keys that share a bare string prefix but no segment (13.9129ms)
+✔ uninstallSkills refuses a legacy files-less registry record over a files-bearing target (14.0022ms)
+✔ uninstallSkills refuses when a listed file is missing from the target (32.5318ms)
+✔ an I/O failure mid-install leaves every skill whole and the target recoverable (45.3902ms)
+✔ registry lost + a user-added file refuses takeover; a pristine directory still recovers (audit #2) (45.7871ms)
+✔ registry lost + user-added file refuses takeover for files-LESS skills too (audit #2, round 3) (23.3132ms)
+✔ a fault at the new-dir rename restores the moved backup and leaves the registry untouched (audit #3a) (27.3389ms)
+✔ a fault at the registry commit rolls the skill directory back too (audit #3b) (42.3063ms)
+✔ a combined fault (commit fails AND the rollback delete fails) keeps the old version in the backup (audit #15) (22.7919ms)
+✔ multi-segment listed files survive the reinstall and uninstall lifecycle (audit #4) (49.6397ms)
+✔ installSkills dry-run reports a fresh install (multi-file skill included) and writes nothing (42.4598ms)
+✔ installSkills dry-run over an installed target reports wouldSkip and writes nothing (20.5384ms)
+✔ installSkills dry-run reports drift as wouldBackUp plus wouldInstall without writing (19.6343ms)
+✔ installSkills dry-run still throws TAMPERED_STAGING and writes nothing (6.2941ms)
+✔ installSkills dry-run takes no lock, so a held one never reports INSTALL_BUSY (6.1397ms)
+✔ installSkills dry-run refuses a junction target with INVALID_TARGET and writes nothing through it (6.3005ms)
+✔ installSkills dry-run refuses a junction at the backups root without creating anything (38.3198ms)
+✔ install --dry-run prints the report and creates nothing (168.0318ms)
+✔ install --dry-run keeps ABSOLUTE_PATH_REQUIRED for a relative target (139.9409ms)
+✔ uninstallSkills dry-run reports the full uninstall set and mutates nothing (23.0808ms)
+✔ uninstallSkills dry-run counts a registered skill whose directory is already gone (16.034ms)
+✔ uninstallSkills dry-run refuses drift exactly like the real run and removes nothing (15.4346ms)
+✔ uninstallSkills dry-run with purge lists the drift backup and the emptied root (32.924ms)
+✔ uninstallSkills dry-run with purge leaves user archives and unverifiable backups unlisted and in place (28.2735ms)
+✔ uninstallSkills dry-run on an absent target returns the empty report without throwing (1.8735ms)
+✔ uninstallSkills dry-run without a registry returns the empty report without inventing one (3.4897ms)
+✔ uninstallSkills dry-run takes no lock, so a stale one never reports INSTALL_BUSY (10.7747ms)
+✔ uninstallSkills dry-run refuses a junction target with INVALID_TARGET and writes nothing through it (11.8786ms)
+✔ uninstall --dry-run prints the report and removes nothing (170.5551ms)
+✔ uninstall --dry-run --purge prints the combined report without touching anything (185.8759ms)
+✖ I1 install refuses a linked ancestor above a missing target before any writes (17.1278ms)
+✖ I1 install refuses a linked ancestor above a present target before any writes (18.8678ms)
+✖ I1 install dry-run refuses a linked ancestor above a missing target before any writes (7.7617ms)
+✖ I1 install dry-run refuses a linked ancestor above a present target before any writes (16.0259ms)
+✖ I1 uninstall refuses a linked ancestor above a missing target before any writes (9.1986ms)
+✖ I1 uninstall refuses a linked ancestor above a present target before any writes (16.1785ms)
+✖ I1 uninstall dry-run refuses a linked ancestor above a missing target before any writes (7.915ms)
+✖ I1 uninstall dry-run refuses a linked ancestor above a present target before any writes (16.517ms)
+✖ I1 extended namespace spelling cannot hide a target ancestor junction (14.9206ms)
+✔ I1 plain extended namespace paths retain the normal install and uninstall lifecycle (14.0456ms)
+✖ I1 install refuses a staging ancestor directory link (15.9682ms)
+✔ I1 install refuses a staging root directory link (11.651ms)
+✔ I1 install refuses a staging skill directory link (10.9415ms)
+✔ I1 install refuses a staging auxiliary directory link (13.5748ms)
+✔ I1 install refuses a multiply linked staging manifest.json (11.4855ms)
+✔ I1 install refuses a multiply linked staging SKILL.md (13.8119ms)
+✔ I1 install refuses a multiply linked staging sections/scope.md (15.6354ms)
+✖ I1 install dry-run refuses a staging ancestor directory link (13.4298ms)
+✔ I1 install dry-run refuses a staging root directory link (11.4917ms)
+✔ I1 install dry-run refuses a staging skill directory link (14.4689ms)
+✔ I1 install dry-run refuses a staging auxiliary directory link (16.5262ms)
+✔ I1 install dry-run refuses a multiply linked staging manifest.json (8.9462ms)
+✔ I1 install dry-run refuses a multiply linked staging SKILL.md (10.0048ms)
+✔ I1 install dry-run refuses a multiply linked staging sections/scope.md (11.3441ms)
+✔ I1 missing target suffix previews write nothing and a real multi-file lifecycle still succeeds (38.0245ms)
+✖ I1 install rejects a junction target ancestor replacement observed during staging reads (14.9895ms)
+✖ I1 uninstall rejects a junction ancestor replacement observed during ownership reads (23.1785ms)
+✖ I1 install dry-run rejects a junction target ancestor replacement observed during staging reads (7.3464ms)
+✖ I1 uninstall dry-run rejects a junction ancestor replacement observed during ownership reads (22.758ms)
+✖ I1 install rejects a plain target ancestor replacement observed during staging reads (14.7635ms)
+✖ I1 uninstall rejects a plain ancestor replacement observed during ownership reads (23.9672ms)
+✖ I1 install dry-run rejects a plain target ancestor replacement observed during staging reads (8.4348ms)
+✖ I1 uninstall dry-run rejects a plain ancestor replacement observed during ownership reads (19.9456ms)
+✖ I1 target creation must not refresh away an existing ancestor replacement (13.7647ms)
+✖ I1 an ancestor swap after lock creation preserves the replacement lock and target (12.4192ms)
+✖ I1 staging ancestor replacement during a manifest read refuses before target creation (16.362ms)
+✖ I1 failed temp mkdir preserves a colliding operator directory (9.1354ms)
+✖ I1 failed temp write cleans only invocation-owned files and preserves an operator sibling (8.0085ms)
+ℹ tests 106
+ℹ suites 0
+ℹ pass 82
+ℹ fail 24
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3156.0497
+
+✖ failing tests:
+
+test at gstack861-m3-audit\test\install.test.mjs:1409:7
+✖ I1 install refuses a linked ancestor above a missing target before any writes (17.1278ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/install.test.mjs:1416:16)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /^Error: INVALID_TARGET$/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at gstack861-m3-audit\test\install.test.mjs:1409:7
+✖ I1 install refuses a linked ancestor above a present target before any writes (18.8678ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/install.test.mjs:1416:16)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /^Error: INVALID_TARGET$/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at gstack861-m3-audit\test\install.test.mjs:1409:7
+✖ I1 install dry-run refuses a linked ancestor above a missing target before any writes (7.7617ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/install.test.mjs:1416:16)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /^Error: INVALID_TARGET$/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at gstack861-m3-audit\test\install.test.mjs:1409:7
+✖ I1 install dry-run refuses a linked ancestor above a present target before any writes (16.0259ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/install.test.mjs:1416:16)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /^Error: INVALID_TARGET$/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at gstack861-m3-audit\test\install.test.mjs:1409:7
+✖ I1 uninstall refuses a linked ancestor above a missing target before any writes (9.1986ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/install.test.mjs:1416:16)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /^Error: INVALID_TARGET$/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at gstack861-m3-audit\test\install.test.mjs:1409:7
+✖ I1 uninstall refuses a linked ancestor above a present target before any writes (16.1785ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/install.test.mjs:1416:16)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /^Error: INVALID_TARGET$/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at gstack861-m3-audit\test\install.test.mjs:1409:7
+✖ I1 uninstall dry-run refuses a linked ancestor above a missing target before any writes (7.915ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/install.test.mjs:1416:16)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /^Error: INVALID_TARGET$/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at gstack861-m3-audit\test\install.test.mjs:1409:7
+✖ I1 uninstall dry-run refuses a linked ancestor above a present target before any writes (16.517ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/install.test.mjs:1416:16)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /^Error: INVALID_TARGET$/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at gstack861-m3-audit\test\install.test.mjs:1426:3
+✖ I1 extended namespace spelling cannot hide a target ancestor junction (14.9206ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/install.test.mjs:1433:14)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /^Error: INVALID_TARGET$/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at gstack861-m3-audit\test\install.test.mjs:1450:5
+✖ I1 install refuses a staging ancestor directory link (15.9682ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/install.test.mjs:1470:14)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /^Error: INVALID_STAGING$/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at gstack861-m3-audit\test\install.test.mjs:1450:5
+✖ I1 install dry-run refuses a staging ancestor directory link (13.4298ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/install.test.mjs:1470:14)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /^Error: INVALID_STAGING$/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at gstack861-m3-audit\test\install.test.mjs:1508:5
+✖ I1 install rejects a junction target ancestor replacement observed during staging reads (14.9895ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/install.test.mjs:1526:16)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /^Error: INVALID_TARGET$/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at gstack861-m3-audit\test\install.test.mjs:1533:5
+✖ I1 uninstall rejects a junction ancestor replacement observed during ownership reads (23.1785ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /^Error: INVALID_TARGET$/. Input:
+  
+  "Error: ENOENT: no such file or directory, rmdir 'C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\gstack861-install-dAogmS\\parent\\skills\\.gstack861-install.lock'"
+  
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/install.test.mjs:1551:16)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: Error: ENOENT: no such file or directory, rmdir 'C:\Users\ADMINI~1\AppData\Local\Temp\gstack861-install-dAogmS\parent\skills\.gstack861-install.lock'
+        at Object.rmdirSync (node:fs:1236:11)
+        at withInstallLock (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/src/install.mjs:111:8)
+        at uninstallSkills (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/src/install.mjs:500:10)
+        at file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/install.test.mjs:1551:29
+        at getActual (node:assert:611:5)
+        at strict.throws (node:assert:759:24)
+        at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/install.test.mjs:1551:16)
+        at Test.runInAsyncScope (node:async_hooks:227:14)
+        at Test.run (node:internal/test_runner/test:1402:25)
+        at Test.processPendingSubtests (node:internal/test_runner/test:974:18),
+    expected: /^Error: INVALID_TARGET$/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at gstack861-m3-audit\test\install.test.mjs:1508:5
+✖ I1 install dry-run rejects a junction target ancestor replacement observed during staging reads (7.3464ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/install.test.mjs:1526:16)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /^Error: INVALID_TARGET$/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at gstack861-m3-audit\test\install.test.mjs:1533:5
+✖ I1 uninstall dry-run rejects a junction ancestor replacement observed during ownership reads (22.758ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/install.test.mjs:1551:16)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /^Error: INVALID_TARGET$/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at gstack861-m3-audit\test\install.test.mjs:1508:5
+✖ I1 install rejects a plain target ancestor replacement observed during staging reads (14.7635ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/install.test.mjs:1526:16)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /^Error: INVALID_TARGET$/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at gstack861-m3-audit\test\install.test.mjs:1533:5
+✖ I1 uninstall rejects a plain ancestor replacement observed during ownership reads (23.9672ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /^Error: INVALID_TARGET$/. Input:
+  
+  "Error: ENOENT: no such file or directory, rmdir 'C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\gstack861-install-7ezUTB\\parent\\skills\\.gstack861-install.lock'"
+  
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/install.test.mjs:1551:16)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: Error: ENOENT: no such file or directory, rmdir 'C:\Users\ADMINI~1\AppData\Local\Temp\gstack861-install-7ezUTB\parent\skills\.gstack861-install.lock'
+        at Object.rmdirSync (node:fs:1236:11)
+        at withInstallLock (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/src/install.mjs:111:8)
+        at uninstallSkills (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/src/install.mjs:500:10)
+        at file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/install.test.mjs:1551:29
+        at getActual (node:assert:611:5)
+        at strict.throws (node:assert:759:24)
+        at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/install.test.mjs:1551:16)
+        at Test.runInAsyncScope (node:async_hooks:227:14)
+        at Test.run (node:internal/test_runner/test:1402:25)
+        at Test.processPendingSubtests (node:internal/test_runner/test:974:18),
+    expected: /^Error: INVALID_TARGET$/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at gstack861-m3-audit\test\install.test.mjs:1508:5
+✖ I1 install dry-run rejects a plain target ancestor replacement observed during staging reads (8.4348ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/install.test.mjs:1526:16)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /^Error: INVALID_TARGET$/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at gstack861-m3-audit\test\install.test.mjs:1533:5
+✖ I1 uninstall dry-run rejects a plain ancestor replacement observed during ownership reads (19.9456ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/install.test.mjs:1551:16)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /^Error: INVALID_TARGET$/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at gstack861-m3-audit\test\install.test.mjs:1560:1
+✖ I1 target creation must not refresh away an existing ancestor replacement (13.7647ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/install.test.mjs:1575:16)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /^Error: INVALID_TARGET$/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at gstack861-m3-audit\test\install.test.mjs:1582:1
+✖ I1 an ancestor swap after lock creation preserves the replacement lock and target (12.4192ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /^Error: INVALID_TARGET$/. Input:
+  
+  "Error: ENOTEMPTY: directory not empty, rmdir 'C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\gstack861-install-ta3CI7\\parent\\skills\\.gstack861-install.lock'"
+  
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/install.test.mjs:1597:16)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: Error: ENOTEMPTY: directory not empty, rmdir 'C:\Users\ADMINI~1\AppData\Local\Temp\gstack861-install-ta3CI7\parent\skills\.gstack861-install.lock'
+        at Object.rmdirSync (node:fs:1236:11)
+        at withInstallLock (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/src/install.mjs:111:8)
+        at installSkills (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/src/install.mjs:303:10)
+        at file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/install.test.mjs:1597:29
+        at getActual (node:assert:611:5)
+        at strict.throws (node:assert:759:24)
+        at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/install.test.mjs:1597:16)
+        at Test.runInAsyncScope (node:async_hooks:227:14)
+        at Test.run (node:internal/test_runner/test:1402:25)
+        at Test.processPendingSubtests (node:internal/test_runner/test:974:18),
+    expected: /^Error: INVALID_TARGET$/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at gstack861-m3-audit\test\install.test.mjs:1604:1
+✖ I1 staging ancestor replacement during a manifest read refuses before target creation (16.362ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/install.test.mjs:1620:16)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /^Error: STAGING_INVALID$/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at gstack861-m3-audit\test\install.test.mjs:1626:1
+✖ I1 failed temp mkdir preserves a colliding operator directory (9.1354ms)
+  Error: ENOENT: no such file or directory, open 'C:\Users\ADMINI~1\AppData\Local\Temp\gstack861-install-oqMaFw\target\.gstack861-tmp-a8a69eae-b380-41c3-b49e-b2a3683c4852\operator.txt'
+      at Object.readFileSync (node:fs:483:20)
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/install.test.mjs:1641:19)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    errno: -4058,
+    code: 'ENOENT',
+    syscall: 'open',
+    path: 'C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\gstack861-install-oqMaFw\\target\\.gstack861-tmp-a8a69eae-b380-41c3-b49e-b2a3683c4852\\operator.txt'
+  }
+
+test at gstack861-m3-audit\test\install.test.mjs:1645:1
+✖ I1 failed temp write cleans only invocation-owned files and preserves an operator sibling (8.0085ms)
+  Error: ENOENT: no such file or directory, scandir 'C:\Users\ADMINI~1\AppData\Local\Temp\gstack861-install-I6Fsv0\target\.gstack861-tmp-b61a376d-c409-468b-af34-13251efd160a'
+      at Object.readdirSync (node:fs:1630:26)
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/install.test.mjs:1660:23)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    errno: -4058,
+    code: 'ENOENT',
+    syscall: 'scandir',
+    path: 'C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\gstack861-install-I6Fsv0\\target\\.gstack861-tmp-b61a376d-c409-468b-af34-13251efd160a'
+  }

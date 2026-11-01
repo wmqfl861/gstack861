@@ -1,0 +1,218 @@
+{
+  "schemaVersion": 1,
+  "lane": "aliases-supplement",
+  "recordedAt": "2026-10-30T14:43:32.568Z",
+  "root": "<REPO>\\.superpowers\\m3-local-acceptance\\aliases\\supplement-7x4kLp",
+  "source": "pinned source fixtures; zero models, network, user config reads/writes; no actual host discovery",
+  "cases": [
+    {
+      "id": "overlap-namespace",
+      "result": {
+        "accepted": true,
+        "result": {
+          "schemaVersion": 1,
+          "host": "zcode",
+          "output": "\\\\?\\<REPO>\\.superpowers\\m3-local-acceptance\\aliases\\supplement-7x4kLp\\overlap-namespace\\staging\\alias-child",
+          "aliases": [
+            {
+              "name": "connect-chrome",
+              "aliasOf": "open-gstack-browser",
+              "sha256": "cbba40de7234b029acc200131b98ee4557c038f8b9e1f053f95c0fdab19d0115"
+            }
+          ],
+          "note": "Rewritten copy, not symlink; install separately. Not host-verified."
+        },
+        "output": "\\\\?\\<REPO>\\.superpowers\\m3-local-acceptance\\aliases\\supplement-7x4kLp\\overlap-namespace\\staging\\alias-child",
+        "relativeComparison": "\\\\?\\<REPO>\\.superpowers\\m3-local-acceptance\\aliases\\supplement-7x4kLp\\overlap-namespace\\staging\\alias-child",
+        "sourceOutputCreated": true
+      }
+    },
+    {
+      "id": "overlap-shortname",
+      "result": {
+        "accepted": true,
+        "result": {
+          "schemaVersion": 1,
+          "host": "zcode",
+          "output": "<REPO>\\.superpowers\\m3-local-acceptance\\aliases\\supplement-7x4kLp\\overlap-shortname\\staging\\alias-child",
+          "aliases": [
+            {
+              "name": "connect-chrome",
+              "aliasOf": "open-gstack-browser",
+              "sha256": "cbba40de7234b029acc200131b98ee4557c038f8b9e1f053f95c0fdab19d0115"
+            }
+          ],
+          "note": "Rewritten copy, not symlink; install separately. Not host-verified."
+        },
+        "output": "<REPO>\\.superpowers\\m3-local-acceptance\\aliases\\supplement-7x4kLp\\overlap-shortname\\staging\\alias-child",
+        "shortIdentity": "<REPO>\\.superpowers\\m3-local-acceptance\\aliases\\supplement-7x4kLp\\overlap-shortname\\staging",
+        "relativeComparison": "..\\..\\..\\..\\..\\..\\..\\..\\..\\..\\..\\<USER-8DOT3>\\.zcode\\workspace\\<WORKSPACE-ID>\\gstack861-m3-audit\\.superpowers\\m3-local-acceptance\\aliases\\supplement-7x4kLp\\overlap-shortname\\staging\\alias-child",
+        "sourceOutputCreated": true
+      }
+    },
+    {
+      "id": "overlap-trailing-dot",
+      "result": {
+        "accepted": true,
+        "result": {
+          "schemaVersion": 1,
+          "host": "zcode",
+          "output": "<REPO>\\.superpowers\\m3-local-acceptance\\aliases\\supplement-7x4kLp\\overlap-trailing-dot\\staging.\\alias-child",
+          "aliases": [
+            {
+              "name": "connect-chrome",
+              "aliasOf": "open-gstack-browser",
+              "sha256": "cbba40de7234b029acc200131b98ee4557c038f8b9e1f053f95c0fdab19d0115"
+            }
+          ],
+          "note": "Rewritten copy, not symlink; install separately. Not host-verified."
+        },
+        "output": "<REPO>\\.superpowers\\m3-local-acceptance\\aliases\\supplement-7x4kLp\\overlap-trailing-dot\\staging.\\alias-child",
+        "relativeComparison": "..\\staging.\\alias-child",
+        "sourceOutputCreated": false
+      }
+    },
+    {
+      "id": "cleanup-on-mkdir-collision",
+      "result": {
+        "accepted": false,
+        "error": {
+          "name": "Error",
+          "message": "EEXIST: file already exists, mkdir '<REPO>\\.superpowers\\m3-local-acceptance\\aliases\\supplement-7x4kLp\\cleanup-on-mkdir-collision\\output\\connect-chrome'",
+          "code": "EEXIST",
+          "stack": "Error: EEXIST: file already exists, mkdir '<REPO>\\.superpowers\\m3-local-acceptance\\aliases\\supplement-7x4kLp\\cleanup-on-mkdir-collision\\output\\connect-chrome'\n    at Object.mkdirSync (node:fs:1410:26)\n    at fs.mkdirSync (file:///<REPO>/.superpowers/m3-local-acceptance/aliases/supplement.mjs:67:31)\n    at stageCommandAliases (file:///<REPO>/src/aliases.mjs:72:52)\n    at attempt (file:///<REPO>/.superpowers/m3-local-acceptance/aliases/supplement.mjs:30:42)\n    at file:///<REPO>/.superpowers/m3-local-acceptance/aliases/supplement.mjs:69:18\n    at runCase (file:///<REPO>/.superpowers/m3-local-acceptance/aliases/supplement.mjs:34:34)\n    at file:///<REPO>/.superpowers/m3-local-acceptance/aliases/supplement.mjs:58:1"
+        },
+        "injected": true,
+        "operatorDirectorySurvived": false,
+        "outputSurvived": false
+      }
+    },
+    {
+      "id": "output-parent-swapped-at-first-create",
+      "result": {
+        "accepted": true,
+        "result": {
+          "schemaVersion": 1,
+          "host": "zcode",
+          "output": "<REPO>\\.superpowers\\m3-local-acceptance\\aliases\\supplement-7x4kLp\\output-parent-swapped-at-first-create\\parent\\output",
+          "aliases": [
+            {
+              "name": "connect-chrome",
+              "aliasOf": "open-gstack-browser",
+              "sha256": "cbba40de7234b029acc200131b98ee4557c038f8b9e1f053f95c0fdab19d0115"
+            }
+          ],
+          "note": "Rewritten copy, not symlink; install separately. Not host-verified."
+        },
+        "injected": true,
+        "output": "<REPO>\\.superpowers\\m3-local-acceptance\\aliases\\supplement-7x4kLp\\output-parent-swapped-at-first-create\\parent\\output",
+        "linkTarget": "<REPO>\\.superpowers\\m3-local-acceptance\\aliases\\supplement-7x4kLp\\output-parent-swapped-at-first-create\\physical",
+        "unexpectedPhysicalOutputCreated": true
+      }
+    },
+    {
+      "id": "source-parent-swapped-after-leaf-lstat",
+      "result": {
+        "accepted": true,
+        "result": {
+          "schemaVersion": 1,
+          "host": "zcode",
+          "output": "<REPO>\\.superpowers\\m3-local-acceptance\\aliases\\supplement-7x4kLp\\source-parent-swapped-after-leaf-lstat\\output",
+          "aliases": [
+            {
+              "name": "connect-chrome",
+              "aliasOf": "open-gstack-browser",
+              "sha256": "cbba40de7234b029acc200131b98ee4557c038f8b9e1f053f95c0fdab19d0115"
+            }
+          ],
+          "note": "Rewritten copy, not symlink; install separately. Not host-verified."
+        },
+        "injected": true,
+        "canonicalDirNowLink": true,
+        "aliasProducedFromLinkedSource": true
+      }
+    },
+    {
+      "id": "reserved-file-directory-prefix",
+      "harnessError": {
+        "name": "Error",
+        "message": "EEXIST: file already exists, mkdir '<REPO>\\.superpowers\\m3-local-acceptance\\aliases\\supplement-7x4kLp\\reserved-file-directory-prefix\\staging\\open-gstack-browser\\skill.md'",
+        "code": "EEXIST",
+        "stack": "Error: EEXIST: file already exists, mkdir '<REPO>\\.superpowers\\m3-local-acceptance\\aliases\\supplement-7x4kLp\\reserved-file-directory-prefix\\staging\\open-gstack-browser\\skill.md'\n    at Object.mkdirSync (node:fs:1410:26)\n    at file:///<REPO>/.superpowers/m3-local-acceptance/aliases/supplement.mjs:100:12\n    at runCase (file:///<REPO>/.superpowers/m3-local-acceptance/aliases/supplement.mjs:34:34)\n    at file:///<REPO>/.superpowers/m3-local-acceptance/aliases/supplement.mjs:99:1"
+      }
+    },
+    {
+      "id": "reserved-trailing-dot-skill-key",
+      "result": {
+        "accepted": false,
+        "error": {
+          "name": "Error",
+          "message": "ALIAS_SOURCE_UNSAFE",
+          "code": null,
+          "stack": "Error: ALIAS_SOURCE_UNSAFE\n    at fail (file:///<REPO>/src/aliases.mjs:8:30)\n    at stageCommandAliases (file:///<REPO>/src/aliases.mjs:60:113)\n    at attempt (file:///<REPO>/.superpowers/m3-local-acceptance/aliases/supplement.mjs:30:42)\n    at file:///<REPO>/.superpowers/m3-local-acceptance/aliases/supplement.mjs:109:18\n    at runCase (file:///<REPO>/.superpowers/m3-local-acceptance/aliases/supplement.mjs:34:34)\n    at file:///<REPO>/.superpowers/m3-local-acceptance/aliases/supplement.mjs:106:1"
+        },
+        "outputSurvived": true
+      }
+    },
+    {
+      "id": "aux-invalid-digest",
+      "result": {
+        "accepted": false,
+        "error": {
+          "name": "Error",
+          "message": "ALIAS_SOURCE_TAMPERED",
+          "code": null,
+          "stack": "Error: ALIAS_SOURCE_TAMPERED\n    at fail (file:///<REPO>/src/aliases.mjs:8:30)\n    at stageCommandAliases (file:///<REPO>/src/aliases.mjs:63:41)\n    at attempt (file:///<REPO>/.superpowers/m3-local-acceptance/aliases/supplement.mjs:30:42)\n    at file:///<REPO>/.superpowers/m3-local-acceptance/aliases/supplement.mjs:116:10\n    at runCase (file:///<REPO>/.superpowers/m3-local-acceptance/aliases/supplement.mjs:34:34)\n    at file:///<REPO>/.superpowers/m3-local-acceptance/aliases/supplement.mjs:112:1"
+        }
+      }
+    },
+    {
+      "id": "crlf-only-name-byte-change",
+      "result": {
+        "accepted": true,
+        "result": {
+          "schemaVersion": 1,
+          "host": "zcode",
+          "output": "<REPO>\\.superpowers\\m3-local-acceptance\\aliases\\supplement-7x4kLp\\crlf-only-name-byte-change\\output",
+          "aliases": [
+            {
+              "name": "connect-chrome",
+              "aliasOf": "open-gstack-browser",
+              "sha256": "030ec4b6b7ffcbef6353b1adee521a4da58946992e1483cb46b04655e14a3514"
+            }
+          ],
+          "note": "Rewritten copy, not symlink; install separately. Not host-verified."
+        },
+        "inputBytes": 19057,
+        "actualBytes": 19037,
+        "expectedOnlyNameBytes": 19052,
+        "inputSha256": "b8c465456dfb36b0b6ef18ddfd940d482c3cb931caecd51bbfda449dbe753e5a",
+        "aliasSha256": "030ec4b6b7ffcbef6353b1adee521a4da58946992e1483cb46b04655e14a3514",
+        "expectedOnlyNameSha256": "1edfb654ccf1ea0808182defcf2404a0a000a54c5ceedd4cce24b8403cf9c303",
+        "onlyNameChanged": false,
+        "canonicalUnchanged": true
+      }
+    },
+    {
+      "id": "install-target-linked-ancestor",
+      "result": {
+        "install": {
+          "installed": [
+            "open-gstack-browser"
+          ],
+          "skipped": [],
+          "backedUp": []
+        },
+        "physicalSkillExisted": true,
+        "uninstall": {
+          "uninstalled": [
+            "open-gstack-browser"
+          ],
+          "backupsRemoved": 0
+        },
+        "physicalSkillRemoved": true,
+        "scope": "shared install integration finding outside owned aliases/test files"
+      }
+    }
+  ]
+}

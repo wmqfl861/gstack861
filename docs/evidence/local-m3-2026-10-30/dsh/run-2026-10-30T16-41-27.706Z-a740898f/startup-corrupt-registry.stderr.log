@@ -1,0 +1,10 @@
+dsh: warning: 1 entry did not activate
+gstack861-skills (gstack861-skills): Error: REGISTRY_INVALID
+    at fail (<repo>/src/install.mjs:20:30)
+    at registryEntries (<repo>/src/install.mjs:156:66)
+    at loadRegistry (<repo>/src/install.mjs:149:10)
+    at new apply (<repo>/src/adapters/dsh-skills.mjs:46:19)
+    at Fiber.execute (file:///C:/Users/Administrator/AppData/Local/Programs/DeepSeek%20Harness/resources/app.asar/dsh/node_modules/@deepseek-ai/cordis/lib/index.js:1068:24)
+    at file:///C:/Users/Administrator/AppData/Local/Programs/DeepSeek%20Harness/resources/app.asar/dsh/node_modules/@deepseek-ai/cordis/lib/index.js:1142:34
+    at <case>/home/profiles/g861accept/#gstack861-skills
+    at <case>/home/profiles/g861accept/#include

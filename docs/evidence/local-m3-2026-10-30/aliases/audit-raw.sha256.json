@@ -1,0 +1,25 @@
+{
+  "algorithm": "sha256",
+  "files": [
+    {
+      "file": "audit-raw.json",
+      "sha256": "4a4f6f8cd124650bbb541aa75aff2b621813a11e93e451c1e9e8544031c40671",
+      "bytes": 472477
+    },
+    {
+      "file": "supplement-raw.json",
+      "sha256": "d6838197ddf658e4c95a957dda40b88f56755eb5cb81fa2417fe5c587c23f7e6",
+      "bytes": 10507
+    },
+    {
+      "file": "findings.json",
+      "sha256": "65d7034e2492b0915d1baf8776e89d4074b6bbdd13c811a0fc0769c08b0c22a1",
+      "bytes": 24155
+    },
+    {
+      "file": "supplement-command.json",
+      "sha256": "f56070c656c2f9caedc037095af2ab77f922fc9174c6e7d41329454a5f0ceaed",
+      "bytes": 3943
+    }
+  ]
+}
