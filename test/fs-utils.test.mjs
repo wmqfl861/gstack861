@@ -530,3 +530,37 @@ if (process.platform === 'win32') {
     });
   });
 }
+
+if (process.platform === 'win32') {
+  // Closes the coverage gap disclosed after the 2026-10-31 seam repair: the
+  // independentDescriptor cleanup-close branch must fail closed on its own and
+  // must never mask a primary read error. Both capture and revalidation stay
+  // under the zero-device injection, so the close fault is the only failure
+  // source; the metadataView hook runs after the real close, so handle.closed
+  // stays honest evidence of real release.
+  test('Windows zero-device witness close failures fail closed without masking primary errors', t => {
+    const f = fixture(t);
+    const closeFault = Object.assign(new Error('native close fault'), { code: 'EIO', syscall: 'close' });
+    metadataView({ path: (name, stat) => zeroPathDevice(name, stat),
+      close: (fd, handle) => { if (handle?.name === f.file) throw closeFault; } }, () => {
+      assert.throws(() => helpers.inspectPlainPath(f.file, file), /PATH_UNSAFE/);
+    });
+    let snapshotReady = false;
+    metadataView({ path: (name, stat) => zeroPathDevice(name, stat),
+      close: (fd, handle) => { if (snapshotReady && handle?.name === f.file) throw closeFault; } }, () => {
+      const snapshot = helpers.inspectPlainPath(f.file, file);
+      snapshotReady = true;
+      assert.throws(() => helpers.assertPlainPathUnchanged(snapshot), /PATH_CHANGED/);
+    });
+    const denied = Object.assign(new Error('native read fault'), { code: 'EACCES', syscall: 'read' });
+    let readFailed = false;
+    metadataView({ path: (name, stat) => zeroPathDevice(name, stat),
+      read: fd => { if (typeof fd === 'number') { readFailed = true; throw denied; } },
+      close: (fd, handle) => { if (readFailed && handle?.name === f.file) throw closeFault; } }, ({ opened }) => {
+      const snapshot = helpers.inspectPlainPath(f.file, file);
+      assert.ok(snapshot.entries.some(entry => entry.descriptor), 'witness handles actually existed');
+      assert.throws(() => helpers.readPlainFile(snapshot), error => error === denied && error.code === 'EACCES');
+      assert.ok(opened.length > 0 && opened.every(handle => handle.closed));
+    });
+  });
+}

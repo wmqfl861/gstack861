@@ -17,7 +17,12 @@ function fixture(t){
  t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
  return {root,workspace,outside,skills,policy,adapter};
 }
-const run=(args)=>spawnSync(process.execPath,[cli,...args],{encoding:'utf8',timeout:10000});
+// Budget: full-suite concurrent runs measured 10.07-10.49s wall time for this
+// child on this host and CI Windows runners (four retained timeout flakes in
+// docs/evidence/local-m3-2026-10-30/ci-followup/residual-seam and
+// docs/evidence/post-m3-2026-11-01), ~1.4s in isolation. 45s keeps >4x headroom
+// over the worst observed flake; a timeout still fails as r.status===null.
+const run=(args)=>spawnSync(process.execPath,[cli,...args],{encoding:'utf8',timeout:45000});
 test('dsh-profile-stage CLI creates scaffold and never runs package manager',t=>{
  const f=fixture(t),out=path.join(f.root,'profile');
  const r=run(['dsh-profile-stage','--output',out,'--policy',f.policy,'--adapter',f.adapter,'--skills',f.skills]);

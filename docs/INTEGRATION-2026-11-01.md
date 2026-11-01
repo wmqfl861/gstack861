@@ -76,3 +76,24 @@ HANDOFF §5 不变（B 轮处理就绪判定与隔离宿主验收）。
 配置或凭据读写、无真实模型或付费调用（含子任务与审核）、上游 submodule 未升级；
 历史证据字节未动；被 `*.log` 忽略的必要日志逐文件检查后 `add -f`，未整仓强制添加；
 `.superpowers/` 未提交。
+
+## 8. DSH 受管就绪入口与三层边界（交付 B，2026-11-01 追加）
+
+`gstack861 dsh-profile-verify --output <profile> --policy <p> --adapter <a> --skills <dir>`
+是产品侧的只读就绪聚合门（B3）：structure（package.json 声明 + 双 shim 经
+fs-utils 链验证）、shims（**字节级**绑定校验——不动态 import profile 内代码，
+verify 自身不执行任何可能被篡改的 shim）、policy（真实 `loadPolicy` 编译）、
+skills（`loadRegistry` 条目 SKILL.md digest 逐一比对）。输出 JSON
+`{schemaVersion,status,checks[]}`；not-ready 时 exit 1 + stderr
+`DSH_PROFILE_NOT_READY`。它不启动宿主、不安装包、不派发工具；宿主进程 exit 0
+从来不是就绪证据（run-guide 实测 optional 插件 apply 失败仍 exit 0）。
+
+| 层 | 提供的保护 | 明确不覆盖 |
+|---|---|---|
+| 产品受管入口 | verify 四检查（派发前就绪判定）+ guard admission（每次工具调用重载策略：运行中策略损坏→`gstack861:POLICY_UNAVAILABLE` 拒绝、越界→OUTSIDE_SCOPE、未映射工具→UNMAPPED_TOOL、SKILL_TAMPERED 拒绝激活且无部分 section） | 未经此入口的启动；宿主激活本身 |
+| 宿主自身 | cordis 依赖链：required 插件（system-prompt→tools→guard）FAILED 时宿主不激活该插件 | optional apply 失败仍 exit 0；任意第三方插件行为 |
+| 旁路入口 | —（OPEN） | PTC、子代理、自定义执行器、直接 node 脚本绕过 guard 的路径：未实测、未宣称不可绕过 |
+
+"启动时曾经健康"不构成后续授权：guard admission 是每次调用的检查，verify 只是
+派发前的聚合判定；两者共同构成本仓库定义的受管路径，旁路路径的封闭依赖宿主侧
+或 OS 级边界（见 ZC-07 边界文档）。

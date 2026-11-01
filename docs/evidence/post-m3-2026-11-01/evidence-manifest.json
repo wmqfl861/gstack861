@@ -1,8 +1,82 @@
 {
   "schemaVersion": 1,
-  "tree": "7a308f3 (integration candidate, pre-D)",
-  "subject": "Delivery A integration gates",
+  "subject": "Delivery A gates + B1 verification + PR4 CI snapshots + B2 gates",
   "records": [
+    {
+      "name": "b1-check-node22.log",
+      "sha256": "403c5bc99921b91d8417ac2f488b603f9f4abd45bbb45e3860ca02664758ae87",
+      "bytes": 143
+    },
+    {
+      "name": "b1-doctor-node22.log",
+      "sha256": "35778d009106bc3bbd7ea3636d0894af13e54225da0fa725e21eb2ab5331e8e3",
+      "bytes": 4110
+    },
+    {
+      "name": "b1-full-suite-node22-16.log",
+      "sha256": "d6d8e32a192303509891c53fd5ccc058554c4f6c8a69f74b09a3eb3b0045169b",
+      "bytes": 310491
+    },
+    {
+      "name": "b1-full-suite-node24.log",
+      "sha256": "2898bdb54d7d193152fcbd8803c10af6f91185d6578921aa00ca6e96a92a28c2",
+      "bytes": 127811
+    },
+    {
+      "name": "b1-full-suite-zero-device.log",
+      "sha256": "7de452ea61ee3ed59ae577363036d9bf540437ac42ba899152f0cd14023dfd16",
+      "bytes": 127987
+    },
+    {
+      "name": "b1-inventory-node22.log",
+      "sha256": "4e9c9f8aae866f31c6a85300b8c4773fe6396d2fbff8a7cb3f7649572194e17f",
+      "bytes": 23653
+    },
+    {
+      "name": "b1-mutant-red.log",
+      "sha256": "1f303307e19fbf3506a96e9ede1e223a50c138a383867cd8a45f0861b1e7c673",
+      "bytes": 1297
+    },
+    {
+      "name": "b1-verify-offline-node22.log",
+      "sha256": "233087e9671ee96278128ff559cb14e8f2fea6289cf6bbc706e162c2d264c03c",
+      "bytes": 1139
+    },
+    {
+      "name": "b2-check.log",
+      "sha256": "b97199444ecf66e5af2d3c3be0b58841a3743bad8ddd0198c0dd5b943cf1b3fd",
+      "bytes": 143
+    },
+    {
+      "name": "b2-doctor.log",
+      "sha256": "35778d009106bc3bbd7ea3636d0894af13e54225da0fa725e21eb2ab5331e8e3",
+      "bytes": 4110
+    },
+    {
+      "name": "b2-full-node22.log",
+      "sha256": "63de49c692b717ff07ca36ff62cd7740cdf45e9667b913262b431accecbfbd37",
+      "bytes": 311878
+    },
+    {
+      "name": "b2-full-node24.log",
+      "sha256": "1377655549c14892b12a0bc15328dc30343f890a9a2cb86b463f29c726e429c1",
+      "bytes": 128409
+    },
+    {
+      "name": "b2-full-zero-device.log",
+      "sha256": "d10336b46c402a78f4482d852b976823ad906bd982189cbab59b00578d6913ec",
+      "bytes": 128557
+    },
+    {
+      "name": "b2-inventory.log",
+      "sha256": "4e9c9f8aae866f31c6a85300b8c4773fe6396d2fbff8a7cb3f7649572194e17f",
+      "bytes": 23653
+    },
+    {
+      "name": "b2-offline.log",
+      "sha256": "9f86421d9f56270485e6b1dfa3c9cb8881d5530632d19e04f298c5802f6270eb",
+      "bytes": 1139
+    },
     {
       "name": "check-node22.log",
       "sha256": "403c5bc99921b91d8417ac2f488b603f9f4abd45bbb45e3860ca02664758ae87",
@@ -37,6 +111,16 @@
       "name": "inventory-node22.log",
       "sha256": "4e9c9f8aae866f31c6a85300b8c4773fe6396d2fbff8a7cb3f7649572194e17f",
       "bytes": 23653
+    },
+    {
+      "name": "pr4-pullrequest-run.json",
+      "sha256": "4d73ccf4a795f24cf4bd26f0a2590bcb4f053c34504053e40d290983860dcb64",
+      "bytes": 12798
+    },
+    {
+      "name": "pr4-push-run.json",
+      "sha256": "fd0756ee2ebbd15f2ee524e5eeeeef8a184a343b681c9eb62c0f6c0cd544aaa3",
+      "bytes": 12775
     },
     {
       "name": "verify-offline-node22.log",
