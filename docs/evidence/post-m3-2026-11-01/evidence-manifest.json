@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "tree": "7a308f3 (integration candidate, pre-D)",
+  "subject": "Delivery A integration gates",
+  "records": [
+    {
+      "name": "check-node22.log",
+      "sha256": "403c5bc99921b91d8417ac2f488b603f9f4abd45bbb45e3860ca02664758ae87",
+      "bytes": 143
+    },
+    {
+      "name": "doctor-node22.log",
+      "sha256": "35778d009106bc3bbd7ea3636d0894af13e54225da0fa725e21eb2ab5331e8e3",
+      "bytes": 4110
+    },
+    {
+      "name": "full-suite-node22-16.log",
+      "sha256": "76ddee734a896396d5f857ce8da499a8cb0350d408b963104f37a50fe53190cb",
+      "bytes": 310243
+    },
+    {
+      "name": "full-suite-node24-win11.log",
+      "sha256": "8c331af4dcc7a9c7eb56319d6c722c6531a9f5e12e201a7c321a2e854c3d2985",
+      "bytes": 127732
+    },
+    {
+      "name": "full-suite-zero-device-attempt1-1-flake.log",
+      "sha256": "351a2c41ba44bd2f70ac8e4f7a470c2e06d73f9d68fd37eae068a33bd5089fae",
+      "bytes": 128731
+    },
+    {
+      "name": "full-suite-zero-device-rerun.log",
+      "sha256": "5497f1095cc022fcb9f984d7338d48f5ced5219c59ca6eb8207d821aef871818",
+      "bytes": 127931
+    },
+    {
+      "name": "inventory-node22.log",
+      "sha256": "4e9c9f8aae866f31c6a85300b8c4773fe6396d2fbff8a7cb3f7649572194e17f",
+      "bytes": 23653
+    },
+    {
+      "name": "verify-offline-node22.log",
+      "sha256": "2d4ee862e14acd852ff63028b6cb2fd4e1f95da5de85fa756859f476e3b6d60c",
+      "bytes": 1139
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "subject": "Supplement to copied-evidence.json (residual-seam bundle)",
+  "scopeNote": "copied-evidence.json froze its 18 records at publication time (2026-10-31). Two CI snapshot files were copied into this directory afterwards for run 41173120891 and are catalogued here instead; that original manifest is retained unchanged and does not cover these two entries, bringing the directory to 20 evidence files at that time. The rename note in docs/LOCAL-M3-ACCEPTANCE-2026-10-30-LINUX.md and docs/INTEGRATION-2026-11-01.md enumerates the six byte-frozen dev evidence JSONL/JSON files that still reference the pre-rename report path.",
+  "records": [
+    {
+      "name": "ci-69b0d93-run.json",
+      "role": "hosted run status snapshot for the seam-repair commit 69b0d93 (run 41173120891, attempt 1, conclusion success)",
+      "frozenInGitAt": "fe3fcae7451b6c32b2660521c1064a8a2927e1f9"
+    },
+    {
+      "name": "ci-69b0d93-jobs.json",
+      "role": "per-job conclusions for the same run: offline-contracts (ubuntu-latest), offline-contracts (windows-latest), render-upstream — all success",
+      "frozenInGitAt": "fe3fcae7451b6c32b2660521c1064a8a2927e1f9"
+    }
+  ]
+}

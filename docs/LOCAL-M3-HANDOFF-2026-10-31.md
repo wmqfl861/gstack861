@@ -11,9 +11,9 @@
 | 任务基线 | PR #3 `680b2f19b2dbef8831e3be1fd996203589b5c41d`（远端未前进，实际以该基线展开） |
 | 交付分支 | `audit/local-m3-windows-20261030`（独立分支；未推 main、未强推、未覆盖远端并行成果） |
 | 代码修复头部 | `69b0d93de54099b430348f59595fda09528101bc`（seam 修复） |
-| 分支最终头部 | `fe3fcae7451b6c32b2660521c1064a8a2927e1f9`（docs 快照） |
-| 托管 CI | `69b0d93` → run [41173120891](https://github.com/wmqfl861/gstack861/actions/runs/41173120891)：ubuntu ✅ / **windows ✅** / render ✅；`fe3fcae` → run [41173536944](https://github.com/wmqfl861/gstack861/actions/runs/41173536944)：✅ |
-| 全量测试 | 1383 tests / 1363 pass / 0 fail / 20 skip（零设备注入、Node 24.21.0、锁定 Node 22.16.0 三环境一致） |
+| SHA 层级（2026-11-01 整合轮更正） | 本文件属 `1ac506c`（历史交接 docs 快照；其父 `fe3fcae` 为报告快照）。本分支上的**最终交付引用**不是某个固定 SHA，而是 `audit/local-m3-windows-20261030` 的分支头（整合时远端= `1ac506c`）；2026-11-01 起的候选交付引用 `integrate/m3-local-acceptance-20261101` 分支头（见 docs/INTEGRATION-2026-11-01.md） |
+| 托管 CI | `69b0d93` → run [41173120891](https://github.com/wmqfl861/gstack861/actions/runs/41173120891)：ubuntu ✅ / **windows ✅** / render ✅；`fe3fcae` → run [41173536944](https://github.com/wmqfl861/gstack861/actions/runs/41173536944)：✅；`1ac506c` → run 41174319403 ✅ |
+| 全量测试（按平台/环境分列，非跨平台固定值） | 本机 Windows + Node 24.21.0、锁定 Node 22.16.0、win32 零设备注入三环境各 1383 tests / 1363 pass / 0 fail / 20 skip（2026-10-30/31 本地 Windows 记录；20 skip 为该树既有的 win32 条件跳过集）。整合树（2026-11-01，+6 用例）为 1389/1369/0/20，三环境一致——见 INTEGRATION-2026-11-01.md。Linux 开发线的对应历史记录为 Ubuntu 1164/1163/0/1、Windows CI 1163/1142/0/21（其独立套件，非本树数字） |
 | 三模块 | 命令别名 51/51+固定源 4/4；DSH Profile 49/49 + 真实宿主 5/5（零模型）；ZCode 配置 99/99 + CLI；共享安装器 110/110 |
 | 独立审核链 | 每轮计划 APPROVE → 实现 → 成果 APPROVE（修复全程共 5 轮独立复审，最后两轮 agent_3966d0e5） |
 | 最高优先级规则 | 无违反：无 main 推送/强推、无绕过 CI、无放宽断言/删测试、无付费模型或 API Key 调用、无全局依赖变更、用户既有 ZCode/DSH 配置零修改、`.superpowers/` 未提交、失败与 flake 原始记录全保留 |
@@ -30,7 +30,7 @@
 
 ## 3. 残余 6 用例的根因与修复（审核重点）
 
-- **复现**：`ci-followup/residual-seam/preload-zero-device.mjs` 注入 runner 实测分裂后，6/6 用例本地失败与托管注解**逐字一致**；零设备全量基线恰 6 失败（协调者与独立审核代理分别跑出）。
+- **复现**：`ci-followup/residual-seam/preload-zero-device.mjs` 注入 runner 实测分裂后，6/6 用例本地失败在**可核对的错误文本与断言位置集合**上与托管注解一致（六例的断言行号 1734:10 / 267:12 / 381:9 及 ENOENT operator.txt 系消息；不宣称路径、耗时、完整堆栈或全部日志字节相同）；零设备全量基线恰 6 失败（协调者与独立审核代理分别跑出）。
 - **根因（单一共享）**：dev=0 路径下每个生成文件在数据 fd 生命周期内新增只读 witness open/close 流量；旧注入 seam 按「文件名匹配的任意 close」或「lstat dev === fstat dev」触发 → 注入在错误时机（witness close 时 wx fd 仍钉住目录，Windows 对含打开句柄目录 rename 失败，注入半途而废）或永不触发。失败状态下产品行为全部为**正确拒绝**（STAGING_NOT_EMPTY / 保留 operator 数据 / fail-closed）——测试装置过时，非产品缺陷。
 - **修复**：仅 `test/aliases.test.mjs`（4 处 close 钩子加 `'wx'` 写 fd 门控）、`test/fs-utils.test.mjs:259`（close 故障 `readFailed` 门控，只在主读错误后的清理 close 抛）、`test/install.test.mjs:1708`（去掉恒为假的 dev 合取，按 ino 匹配）。**src/ 零改动**（五文件冻结 SHA256 前缀 cbff271d/02eaf82f/131d1b21/4f098532/0c525632 修复前后逐字符相同）；全部断言与错误集合逐字保留。
 - **验证**：定向 6/6；零设备/Node24/Node22 隔离全量均 1383/1363/0/20；Node22 直跑 check（119 模块）/offline（9/9）/doctor 全 exit 0；并行过载 flake（4 例，均不在修改集）保留对照日志并以隔离串行重跑排除。
@@ -64,7 +64,7 @@ node --test test/*.test.mjs                             # 期望 1383/1363/0/20
 2. **已批准的线性 sweep 时序权衡**：两次外层扫描间「完全恢复的瞬时祖先替换」可能失去内部观察机会（f4d1bd3 审核批准的披露，非本轮引入）。
 3. **witness close-fault 覆盖缺口**：`readFailed` 门控后 `independentDescriptor` 的 close 故障分支失去意外覆盖（fail-closed；后续独立用例候补）。
 4. **ZCode 真实宿主验证**：需授权的隔离 home/用户配置环境；本轮只完成适配器协议控制。
-5. **完整上游渲染缺 Bun**；**DSH 原生文件工具 / 模型消费**未验证（真实宿主验收为零模型、4 插件 ACTIVE、真实 tools.execute 管线）。
+5. **渲染证据分层**：托管 `render-upstream` CI 任务已在上述各 run 中实际执行并成功（托管已验证）；本机 Windows 未安装 Bun 且渲染入口受 CI 执行策略限制，本地未渲染——两者分开标注、互不替代。**DSH 原生文件工具 / 模型消费**未验证（真实宿主验收为零模型、4 插件 ACTIVE、真实 tools.execute 管线）。
 
 ## 6. 请求审核代理决定
 
