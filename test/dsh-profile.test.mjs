@@ -346,7 +346,7 @@ test('both generated plugin dependencies load the real adapters and preserve the
  policy.writeRoots=[f.workspace];
  policy.bindings.dsh={read:{effect:'read',pathKey:'file_path'},write:{effect:'write',pathKey:'file_path'}};
  fs.writeFileSync(f.policy,JSON.stringify(policy));
- stageDshProfile({output:f.output,policyPath:f.policy,adapterPath:realAdapter,skillsDir:f.skills});
+ const result=stageDshProfile({output:f.output,policyPath:f.policy,adapterPath:realAdapter,skillsDir:f.skills});
  const pkg=JSON.parse(fs.readFileSync(path.join(f.output,'package.json')));
  const expected={'gstack861-guard':guardPlugin,'gstack861-skills':skillsPlugin};
  const loaded={};
@@ -359,6 +359,8 @@ test('both generated plugin dependencies load the real adapters and preserve the
    loaded[name]=await import(pathToFileURL(path.join(dir,pluginPackage.main)).href);
    assert.equal(loaded[name].apply,expected[name].apply,'shim must load the project adapter');
    assert.deepEqual(loaded[name].inject,expected[name].inject);
+   for(const file of ['package.json',pluginPackage.main])
+    assert.ok(result.files.includes(path.relative(f.output,path.join(dir,file)).split(path.sep).join('/')));
  }
  assert.deepEqual(Object.keys(loaded).sort(),Object.keys(expected).sort());
  let guard;

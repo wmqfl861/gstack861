@@ -29,7 +29,7 @@ APPROVE（含三项修正，均已落实：六文件改名注记、引用实证�
 | `src/aliases.mjs` | 取验收线 | dev 的 realOutput/控制字符/整键折叠/清理所有权均被 fs-utils inspectPlainPath 体系覆盖或更强（dev 的 `rmSync(dest,{recursive,force})` 恰是验收线测试锁定不许的行为）；**目录前缀折叠变体裁决保留验收线支持语义**（整键折叠检查已完全阻止不敏感 FS 写碰撞；支持语义有测试锁定） |
 | `src/dsh-profile.mjs` | 取验收线 | plainDirectory/loadPolicy 包装/SKILLS_ADAPTER_FILE_REQUIRED 均被覆盖或统一（错误码集=验收线全集，`ADAPTER_FILE_REQUIRED` 统一 guard/skills adapter） |
 | `src/zcode-profile.mjs` | 取验收线（连带 fs-utils/install/bin/四套测试整体） | dev 多 entry 收据与验收线单一所有者+`ZCODE_RECEIPT_CONFLICT` 冲突（后者测试锁定）；ROLLBACK_CONFLICT 等分类学被验收线恢复协议超集覆盖；dev Windows 注入框架被 windows-identity 取代 |
-| 4 个测试文件 | 验收线全保 + 并入 dev 独有有效用例 | 并入：dsh `both generated plugin dependencies…`（安装后激活+真实离线契约端到端，验收线无等价物）。删除的 dev 用例均被验收线超集/同场景覆盖（junction-overlap、折叠变体第三组、路径形态注入回滚、dev 收据文件名/错误码两套）；双进程竞态测试按审核建议适配后保留（P 提交） |
+| 4 个测试文件 | 验收线全保 + 并入 dev 独有有效用例 | 并入：dsh `both generated plugin dependencies…`（安装后激活+真实离线契约端到端，验收线无等价物；适配说明：变量名 `name`→`skillName` 避免遮蔽依赖循环变量，dev 原文其余断言含 `result.files` 包含性检查在复审后已完整恢复）。删除的 dev 用例均被验收线超集/同场景覆盖（junction-overlap、折叠变体第三组、路径形态注入回滚、dev 收据文件名/错误码两套）；双进程竞态测试按审核建议适配后保留（P 提交） |
 | `docs/LOCAL-M3-ACCEPTANCE-2026-10-30.md` | 撞名拆分 | 验收线 Windows 报告保持原名（实证引用=HANDOFF+4 个历史 git-status 快照）；开发线 Linux 记录改名 `…-LINUX.md`，更新 3 个 md 链接（两个 ADDENDUM+DELIVERY.md）；**六个字节冻结 jsonl/json 不动**：`WINDOWS-CI-V2.evidence.jsonl`、`-V2.inputs.json`、`WINDOWS-CI.evidence.jsonl`、`-CI.inputs.json`、`2026-10-30.evidence.jsonl`、`-31-DELIVERY.evidence.jsonl`——其内部旧路径由 -LINUX.md 头部注记与本节解释 |
 
 ## 3. 移植项 P1-P4（P 提交 `7a308f3`，均复用既有错误码）
