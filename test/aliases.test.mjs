@@ -53,6 +53,14 @@ function updateManifest(f, change) {
  change(manifest);
  fs.writeFileSync(manifestPath(f), JSON.stringify(manifest));
 }
+function updateBody(f, bytes) {
+ fs.writeFileSync(path.join(f.dir,'SKILL.md'),bytes);
+ updateManifest(f,m=>{m.sha256=textDigest(bytes);});
+}
+function assertNoOutput(f, pattern) {
+ assert.throws(()=>stageCommandAliases({staging:f.staging,output:f.output,host:'zcode'}),pattern);
+ assert.equal(fs.existsSync(f.output),false);
+}
 function snapshot(root) {
  const records = [];
  const walk = (file, rel) => {
@@ -428,3 +436,21 @@ for (const host of ['zcode','dsh']) {
   assert.deepEqual(loadRegistry(target),[]);
  });
 }
+
+// Ported from the parallel development line: ambiguous YAML key forms must not
+// let a second name identity survive the pinned plain-key renderer.
+test('rejects duplicate frontmatter identity even with spaced or quoted YAML keys',t=>{
+ for (const second of ['name: other','name : other','"name": other',"'name': other"]) {
+  const f=fixture(t);updateBody(f,Buffer.from(`---\nname: open-gstack-browser\n${second}\n---\nbody\n`));
+  assertNoOutput(f,/ALIAS_(FRONTMATTER_INVALID|CANONICAL_NAME_MISMATCH)/);
+ }
+});
+test('refuses tagged, anchored and alias keys before creating ambiguous alias metadata',t=>{
+ for (const header of ['!!str name: other','!<tag:yaml.org,2002:str> name: other','&anchor name: other','identity: &nameKey name\n*nameKey : other']) {
+  const f=fixture(t),before=Buffer.from(`---\nname: open-gstack-browser\n${header}\n---\nbody\n`);
+  updateBody(f,before);const manifest=fs.readFileSync(path.join(f.dir,'manifest.json'));
+  assertNoOutput(f,/ALIAS_FRONTMATTER_INVALID/);
+  assert.deepEqual(fs.readFileSync(path.join(f.dir,'SKILL.md')),before);
+  assert.deepEqual(fs.readFileSync(path.join(f.dir,'manifest.json')),manifest);
+ }
+});

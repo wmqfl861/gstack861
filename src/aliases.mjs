@@ -47,9 +47,12 @@ function renameFrontmatter(bytes) {
   const text = bytes.toString('latin1');
   const m = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/.exec(text);
   if (!m) fail('ALIAS_FRONTMATTER_INVALID');
-  const names = [...m[1].matchAll(/^name:([^\r\n]*)\r?$/gm)];
-  if (names.length !== 1 || names[0][1].trim() !== ALIAS.canonical) fail('ALIAS_CANONICAL_NAME_MISMATCH');
-  const offset = text.indexOf('\n') + 1 + names[0].index + 5 + names[0][1].indexOf(ALIAS.canonical);
+  // The pinned renderer uses plain top-level keys. Refuse ambiguous YAML key
+  // forms/merges instead of letting a second identity survive the rewrite.
+  if (/^(?:["'?!&*]|<<[ \t]*:)/m.test(m[1])) fail('ALIAS_FRONTMATTER_INVALID');
+  const names = [...m[1].matchAll(/^name[ \t]*:[^\r\n]*/gm)];
+  if (names.length !== 1 || !/^name:[ \t]*open-gstack-browser[ \t]*$/.test(names[0][0])) fail('ALIAS_CANONICAL_NAME_MISMATCH');
+  const offset = text.indexOf('\n') + 1 + names[0].index + names[0][0].indexOf(ALIAS.canonical);
   return Buffer.concat([bytes.subarray(0, offset), Buffer.from(ALIAS.name), bytes.subarray(offset + ALIAS.canonical.length)]);
 }
 

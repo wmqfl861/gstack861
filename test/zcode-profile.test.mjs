@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
+import { spawn } from 'node:child_process';
 import { planZcodeConfig, applyZcodeConfigPlan, planZcodeUninstall } from '../src/zcode-profile.mjs';
 
 const RECEIPT = '.gstack861-zcode-receipt.json';
@@ -461,3 +462,60 @@ for (const target of ['receipt', 'config']) for (const fault of ['operator data'
 });
 // ZC-07 remains OPEN: pathname checks are not an OS-atomic final-syscall sandbox.
 // The retained adversarial syscall-seam reproduction is evidence, not a passing test.
+
+// Ported from the parallel development line: fatal UTF-8 decoding and the
+// drive-root workspace refusal. Neither may rewrite operator bytes.
+test('refuses config and receipt bytes that are not strict UTF-8',t=>{
+ const f=fixture(t,{config:'{}'});
+ const invalid=Buffer.concat([Buffer.from('{"x":"'),Buffer.from([0xff]),Buffer.from('"}')]);
+ fs.writeFileSync(f.file,invalid);
+ for (const planner of [planZcodeConfig,planZcodeUninstall]) {
+  assert.throws(()=>planner(f),/ZCODE_CONFIG_INVALID/);
+  assert.deepEqual(fs.readFileSync(f.file),invalid);
+ }
+ fs.writeFileSync(f.file,'{}');
+ install(f);
+ const brokenReceipt=Buffer.concat([Buffer.from('{"workspace":"'),Buffer.from([0xfe]),Buffer.from('"}')]);
+ fs.writeFileSync(f.receipt,brokenReceipt);
+ for (const planner of [planZcodeConfig,planZcodeUninstall]) {
+  assert.throws(()=>planner(f),/ZCODE_RECEIPT_INVALID/);
+  assert.deepEqual(fs.readFileSync(f.receipt),brokenReceipt);
+ }
+});
+test('refuses a drive-root workspace',t=>{
+ const f=fixture(t);
+ const root=path.parse(f.workspace).root;
+ for (const planner of [planZcodeConfig,planZcodeUninstall]) {
+  assert.throws(()=>planner({...f,workspace:root}),/WORKSPACE_INVALID/);
+ }
+});
+
+// Adapted from the parallel development line: concurrent appliers of the same
+// precomputed snapshot must publish exactly one config; the loser fails closed
+// under the audited CAS/lock semantics.
+test('two processes with the same precomputed snapshot publish exactly one config',async t=>{
+ const f=fixture(t),moduleUrl=new URL('../src/zcode-profile.mjs',import.meta.url).href;
+ const program=`import {planZcodeConfig,applyZcodeConfigPlan} from ${JSON.stringify(moduleUrl)};
+ const plan=planZcodeConfig(JSON.parse(process.argv[1]));console.log('READY');
+ process.stdin.once('data',()=>{try{console.log(JSON.stringify(applyZcodeConfigPlan(plan)));}
+ catch(error){console.log(JSON.stringify({error:error.message}));process.exitCode=1;}});`;
+ const launch=()=>{
+  const child=spawn(process.execPath,['--input-type=module','--eval',program,JSON.stringify(f)],{stdio:['pipe','pipe','pipe'],signal:AbortSignal.timeout(10000)});
+  let output='',errors='',readyResolve,readyReject,readySeen=false;
+  const ready=new Promise((resolve,reject)=>{readyResolve=resolve;readyReject=reject;});
+  child.stdout.on('data',bytes=>{output+=bytes;if(!readySeen&&output.includes('READY\n')){readySeen=true;readyResolve();}});
+  child.stderr.on('data',bytes=>{errors+=bytes;});
+  child.on('error',readyReject);
+  const done=new Promise(resolve=>child.once('close',(code,signal)=>{if(!readySeen)readyReject(new Error(errors||'CHILD_NOT_READY'));resolve({code,signal,output,errors});}));
+  t.after(()=>{if(child.exitCode===null)child.kill();});return {child,ready,done};
+ };
+ const workers=[launch(),launch()];await Promise.all(workers.map(worker=>worker.ready));
+ for(const worker of workers)worker.child.stdin.end('APPLY\n');
+ const outcomes=await Promise.all(workers.map(worker=>worker.done));
+ assert.deepEqual(outcomes.map(value=>value.code).sort(),[0,1]);
+ for(const value of outcomes)assert.equal(value.signal,null,value.errors);
+ const refused=outcomes.find(value=>value.code===1);assert.match(refused.output,/ZCODE_CONFIG_(CHANGED|BUSY)/);
+ assert.equal(read(f).hooks.events.PreToolUse.length,1);
+ assert.ok(fs.existsSync(f.receipt));
+ assert.deepEqual(fs.readdirSync(f.dir).sort(),['.gstack861-zcode-receipt.json','config.json']);
+});

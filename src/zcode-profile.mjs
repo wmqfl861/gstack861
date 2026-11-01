@@ -5,6 +5,7 @@ import { object, canonical, freeze, textDigest } from './json.mjs';
 import { inspectPlainPath, assertPlainPathUnchanged, assertPlainFileDescriptor, readPlainFile } from './fs-utils.mjs';
 
 const fail = code => { throw new Error(code); };
+const strictUtf8 = new TextDecoder('utf-8', { fatal: true });
 const CONFIG_DIR = '.zcode';
 const CONFIG_FILE = 'config.json';
 const MAX_CONFIG_BYTES = 1024 * 1024;
@@ -36,7 +37,9 @@ function record(file, code) {
 }
 function json(bytes, code) {
   if (bytes === null) return {};
-  try { const value = JSON.parse(bytes.toString('utf8')); if (!object(value)) fail(code); return value; }
+  // Fatal decoding: never accept (and later write back) replacement characters
+  // produced from invalid UTF-8 bytes in operator-owned config or receipts.
+  try { const value = JSON.parse(strictUtf8.decode(bytes)); if (!object(value)) fail(code); return value; }
   catch { fail(code); }
 }
 function validateConfig(config) {
@@ -91,6 +94,7 @@ function inspectState(options) {
   const {workspace,nodePath,cliPath,policyPath} = options;
   if (![workspace,nodePath,cliPath,policyPath].every(p => typeof p === 'string' && path.isAbsolute(p) && !/[\x00-\x1f]/.test(p))) fail('ABSOLUTE_PATH_REQUIRED');
   const root = inspect(workspace, 'directory', false, 'WORKSPACE_INVALID');
+  if (path.parse(root.path).root === root.path) fail('WORKSPACE_INVALID');
   const dirPath = path.join(root.path, CONFIG_DIR), dir = inspect(dirPath, 'directory', true, 'ZCODE_CONFIG_DIR_UNSAFE');
   const state = {workspace:root, dir, identity:{nodePath,cliPath,policyPath}, configPath:path.join(dirPath,CONFIG_FILE), receiptPath:path.join(dirPath,ZCODE_RECEIPT_FILE)};
   state.configRecord = record(state.configPath, 'ZCODE_CONFIG_UNSAFE');
