@@ -15,6 +15,7 @@ import { TaskStore } from '../src/tasks.mjs';
 import { migrateStateFiles } from '../src/migrate.mjs';
 import { stageCommandAliases } from '../src/aliases.mjs';
 import { stageDshProfile } from '../src/dsh-profile.mjs';
+import { verifyDshProfile } from '../src/dsh-verify.mjs';
 import { planZcodeConfig, applyZcodeConfigPlan, planZcodeUninstall } from '../src/zcode-profile.mjs';
 
 const args = process.argv.slice(2);
@@ -133,6 +134,15 @@ if (args[0] === 'hook') {
       for (const key of ['--output', '--policy', '--adapter', '--skills']) if (options[key] === undefined) throw new Error('INVALID_ARGUMENTS');
       print(stageDshProfile({ output:absolute(options['--output']), policyPath:absolute(options['--policy']),
         adapterPath:absolute(options['--adapter']), skillsDir:absolute(options['--skills']), profileName:options['--name'] }));
+    } else if (args[0] === 'dsh-profile-verify') {
+      // Read-only readiness aggregation: never launches the host, installs
+      // nothing, dispatches no tools, and executes no code from the profile.
+      const options = flags(args.slice(1), ['--output', '--policy', '--adapter', '--skills']);
+      for (const key of ['--output', '--policy', '--adapter', '--skills']) if (options[key] === undefined) throw new Error('INVALID_ARGUMENTS');
+      const result = verifyDshProfile({ output:absolute(options['--output']), policyPath:absolute(options['--policy']),
+        adapterPath:absolute(options['--adapter']), skillsDir:absolute(options['--skills']) });
+      print(result);
+      if (result.status !== 'ready') { console.error('gstack861: DSH_PROFILE_NOT_READY'); process.exitCode = 1; }
     } else if (args[0] === 'zcode-config-install') {
       const options = flags(args.slice(1), ['--workspace', '--policy'], ['--apply']);
       if (!options['--workspace'] || !options['--policy']) throw new Error('INVALID_ARGUMENTS');
