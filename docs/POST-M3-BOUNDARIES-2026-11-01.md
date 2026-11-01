@@ -70,9 +70,9 @@ upstream.lock 的 `5755601`；本地 Windows 未安装 Bun 且渲染入口按设
 
 ## 5. 蓝图状态增量（FEATURE_MATRIX 精确更新）
 
-- 命令别名生命周期（M3 组）：**implemented + contract_tested**（PR #4 整合树
-  1390/1370/0/20 三环境）；host_verified 维持 DSH fixture 管线级（cce238ac），
-  原生工具/模型消费 not_run（§1）。
+- 命令别名生命周期（M3 组）：**implemented + contract_tested**（PR #4=c9e76f7
+  整合树 1389/1369/0/20 三环境；本 B 分支 336f05f 树 1397/1377/0/20=B1 +1、B3 +7）；
+  host_verified 维持 DSH fixture 管线级（cce238ac），原生工具/模型消费 not_run（§1）。
 - DSH 宿主配置生命周期新增 `dsh-profile-verify`：**implemented + contract_tested**
   （7 测试含逐检查红例与只读断言）；host_verified 不变。
 - ZCode 真实宿主各项：维持 blocked（§2）；本轮 P2/P3（严格 UTF-8、驱动器根拒绝）

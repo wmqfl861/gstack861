@@ -68,27 +68,33 @@ test('refuses a broken policy with a policy check failure and no writes', t => {
 test('refuses a tampered skill with a skills check failure and no writes', t => {
   const f = fixture(t); installOneSkill(f); stageDshProfile(options(f));
   fs.appendFileSync(path.join(f.skills, 'gstack-verify-probe', 'SKILL.md'), 'tampered');
+  const before = snapshot(f.root);
   const result = verifyDshProfile(options(f));
   assert.equal(result.status, 'not-ready');
   assert.equal(check(result, 'skills').status, 'not-ok');
   assert.match(check(result, 'skills').detail, /DSH_VERIFY_SKILL_TAMPERED/);
+  assert.deepEqual(snapshot(f.root), before);
 });
 
 test('refuses a missing skills shim with a structure check failure', t => {
   const f = fixture(t); installOneSkill(f); stageDshProfile(options(f));
   fs.rmSync(path.join(f.output, 'plugins', 'gstack861-skills', 'index.mjs'));
+  const before = snapshot(f.root);
   const result = verifyDshProfile(options(f));
   assert.equal(result.status, 'not-ready');
   assert.equal(check(result, 'structure').status, 'not-ok');
   assert.equal(check(result, 'shims').status, 'not-ok');
+  assert.deepEqual(snapshot(f.root), before);
 });
 
 test('refuses a corrupted package.json with a structure check failure', t => {
   const f = fixture(t); installOneSkill(f); stageDshProfile(options(f));
   fs.writeFileSync(path.join(f.output, 'package.json'), '{');
+  const before = snapshot(f.root);
   const result = verifyDshProfile(options(f));
   assert.equal(result.status, 'not-ready');
   assert.equal(check(result, 'structure').status, 'not-ok');
+  assert.deepEqual(snapshot(f.root), before);
 });
 
 test('refuses a shim rebound to a decoy module with a shims check failure', t => {
