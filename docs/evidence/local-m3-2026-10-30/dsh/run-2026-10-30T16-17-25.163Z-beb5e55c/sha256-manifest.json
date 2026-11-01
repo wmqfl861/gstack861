@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "files": {
+    "clean-pipeline.stderr.log": "64b8d0be429172a7fb7d111a88580058b2e7691608ee29d7f119eceb95885c66",
+    "clean-pipeline.stdout.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "git-preparation.json": "0661cb864ef50d9a1bc18dd34e0f44f9e38f0c67baf87974581ced1b536e628f",
+    "run-result.json": "d2796d6a568a797c6699e74ab3b818da73a016eaf6b5bb98fbcc6641c70b7842",
+    "tested-source.json": "b6b0e12cec68e21d131762514b5a1bc7931cc6d209d65425ed98b30b1e0bdd07"
+  }
+}

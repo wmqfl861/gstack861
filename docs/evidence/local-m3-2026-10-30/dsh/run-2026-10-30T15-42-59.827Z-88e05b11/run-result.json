@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "runId": "run-2026-10-30T15-42-59.827Z-88e05b11",
+  "baseline": "680b2f19b2dbef8831e3be1fd996203589b5c41d",
+  "testedSourceFingerprint": "d474c1af40f7f195428441b4d992284922efeafd5a0962eb26fc81444c6878c2",
+  "reviewedPlanSha256": "ce91543b5e28972cbd5c626ae7add11641131fde78f63394be165f8e1605d338",
+  "status": "failed",
+  "evidenceClass": "pre-host-prerequisite-failure",
+  "requestEvidence": {
+    "modelRequestsObserved": 0,
+    "networkEntryAttempts": 0,
+    "controlledZeroModelConclusion": "no-host-child-launched",
+    "basis": "taskless exact plugin roster; no model/Agent/credential services; clean environment; process network/child tripwires"
+  },
+  "hostChildrenLaunched": 0,
+  "controls": [],
+  "failure": {
+    "name": "Error",
+    "message": "FIXTURE_GIT_INIT_FAILED",
+    "stack": "Error: FIXTURE_GIT_INIT_FAILED\n    at assert (<repo>/.superpowers/m3-local-acceptance/dsh-host/run.mjs:24:53)\n    at makeFixture (<repo>/.superpowers/m3-local-acceptance/dsh-host/run.mjs:155:3)\n    at runApproved (<repo>/.superpowers/m3-local-acceptance/dsh-host/run.mjs:281:52)\n    at async <repo>/.superpowers/m3-local-acceptance/dsh-host/run.mjs:354:5"
+  },
+  "finalSourceFingerprint": "d474c1af40f7f195428441b4d992284922efeafd5a0962eb26fc81444c6878c2"
+}

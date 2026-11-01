@@ -1,0 +1,1 @@
+{"label":"startup-corrupt-registry","status":"passed","toolBodyInvocations":{"write":0,"read":0},"controls":["startup-corrupt-registry"],"warningCount":1}

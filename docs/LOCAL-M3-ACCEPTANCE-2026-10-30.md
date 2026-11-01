@@ -1,190 +1,197 @@
-# M3 本地验收、修复与交付记录 — 2026-10-30
+# LOCAL M3 Windows 验收报告 — 2026-10-30
 
-本批完成三个模块的 Linux 离线反例、修复、回归及非作者交叉复核，并使用已安装的 ZCode Linux CLI 检查真实技能发现和配置诊断。**没有完成原生 Windows 实机验收、DSH 宿主加载或 ZCode 工具调度安全验收。** 用户已明确选择“先完成当前环境验证并记录 Windows 阻塞”。本文不把离线 fixture、静态源码审查、宿主 `doctor` 或 CI 测试等同于真实宿主端到端验收。
+验收完成日期：2026-10-31。本报告交付三个模块的原生 Windows 修复与证据；**整体宿主验收为部分完成**：DSH 实际生成 Profile 的插件、索引和 fixture 工具管线已实测，ZCode 配置生命周期已离线验证，当前 ZCode 真实宿主测试受阻。最终合并由 ChatGPT 决定。
 
-## A. 环境与执行边界
+## A. 环境
 
-| 项目 | 实际环境 |
-| --- | --- |
-| 操作系统 | Ubuntu 24.04.1 LTS，Linux 6.8.0-147-generic，x86_64 |
-| 原生 Windows | 当前会话无 Windows 执行入口；没有使用 WSL 冒充 Windows |
-| 用户 | `ubuntu`，UID/GID 1000；产品测试由普通用户执行 |
-| 数据盘 | `/mnt/d`，`/dev/vdb2`，ext4；验收期间约 50 GiB 可用 |
-| 工作树 | `/mnt/d/codex-workspace/gstack861-m3-acceptance-20261030/feature` |
-| 固定基线工作树 | 同一任务目录下 `baseline`，detached HEAD |
-| 临时目录 | `/mnt/d/codex-workspace/g3tmp-1030`；宿主隔离 fixture 在任务目录 `tmp/` |
-| Node / npm / Git | `v24.21.0` / `12.2.0` / `2.43.0` |
-| ZCode | 已安装的非官方 `zcode-app-cli` npm 包 `3.16.3-39`；实际 CLI 报告 `0.17.0`，包内 Desktop runtime 元数据为 `3.16.3`。不是 Windows 官方 Desktop 实测 |
-| DSH | PATH 和有界目录检查未发现安装；没有可报告的实际宿主版本 |
+| 项 | 实际值 / 来源 |
+|---|---|
+| Windows | Microsoft Windows 11 Pro for Workstations，10.0.22624，build 22624 |
+| 执行环境 | 原生 Windows Node；Git Bash 仅启动命令，没有 WSL |
+| Node.js | v24.21.0；项目要求 >=22 |
+| Git | 2.56.0.windows.2 |
+| ZCode 桌面 | 3.17.1.9553，读取安装 exe 文件版本 |
+| ZCode 内置 CLI | 0.17.1，安装包源码常量；本次没有启动 ZCode CLI/会话 |
+| DSH | 0.2.1-rc.3，实际宿主输出；内嵌 Node 24.21.0 |
+| 固定 gstack | 5755601dac5d35ebd7dde181fdefe52a023c73d9，共57个顶层源技能 |
+| 依赖 | 项目零 npm 依赖；没有全局安装/升级，Bun 不可用 |
 
-没有安装或升级全局依赖，没有调用真实或付费模型，没有使用 API key 发起请求。真实 ZCode CLI 仅运行公开的帮助、技能列表/读取和 `doctor` 命令，置于没有外部网络接口的网络命名空间；`sudo` 仅用于建立该命名空间，随即用 `setpriv` 降回 UID/GID 1000。用户 HOME 未重定向；设置、provider、空 credentials、session、storage 和诊断路径均用公开配置点指向独立数据盘 fixture。未修改用户既有 ZCode/DSH 配置，也未授予正式工作区 Hook 信任。
+最早两个 DSH `--version` 探针先于强化隔离审查，使用普通宿主路径；研究阶段的部分仅用于读取安装包的 Electron 调用也未重定向 home。这些调用没有启动 Profile、工具或模型任务，不能称为完整隔离验收。最终成功的5个DSH进程均使用新建 DSH_HOME、DSH_AGENTS_HOME、USERPROFILE、临时目录与空 cwd，固定中性用户标识，禁用遥测，无继承凭据、代理、任务/模型插件。启动前验证准确的环境键值及 `os.homedir()`。第二次尝试在这些Windows身份字段修正前已于导入DSH前失败，其记录保留在后文。详细披露见 [DSH 可行性记录](evidence/local-m3-2026-10-30/dsh/host-feasibility.md)。
 
-初始 shell 的 `umask 0002` 使部分既有 fixture 生成可被组写的 policy，触发既有严格权限拒绝；较长 TMP 路径还触发既有提示长度断言。最终门禁使用 `umask 0022` 和较短的数据盘 TMP 路径。没有放宽权限、断言或超时，也没有修改这些无关 fixture 来消除失败。`0002` 和长路径下的完整测试兼容性仍不是本批通过声明。
+## B. 代码基线与分支
 
-## B. 代码基线与工作区
+- 仓库：https://github.com/wmqfl861/gstack861 ，PR：https://github.com/wmqfl861/gstack861/pull/3 。
+- 开始验收时，远端 PR head/开发分支均为 **680b2f19b2dbef8831e3be1fd996203589b5c41d**（0.4.33）；原始基线完整保存在 `baseline/`。
+- 在独立 `gstack861-m3-audit` worktree 验收；起初跟踪 `work/m3-command-aliases-20261029`。原 `gstack861` 的 `main` 保持 `15c32ae2e4afc0b2de600b346d7977921059caa0` 干净；没有 reset、删除 stash、force push、main 推送或合并。
+- 验收期间远端有并行成果，先前进到 `3b4ee5b989781b8dd207e238c3ca02d121623411`、`9acc27885d5cbe5e379873dace26b4700e05d937`，最终观察到 **408ededd1764cd45e156a42e2c20b6bad17862bc**。本地没有覆盖或合并这些提交；保存在独立 **audit/local-m3-windows-20261030** 分支，供 ChatGPT 比较并集成。
+- 最终测试时 HEAD 仍为基线，修复在工作树；`final-round4/tested-files.json` 逐文件绑定实际测试的源码和测试字节，`source-stability.json` 为 true。
+- DSH 成功运行的源码/测试/启动脚本聚合 SHA256：**bf16abf5e6d555a859af8ad88d7d7aebc6606f58ca4463c4a20011b6de5e2b5d**。其中包含本地启动脚本，不能直接当作提交 tree ID。提交 SHA 和推送结果以交付消息及 `delivery.json` 的实际记录为准。
 
-- 开发分支：`work/m3-command-aliases-20261029`。
-- PR：[wmqfl861/gstack861#3](https://github.com/wmqfl861/gstack861/pull/3)，目标为 `audit/full-review-20261029`，不是 `main`。
-- 接手时 PR head 和远端开发分支均为 `680b2f19b2dbef8831e3be1fd996203589b5c41d`。
-- 接手时远端 `main` 为 `15c32ae`，审核基线分支为 `4264717`；各完整引用保存在发布核验记录中。
-- `upstream/gstack` 固定为 `5755601dac5d35ebd7dde181fdefe52a023c73d9`；固定源码技能数为 **57**，root router 另计。
-- 使用现有 clone 的独立 worktree；开始时工作树干净、无 stash。保留其他分支，不使用 reset、clean、强推，也不合并 PR。
+## C. 三大模块测试
 
-实际修改的生产代码仅为 `src/aliases.mjs`、`src/dsh-profile.mjs`、`src/zcode-profile.mjs`。测试修改为 `test/aliases.test.mjs`、`test/dsh-profile.test.mjs`、`test/zcode-profile.test.mjs`、`test/host-setup-cli.test.mjs`。公共 policy、install、stage、JSON 工具、CLI、宿主 adapter/overlay、上游 submodule 和 CI 工作流保持原实现。
+### 1. 命令别名 `/connect-chrome` → `/open-gstack-browser`
 
-最终输入清单见 [输入 SHA-256 清单](LOCAL-M3-ACCEPTANCE-2026-10-30.inputs.json)。先冻结 229 个已跟踪文件，再在最终完整运行前记录 v2：唯一差异是新测试的 POSIX mode 断言按平台执行，生产代码没有变化。提交树校验以清单中每个文件的字节摘要为准，不能把早期候选的测试结果套用到后续源代码。
+离线结果：**51/51**。固定上游源 fixture 的两宿主生命周期另有 **4/4**。canonical 原始字节不变；仅替换 frontmatter name token，保留 CRLF、空白和正文原始字节；辅助文件逐字节复制，manifest SHA256/git blob 更新；canonical/alias 分别安装入共享注册表、重复安装 skip、各自卸载。
 
-## C. 三大模块结果
+修复了完整祖先 junction/symlink 验证与 Windows namespace/8.3 物理重叠、reserved/casefold/file-directory key 预检、失败时递归删除调用方目录的问题。清理只删除本次独占创建、身份与生成内容仍吻合的文件；保留用户原地修改、并发子项和无法证明所有权的恢复文件。
 
-### C1. 命令别名
+真实 DSH 结果：安装链生成的 canonical、alias 和 root fixture 在实际 `systemPrompt.assemble()` 的 `gstack861:skills` 索引中分别出现，名称/路径/摘要正确，没有同名覆盖。这证明该组合的原生索引贡献；没有调用浏览器、斜杠命令或模型。ZCode 实际技能发现尚未执行。
 
-修复了五类可复现问题：
+完整上游宿主渲染未执行（缺 Bun）；固定上游源 fixture 与实际渲染证据分开。辅助文件正控显式使用固定上游的真实文档 blob；DSH 主机管线则使用受控技能 fixture。不能将其称为原始技能方法论消费或浏览器功能验证。
 
-| 编号 / 级别 | 原问题与影响 | 修复 |
-| --- | --- | --- |
-| AL1 / P1 | 仅做词法路径包含判断，输出祖先 symlink 可以让生成路径物理落入 canonical staging | 写入前解析已有路径前缀及源 realpath，拒绝物理重叠 |
-| AL2 / P2 | 整文件 UTF-8 解码和重编码改写 CRLF 或非 UTF-8 正文字节 | 用 Buffer 切片仅替换 frontmatter 中的 name 值 |
-| AL3 / P2 | commit/files 类型、保留文件名、大小写或文件/目录碰撞可生成安装器拒收的产物 | 生成前校验 manifest、摘要和完整辅助文件路径集合 |
-| AL4 / P1 | 写入失败时递归删除调用者原有 output 目录 | 只清理本次已成功创建的 alias 子目录；不删除原有 output |
-| AL5 / P2 | 重复、带引号、tag、anchor 或 alias 形式的 YAML name 产生歧义身份 | 接受固定上游使用的简单顶层键格式，拒绝歧义形式；不伪称通用 YAML 解析器 |
+### 2. DSH Profile
 
-原 4 项 alias 测试全部通过，说明其覆盖不足。独立外部反例 6 项在原实现全部失败，修后相同条件全部通过；早期扩展测试修前 15 项中 6 通过、9 失败。非作者复核又发现 AL5 的 tag/anchor 缺口：4 个真实生成案例修前全部违反拒绝断言，补丁后全部通过；对应新测试使计数从 17/18 变为 **18/18**。PyYAML 只用于说明旧输出的歧义，未计作宿主证据。
+离线结果：**49/49**。生成器现在输出 guard 与 skills 两个完整 package/shim，指向真实仓库适配器；`skillsAdapterPath` 默认仓库适配器。完整策略验证复用 `loadPolicy`，路径检查复用共享核心，输出失败清理要求身份与内容吻合。Windows URL 测试修正为标准 `pathToFileURL`，保留准确比较并覆盖空格、Unicode和8.3路径。
 
-最终实际 CLI fixture 对 `zcode`、`dsh` 两种 host 标签共运行 28 条命令，覆盖 alias-stage、原始字节/二进制辅助文件、摘要、真实 install registry、重复安装、dry-run、用户文件占用/改写、uninstall 和重复卸载。现有 install/stage 回归 **83/83**。这些 fixture 没有启动 DSH 或执行技能正文。
+真实宿主结果：成功运行 **run-2026-10-30T17-31-03.592Z-cce238ac**，5个独立 DSH 进程全部完成。消费的是实际 `stageDshProfile` 生成输出，仅离线将其已存在插件目录暴露到自身 `node_modules`；没有包管理器、下载、替换 shim 或修补生成 patch。
 
-真实 Linux 宿主检查从固定基线 [CI run 41046662516](https://github.com/wmqfl861/gstack861/actions/runs/41046662516) 下载 `rendered-skills` 和 `render-manifests`，通过真实 stage-render、alias-stage 和 install 链安装到独立 Git 工作区。没有在本地伪设 CI 环境执行上游 renderer。
+| 控制 | 实际观察 |
+|---|---|
+| 正常加载 | system-prompt、tools、gstack861-guard、gstack861-skills 均 ACTIVE=2；加载适配器导出与仓库真实适配器一致 |
+| Skills 索引 | `systemPrompt.assemble()` 列出3项：connect-chrome、gstack、open-gstack-browser；名称、描述、绝对路径与注册摘要匹配 |
+| 合法工具 | 经真实 `ctx.tools.execute()` 执行受控 fixture_write/read，产生并读回准确字节 |
+| 越界写入 | `gstack861:OUTSIDE_SCOPE`；工具主体计数不增加，目标不存在 |
+| `.git/config` | `gstack861:PROTECTED_PATH`；工具主体不执行，哨兵字节不变 |
+| 运行中策略损坏 | `gstack861:POLICY_UNAVAILABLE`；未写入；恢复策略后同一 guard 正常放行并读回 |
+| 启动前坏策略 | guard FAILED=3，宿主仍返回0并警告；验收控制器检测失败后**没有派发工具** |
+| 缺 systemPrompt | tools/guard/skills PENDING=0，缺服务警告；未派发工具 |
+| 损坏注册表 / 篡改技能 | skills FAILED=3，警告分别为 REGISTRY_INVALID / SKILL_TAMPERED；未派发工具 |
 
-已安装的 ZCode CLI 实际列出 **59 个项目技能（57 个固定技能 + root router + alias）及 1 个系统内置技能**。`skills inspect` 分别完整读取 `open-gstack-browser` 和 `connect-chrome`，名称、路径独立，没有发现身份冲突。`commands list` 返回 **0**，因此这里只证明技能发现/读取，不证明斜杠命令调用、浏览器启动或模型消费；DSH 和 Windows 中的独立发现仍未验证。
+**重要限制：启动负控通过表示准确检测到宿主失效，不表示 DSH 自身启动闭锁。** 坏插件时宿主仍能退出0，成功 sibling 可存活；阻止测试继续派发的是验收控制器。一般启动器仍须检查实际激活状态，不能只信 exit code。生成 skills 插件贡献 prompt 索引，没有挂载 native `ctx.skills`，没有验证自动技能扫描/原生文件工具/PTC/子代理/模型消费。
 
-### C2. DSH Profile
+正常流程真实执行主体计数 write=2、read=2；三个拒绝操作没有触发主体。所有5进程记录的网络、子进程、敏感配置读取 tripwire 数均为0，任务/模型/凭据服务缺席。证据支持该受控组合的零模型请求结论，不是OS网络隔离证明；doctor中的常量0没有用作计量。
 
-原实现声明了 `gstack861-skills` 本地依赖，却没有生成对应 package/index 文件。补齐该插件 shim，并绑定仓库中真实 `dsh-skills.mjs`；Guard shim 仍使用显式提供的 Guard adapter。配置补丁顺序为 `system-prompt → tools → gstack861-guard → gstack861-skills`；Skills adapter 的 `systemPrompt` 依赖明确保留。
+保留两次失败尝试：第一次在宿主启动前因深路径 Git `.git/refs/heads` 过长失败，hostChildren=0；第二次1个 Electron 子进程在导入DSH前因Windows补入用户环境变量失败。经独立审核后分别缩短 fixture 路径并显式设置/验证 fixture home，再获得上述成功；没有降低校验条件。
 
-将仅检查 JSON 表面的策略验证改为调用公共 **`loadPolicy`**，保留策略在 workspace 外的约束、权限验证和路径正规化；输入、输出、adapter、policy 和 skills 根的祖先目录在生成前拒绝链接。没有在生成时执行调用方提供的 adapter，也没有自动安装依赖。
+### 3. ZCode 配置生命周期
 
-| 编号 / 级别 | 已复现的问题 |
-| --- | --- |
-| DSH-M3-001 / P1 | 缺少实际本地 Skills 插件包，声明与输出不一致 |
-| DSH-M3-002 / P2 | profile 生成声称成功，但真实 Guard 的共享 policy 校验会拒绝同一输入 |
-| DSH-M3-003 / P2 | workspace/policy 物理包含关系未使用共享正规化结果 |
-| DSH-M3-004 / P2 | 只检查叶子，祖先 symlink/junction 可绕过输入与输出检查 |
+离线结果：**99/99**；模块及 CLI 集成 focused 合计 **213/213**（含 aliases/DSH/Skills），无跳过。原始5个ZCode单元fixture漏传 workspace 的问题已修正，保留安全断言。fresh `.zcode` 先验证再创建和加锁；预览与验证无变更的操作零写入。
 
-原定向测试 10/10；新增 profile 测试在原源码上为 11 项中 4 通过、7 失败；修后 profile + skills **17/17**。另有 6 个外部业务反例修前全部失败、修后全部通过。
+计划深度冻结，并以私有状态绑定字节、存在性、文件及目录身份；格式变化、同内容替换、缺失/新建等并发变化均拒绝。共享校验拒绝畸形已知配置结构并保留外国Hook变体/元数据。CLI严格匹配编译策略与选定工作区，策略损坏/删除仍能按所有权卸载。
 
-离线验收用真实 install registry、真实 CLI 生成 8 个 profile 文件并导入两个实际 shim；adapter `apply()` 连接的是明确标注的**离线 service recorder**，不是 Cordis/DSH 宿主。验证了 inject 元数据、Guard admission 的范围内/越界/未知工具/取消情况、损坏 policy、技能摘要篡改及缺少传递依赖时真实 `ERR_MODULE_NOT_FOUND`。该 fixture 不执行文件工具，且其 writeRoots 包含技能目录，不能据此声称部署技能目录已经获得写保护。
+工作区内旁置 `.zcode/.gstack861-zcode-receipt.json` 记录本次实际插入的完整Hook及原始字段存在性。预先存在的相同Hook不会被认领；卸载只移除收据证明的一条完整记录，保留修改后的Hook、用户字段、预先存在的开关/空容器和并发修改。fresh配置在安全空结果时恢复为不存在；原有JSON值语义保持。实际合并/卸载可能重新格式化JSON；预览、幂等无变更和正常回滚保持准确字节。
 
-真实 `scripts/verify-dsh-skills.mjs` 返回 **exit 2 / BLOCKED**，没有找到 DSH。生成输出继续标记 `scaffolded-not-host-verified`，README 要求确认插件实际注册。**DSH apply 抛错后进程仍 exit 0 的宿主行为没有在本机验证；不能用生成成功或离线 apply 通过替代这项验收。**
+收据 intent→配置提交→收据最终化具有故障回归；瞬时读回错误可恢复准确原始状态；组合故障保留真实 pending屏障或明确报告已提交/不确定状态。锁清理失败附独立 cleanupCode，保留主错误。序列化结果与输入使用同一1MiB限额，避免成功写出后无法卸载。临时文件清理同时证明身份与内容：独占创建后仅证明空文件，写入成功返回后才采用预期字节；保留同inode用户修改、部分写入和不可读内容，清理失败不覆盖原事务错误。
 
-### C3. ZCode 配置生命周期
+CLI每次`--apply`重新构建计划；跨预览到应用的已保存凭证未实现。并发拒绝证据对应保留API计划对象的`planZcodeConfig`→`applyZcodeConfigPlan`，不扩大为CLI承诺。
 
-固定基线存在首次安装无法创建 `.zcode` 就尝试加锁、卸载缺少对称路径校验、只比较正规化 JSON 而忽略原始字节变化、浅层冻结可改写计划、外部 existingConfig 绕过磁盘错误、Hook 身份忽略额外 metadata、空卸载产生写入/失败等问题。原测试有 5 个 fixture 漏传 workspace；补齐 fixture 参数，保留原有断言，另建真正触及这些行为的独立 Git fixture 反例。
+真实 ZCode 宿主结果：**受阻 / 未运行**。当前安装包没有已确认完整用户配置/home隔离，默认配置读取可自动迁移写入；没有找到受支持的零模型原生文件工具测试入口。未修改用户trust/config、未创建模型会话、未启动历史keyed脚本。真实新会话发现、Hook执行、合法/越界/.git、启动错误、超时、updatedInput共存、实时回滚均未新验证。见[受阻依据](evidence/local-m3-2026-10-30/zcode/host-feasibility.md)。
 
-修复后的计划深冻结并绑定内部 WeakMap；CAS 同时检查文件存在性、原始字节、device/inode、size、mtime/ctime 和 mode。两个 planner 及 apply 对称检查 workspace/config 祖先及链接，先验证再创建目录和协作锁。Hook 使用完整规范化对象身份匹配，保留其他 Hook、其他事件及额外 metadata。
+额外5/5真实仓库CLI适配器子进程控制（合法不干预、越界/.git拒绝、坏策略拒绝及恢复）为**协议证据**；没有调用ZCode工具主体，不能替代上述宿主检查。
 
-采用独立 `.zcode/.gstack861-zcode-config.json` 所有权收据，记录本安装创建的容器字段和完整自有条目。没有向宿主 Hook schema 塞入私有字段。卸载保留原有 `hooks.enabled: true` 和用户配置；干净安装卸载后原 `hooks === undefined` 断言仍成立。收据缺失时采取保守处理；损坏、链接或并发修改时拒绝。多组自有 Hook 身份可分别卸载。
+## D. 安全审核、问题与修复
 
-| 证据 | 结果与归属 |
-| --- | --- |
-| `zcode-baseline-lifecycle-red-v2` → `zcode-fixed-lifecycle-v2` | 原始 680 基线的 11 个有效场景全部失败；相同业务条件修后 11/11 |
-| `zcode-baseline-new-regressions` | 早期 22 项测试快照在原源码上 6 通过、16 失败；不是 16 个独立漏洞，其中部分被更早的首次安装问题阻断 |
-| `zcode-post-publication-v1-control-red` | 在独立副本重建缺少最后两行校验的相邻候选，证明发布期间 receipt 修改必须再次验证；这是候选对照，不冒称历史 680 反例 |
-| `zcode-readback-eio-red` → `zcode-readback-eio-green` | 非作者发现候选在 rename 成功后首次读取 EIO 时漏记 publication，残留 config 并撤回 receipt；在真实文件生命周期中，对 `fs.openSync` 注入一次 EIO；修前 exit 1、修后 exit 0 |
-| `zcode-expanded-both-v4` | 最终 26 项库测试 + 7 项 CLI 测试，共 **33/33**，0 跳过；其中一项为既有 DSH CLI 测试 |
+实施过程为本地计划→独立审计划→不重叠模块并行开发→独立规格/质量审核→复现问题后按补充计划修复→定向复审。过程规则/计划留在gitignored `.superpowers`；仓库证据只包含实际结果，不提交本地流程规则。
 
-回滚修复在 mutation 成功后立即登记 publication，再进行可能失败的读回；回滚前必须证明已发布版本或 staged inode/预期字节仍匹配。额外测试验证遇到外部写入时保留外部字节并报告冲突。真实双进程 READY 屏障测试使两个进程预先持有同一快照，释放屏障后仅一个成功发布，另一个被 CAS/锁拒绝。没有延长原有期限。
+| 缺陷 / 严重性 | 修复及回归证据 |
+|---|---|
+| Alias A1/A2 高：链接祖先/物理重叠、无所有权递归清理 | 共享路径身份检查+物理比较，独占创建/字节证明清理；aliases51/51 |
+| Alias A3 中、A4 低：映射预检、CRLF漂移 | 完整key/摘要预检，name字节切片；保留canonical |
+| Installer I1 高：目标祖先穿越 | install/uninstall/dry-run全链共享验证；110/110，原68项保留 |
+| DSH 高/中：缺Skills插件、不完整策略和路径校验 | 双插件、真实适配器与完整loadPolicy；49/49及真实加载控制 |
+| ZC-01/02/06 高：路径、卸载所有权、CLI工作区绑定 | 共享身份、收据与精确完整Hook、策略匹配；99/99及CLI |
+| ZC-03/04/05 中：首次锁、可变/陈旧计划、配置形状 | 安全创建顺序、不可变私有计划、统一校验 |
+| 复审R1/R2 Important：同inode修改仍被删除 | 内容+身份双证明；DSH RED47/49→49/49，installer RED107/109及moved负控→110/110 |
+| 复审R3/R4/R4b Important：输出大小、收据读回/清理状态 | 18场景RED3/18→18/18；再补清理负控RED2/4→93/93 |
+| 最终审核R5 Important：临时文件同inode内容被清理 | 身份+内容证明；6个新增场景及既有部分写入oracle强化，RED2/7→最终99/99 |
 
-最终新增测试中的 POSIX `0600` 精确断言仅在非 Windows 执行；所有平台仍执行整个测试，检查普通文件、非 symlink、单链接及完整生命周期。这是静态平台契约修正，不是声称 Windows 失败后被跳过；POSIX mode 不证明 Windows ACL。Alias 的一个新增大小写文件系统 fixture 仅适用于大小写敏感文件系统；独立的 manifest-only 碰撞拒绝测试覆盖所有平台。
+修复提交对应本验收分支最终源码提交；精确源码SHA256在`final-round4/tested-files.json`，独立审核结论在`repairs/reviews`。提交ID由提交后`delivery.json`及交付消息记录。全部原始失败、RED/GREEN日志保留；没有删失败测试、放宽断言或新增跳过制造通过。
 
-真实 ZCode Linux CLI 的独立工作区已验证预览无 config 写入、apply 后项目配置被读取、uninstall 后配置可读取，以及损坏 JSON 时 `doctor` 返回 exit 1 / `config_file_invalid`。安装后 `doctor` 明确返回 `config_project_hooks_pending_trust`：**配置读入但 Hook 未激活**。没有调用模型以触发工具，也没有把直接调用我们 adapter 的结果称为宿主拦截。合法/越界路径实际工具执行、`.git` 拦截、启动失败、超时、多个 Hook 的 updatedInput 冲突及信任/回滚后的实际调度仍未验证。
+**仍开放 ZC-07：** portable Node 路径复查无法保证抵御同用户在最后检查后、最终文件系统调用内部的恶意目录替换。保留基线确定性接缝复现；未宣称彻底修复、OS sandbox或原子CAS。需要原生目录句柄/no-reparse/compare-and-swap后端的单独设计。
 
-## D. 独立安全审核与剩余边界
+ZCode运行时Hook启动/超时错误与正常启动后适配器拒绝策略不同。源码显示仅满足PreToolUse的`onError:"deny"`等条件时执行异常转为deny；当前生成器未声明该字段。此处只记录未验证的宿主边界，不修改未经宿主验证的声明语义。收据为本地来源记录，不是抵御恶意同用户伪造的认证。
 
-Alias 作者与 DSH 作者相互交叉复核；ZCode 由 DSH 作者作非作者复核。三个审阅均直接阅读最终源文件、测试、反例和原始日志，而不是仅认可作者的通过声明。使用 codebase-memory 图定位与覆盖检查；图中旧源 metadata 和排除的 test/bin 路径通过当前源码完整读取补足。
+## E. 完整测试统计
 
-审阅范围包括路径遍历、祖先链接/junction、硬链接、物理重叠、用户文件所有权、并发修改、失败回滚、损坏配置、插件缺失、子进程返回码、错误输出和 Windows 路径/权限语义。实际关闭了 AL5 第二种歧义键及 ZCode publication/readback EIO 两个非作者发现。最终范围内未发现剩余阻断；这不等于总体架构或主协调 Agent 已验收。
+| 阶段 / 命令 | 实际结果 |
+|---|---|
+| 原始`npm run check` | exit0，115模块，3固定pin；HEAD历史证据stale警告保留 |
+| 原始`npm test` | exit1，1104 total /1076 pass /8 fail /20 skip /0 cancelled |
+| 首轮修复全量 | 1311 total /1291 pass /0 fail /20 skip，源码稳定 |
+| 复审修复全量 | 1335 total /1315 pass /0 fail /20 skip，源码稳定 |
+| R5前全量 | 1338 total /1318 pass /0 fail /20 skip，保留为历史 |
+| **最终`npm run check`** | **exit0，116模块，3固定pin**；历史HEAD证据警告原样保留 |
+| **最终`npm test`** | **exit0，1344 total /1324 pass /0 fail /20 skip /0 cancelled**，约94秒 |
+| 最终`npm run verify-offline` | exit0，9/9 PASS |
+| 最终`npm run doctor` | exit0，完整JSON；现有主机历史状态未擅自升级 |
+| 最终inventory | exit0，固定gitlink，57技能 |
+| 最终focused模块/CLI | exit0，213/213，无失败/跳过 |
+| DSH真实宿主组合 | 5/5进程控制完成；7个正常工具管线操作及索引证据 |
 
-独立记录在证据包中的路径：
+20项跳过均为原有平台差异（POSIX权限/链接、sh PATH桩、慢管道、signal等），逐条保存在`baseline/summary.json`。Windows URL测试修正标准oracle，没有跳过。`npm test -- 文件`会叠加原脚本wildcard，因此focused使用等价`node --test 精确文件`；完整`npm test`确实执行。
 
-- `evidence/alias-independent-review.json`，SHA-256 `bec5a149081d52c002641f77450331df234e3a980578ff347c28d65bf8da09d5`。
-- `evidence/dsh-independent-review.json`，SHA-256 `b9584d66f7afa934d90c916fc8c10f640efdd0c29dfb4f963cbd79e3f50db385`。
-- `evidence/zcode-independent-review.json`，SHA-256 `763bee33d3aafac07d0d683d5f25261053c16352a415bc2a07d1647c5b0e807d`。
+## F. 证据与复现
 
-明确保留以下边界：
+证据根：[evidence/local-m3-2026-10-30](evidence/local-m3-2026-10-30/)。完整stdout/stderr留档；根`sha256-manifest.json`绑定文件字节，自身不递归包含。
 
-1. 文件操作的祖先检查不是对同 UID 恶意并发替换的操作系统级隔离；协作锁不能围栏不遵守锁的 writer 在最后 rename 窗口写入。
-2. config/receipt 两文件更新可在普通错误时比较后回滚，但不具备进程崩溃原子性；持久 I/O 错误、遗留锁或外部冲突可能需要检查。收据摘要检测漂移，不提供对恶意任意写入者的密码学授权。
-3. DSH profile 的依赖存在性、真实服务注册及 Guard fail-closed 必须由实际宿主验证，exit 0 不足以证明成功。
-4. ZCode 配置读取、技能发现和我们的 deny 返回值都不证明宿主一定拦截；Hook 超时与 updatedInput 合并行为仍为未完成项。
-5. 原生 Windows 的 junction、ACL、编码和宿主安全需要实机验收。远端 Windows CI 的离线测试即使通过，也不能替代这一项。
+- `baseline/`：原始完整命令、doctor、inventory、115模块、8失败栈、20跳过、源码文件摘要。
+- `aliases/`、`zcode/`、`dsh/pre-fix-repro.json`：原生复现清单、实际/预期、原因影响、保留的脚本与摘要。
+- `repairs/`：精选原始RED/GREEN完整日志、实现报告、独立复审结果和文件摘要；不发布本地计划或流程规则。
+- `final/`、`final-round2/`、`final-round3/`：前三版全量结果，保留为历史；`final-round4/`为最终源码的check/test/offline/doctor/inventory/focused命令及稳定性证明。
+- `dsh/run-2026-10-30T15-42-59.827Z-88e05b11/`：第一次预检失败，0宿主；`dsh/run-2026-10-30T16-17-25.163Z-beb5e55c/`：第二次导入前环境失败。
+- `dsh/run-2026-10-30T16-41-27.706Z-a740898f/`：R5前同样五控制成功，保留为历史。**`dsh/run-2026-10-30T17-31-03.592Z-cce238ac/`**：最终5进程完整结果、真实主机stdout/stderr、Git准备、插件/服务/索引/工具/哨兵/计数、生成配置摘要和tested-source.json。
+- `zcode/adapter-contract.json`：5项原始适配器协议控制；`host-feasibility.md`列当前宿主受阻的准确接口与源码依据。
 
-## E. 完整测试统计与原始失败
+DSH无模型执行使用已安装ASAR-aware Electron carrier加载DSH公开Profile API；不是`headless --prompt`。网络/子进程/敏感文件tripwire在安装包导入前生效，启动的准确插件列表无模型/任务/凭据服务；每个负控均不派发工具。0请求结论依据这些实际观测与限制，不是只看退出码。原有DSH/ZCode用户配置没有被本次安装/卸载操作修改，测试配置均属于新fixture。
 
-执行器 `record.py` 为每条命令保存完整 stdout/stderr、argv、cwd、UID、平台、时间、实际退出码和日志 SHA-256，数据均落在数据盘。最终运行使用 `umask 0022`，`TMPDIR/TMP/TEMP=/mnt/d/codex-workspace/g3tmp-1030`，模型开关为 0，并去除已知模型凭据环境变量。
+## G. 交付与剩余问题
 
-```bash
-umask 0022
-export GSTACK_ACCEPTANCE_TMP=/mnt/d/codex-workspace/g3tmp-1030
-python3 record.py final-full-tests ./feature npm test
-python3 record.py final-check ./feature npm run check
-python3 record.py final-verify-offline ./feature npm run verify-offline
-python3 record.py final-doctor ./feature npm run doctor
-python3 record.py final-inventory ./feature node bin/gstack861.mjs inventory --upstream upstream/gstack
-```
+| 分类 | 实际状态 |
+|---|---|
+| 已完成 | 原生Windows基线、三模块复现与修复、共享安装器兼容性、回归、全量复测、DSH实际生成Profile加载/索引/fixture工具管线及失效检测 |
+| 已实现但未验证 | ZCode真实新会话配置读取/Skills拾取/Hook运行和UI回滚；DSH原生文件工具/模型技能消费/自动扫描；实际浏览器命令调用 |
+| 环境受阻 / 开放 | 当前ZCode完整home隔离与零模型原生工具入口，缺Bun的完整上游渲染，ZC-07原子文件系统边界 |
+| 需要另行条件或授权 | disposable Windows账户/VM或有完整隔离的ZCode手工宿主测试；用户现有配置/trust修改需明确授权与备份。付费模型请求本次明确禁止，没有发起 |
+| 合并决定 | 交由ChatGPT；仅推送独立验收分支供比对，不合并、不覆盖远端并行成果 |
 
-以上 `final-full-tests/check/verify-offline/doctor/inventory` 记录属于 v1 输入快照；生产代码与 v2 相同。最终 v2 的全量门禁是下表五条 `final-requested-*` 记录，不能仅凭文件名前缀 `final` 混淆运行输入。
+此结果不宣称完整gstack迁移、双宿主全功能对等、全宿主不可绕过安全或`host_verified`整体认证。实际提交SHA、推送与CI状态在完成后回传。
 
-`npm test` 实际脚本为 `node --test test/*.test.mjs`。用户要求的五条 `npm test -- test/<module>.test.mjs` 仍逐条实际执行；每条都包含完整通配符集合，不能称为五个独立专项套件。真正定向测试使用 `node --test 文件...`，68 项选定文件测试是 1151 项全集的一部分。
+## H. CI 后续：Windows 身份修复的实际托管结果与残余注入 seam 修复（2026-10-31 追加）
 
-<!-- FINAL-RESULTS:BEGIN -->
-| 记录 / 输入 | 实际命令 | Tests / pass / fail / skip | exit | 秒 |
-| --- | --- | --- | --- | --- |
-| `final-check` / v1 | `npm run check` | 见下文专项输出 | 0 | 9.405 |
-| `final-full-tests` / v1 | `npm test` | 1151/1150/0/1 | 0 | 81.403 |
-| `final-verify-offline` / v1 | `npm run verify-offline` | 见下文专项输出 | 0 | 5.042 |
-| `final-doctor` / v1 | `npm run doctor` | 见下文专项输出 | 0 | 0.663 |
-| `final-inventory` / v1 | `node bin/gstack861.mjs inventory --upstream upstream/gstack` | 见下文专项输出 | 0 | 1.115 |
-| `final-requested-aliases` / v2 | `npm test -- test/aliases.test.mjs` | 1151/1150/0/1 | 0 | 78.350 |
-| `final-requested-dsh-profile` / v2 | `npm test -- test/dsh-profile.test.mjs` | 1151/1150/0/1 | 0 | 83.492 |
-| `final-requested-dsh-skills` / v2 | `npm test -- test/dsh-skills.test.mjs` | 1151/1150/0/1 | 0 | 82.737 |
-| `final-requested-zcode-profile` / v2 | `npm test -- test/zcode-profile.test.mjs` | 1151/1150/0/1 | 0 | 226.054 |
-| `final-requested-host-setup` / v2 | `npm test -- test/host-setup-cli.test.mjs` | 1151/1150/0/1 | 0 | 216.129 |
+### H.1 实际托管 CI（f4d1bd3，run 41131365406 attempt 1）
 
-全集为 **1151 tests / 81 suites**，1150 通过、0 失败、1 跳过；五次 v2 运行计数一致，完整退出状态均为 0。相对固定基线新增 **46 项测试**。唯一 Linux skip 是既有 `writes through 8.3 short-name aliases of protected roots are blocked (win32)`；没有增加 Linux skip。
-<!-- FINAL-RESULTS:END -->
+| 任务 | 结果 |
+|---|---|
+| Ubuntu（离线契约/全量） | 成功 |
+| 上游渲染 | 成功 |
+| Windows | 失败——失败块从诊断轮的 256 缩小到 6 个故障注入用例（`ci-f4d1bd3-windows-annotations.json`） |
 
-`npm run check` 检查 **115 个模块**和 3 个完整 commit pin，返回 0。它仍输出历史 HEAD evidence stale 警告；没有修改历史 evidence 使其消失。`verify-offline` 为 9/9 步，包括 7 个无 key 的 BLOCKED smoke、离线 workflow journal harness 和 model-review readiness，**不是 9 次真实模型调用**。项目 `doctor` 返回 0，但其中 DSH keyed vertical 等文字引用的是历史报告，不是本批宿主验收结果。
+### H.2 本地复现与根因（单一、共享）
 
-历史失败完整保留并区分原因：
+以 `preload-zero-device.mjs` 注入托管 runner 实测元数据分裂（路径 API `lstat` dev=0，句柄 API `fstat` dev 非零、ino/kind/nlink 相同），6/6 用例本地失败且错误文本与断言行号与托管注解逐字一致；零设备全量基线 1383/1357/6/20，失败集合恰为 CI 六例（协调者与独立审核代理分别跑出相同结果）。根因：dev=0 路径下每个生成文件在数据 fd 生命周期内新增只读 witness open/close 流量，旧注入 seam 按"文件名匹配的任意 close"或"lstat dev 与 fstat dev 相等"触发——注入在错误时机触发（witness close 时 wx fd 仍钉住目录，Windows 对含打开句柄目录的 rename 失败，注入半途而废）或永不触发（dev 0 恒不等于 fstat dev）。失败状态下产品行为全部为正确拒绝（STAGING_NOT_EMPTY / 保留 operator 数据 / fail-closed），属测试装置过时而非产品缺陷。
 
-| 原始记录 | 实际结果 | 解释 |
-| --- | --- | --- |
-| `baseline-tests` | 1105 tests / 1083 pass / 21 fail / 1 skip，exit 1 | 初始长 TMP + umask 0002；包含环境 fixture 失败及本次 M3 问题 |
-| `baseline-standard-tests` | 1105 / 1093 / 11 / 1，exit 1 | 初次 detached worktree 未初始化 submodule，多 4 项上游文件缺失；已随后初始化，保留该次日志 |
-| `baseline-complete-tests` | **1105 / 1097 / 7 / 1，exit 1** | 子模块完整、短 TMP、0022 的固定 680 原始基线；7 项包括 2 个产品 CLI 失败及 5 个原测试 fixture 漏参数失败 |
-| `baseline-verify-offline` | exit 1 | 原始 0002 fixture 的 `UNSAFE_POLICY_PERMISSIONS`，没有放宽该守卫 |
-| `alias-requested-npm-tests` | 1105 / 1097 / 7 / 1，exit 1 | 原始用户命令是全量；不是 alias-only 失败 |
-| `zcode-npm-forwarded-selection` | 1146 / 1145 / 0 / 1，exit 0 | 修复中间版本；早于最终 AL5/EIO/平台断言，不作为最终快照门禁 |
+### H.3 修复：仅测试注入 seam（计划获独立 APPROVE 后实施）
 
-最早 ZCode 外部 helper 参数传递错误、两个报告文件名与 recorder 冲突的 `FileExistsError`、初次 sudo 环境导致的宿主 probe 错误均保留。它们是测试工具/报告生成问题，不计作产品反例，也没有用其失败数量充当独立漏洞数。
+| 文件 | 调整 | 不变项 |
+|---|---|---|
+| test/aliases.test.mjs（4 处 close 钩子） | descriptors 记录 `{name, flags}`，仅在生成写 fd（`'wx'`）关闭时触发注入——即用例名义时点"生成文件写入完成关闭后、下一生成写之前" | 全部断言（STAGING_NOT_EMPTY、operator 字节保留、目录仅 operator.txt、replaced/edited）逐字保留 |
+| test/fs-utils.test.mjs:259 | close 故障由 `readFailed` 门控，只在主读错误后的清理 close 抛出（该用例主题） | caught===denied EACCES、句柄全关断言不变 |
+| test/install.test.mjs:1708 | 原文件按 ino 匹配（去掉在设备分裂下恒为假的 dev 合取；temp 内仅一个文件） | EIO 主错误、temp 保留、字节/ino 保留、refused=true 及全部终态断言不变 |
 
-## F. 证据、输入身份和发布
+`src/` 零改动：五个冻结源码 SHA256（cbff271d/02eaf82f/131d1b21/4f098532/0c525632 前缀）修复前后逐字符相同。
 
-- [完整原始文本证据包](LOCAL-M3-ACCEPTANCE-2026-10-30.evidence.jsonl)：每行包含原相对路径、SHA-256、字节数和未经截断的 UTF-8 文本。对 `text.encode('utf-8')` 取摘要可验证原始日志字节。包含失败日志、命令 metadata、独立审阅和外部复现脚本；不包含临时数据库、模型凭据、node_modules、渲染构建产物或 symlink fixture。
-- [最终运行输入](LOCAL-M3-ACCEPTANCE-2026-10-30.inputs.json)：版本化最终源输入清单及基线身份。
-- 日志和审阅文件保留于数据盘 `/mnt/d/codex-workspace/gstack861-m3-acceptance-20261030/evidence/`；fixture 的准确路径见各原始记录，包括任务 `tmp/`、`evidence/dsh-offline-fixture/` 和 `/mnt/d/codex-workspace/g3tmp-1030/`。外部复现脚本位于任务根目录及 `tmp/`。原日志没有被成功重跑覆盖。
-- 真实 Linux 宿主输出以 `zcode-native-linux-v2-*` 为最终输入版本，`zcode-native-linux-observations-v2.json` 核对运行前后源 SHA；第一次宿主执行与探针输出亦保留。
-- 历史基线远端 CI：两个 run 的 Ubuntu/Windows offline-contracts 失败，render-upstream 成功；[push run 41046656408](https://github.com/wmqfl861/gstack861/actions/runs/41046656408)、[PR run 41046662516](https://github.com/wmqfl861/gstack861/actions/runs/41046662516)。没有把历史失败替换为本地通过。
+### H.4 验证（隔离串行）
 
-本文件在正常提交前生成。提交/推送、远端分支 SHA 和对应 Actions 要在发布后单独核验，不能在这里预填成功。交付消息将提供实际完整 SHA 和对应 Actions 链接；也可从 [PR #3 Checks](https://github.com/wmqfl861/gstack861/pull/3/checks) 核查目标 head。未直接推送 main、未 force push、未绕过 CI、未合并 PR。
+- 定向 6 例零设备：6/6 通过，exit 0。
+- 零设备全量：1383/1363/0 失败/20 跳过，exit 0。
+- 常规全量 Node 24.21.0 与锁定 Node 22.16.0：均 1383/1363/0/20，exit 0（Node 22 日志为 TAP 格式即真 22 运行的硬证据）。
+- Node 22.16.0 直跑 check（119 模块）/verify-offline（9/9）/doctor（自报 v22.16.0）：全部 exit 0。
+- 过载 flake 如实记录：三个全量并行首轮出现过载假失败（host-setup-cli 的 spawnSync 10s 超时×3、29 秒停滞下 NTFS 文件 ID 复用×1），均不在修改集、修复前单任务基线通过；并行日志保留为对照（`overload-flake-*.log`），隔离串行重跑与独立复审代理自跑均为零失败。
 
-## G. 剩余事项与交接状态
+### H.5 独立审核链与证据
 
-| 状态 | 本批结论 |
-| --- | --- |
-| 已完成 | Linux 下三个模块的确定性反例、最小修复、回归、原始证据和非作者代码/证据复核；实际 ZCode Linux CLI 的独立技能发现、读取及配置诊断 |
-| 已实现但未验证 | DSH 完整 profile 宿主注册、真实工具经 Guard 调度；ZCode Hook 实际执行、超时/错误处理和多 Hook 合并；alias 在 DSH/Windows 的真实发现与调用 |
-| 被环境阻塞 | 当前本地原生 Windows 实机验收；当前真实 DSH Profile 加载和 Guard/Skills 服务激活 |
-| 需要后续授权/条件 | 如未来只能通过模型触发宿主工具，需要主协调 Agent 另行决定调用方式与预算；本批没有推断模型或付费授权。修改既有宿主配置仍需备份和明确授权 |
-| 主协调 Agent 决策 | 对修复、所述剩余边界及证据作最终独立审核；安排 Windows/DSH 实机及 ZCode 信任后的工具验收；决定是否合并 PR #3 |
+计划审核（agent_3966d0e5）APPROVE，含一项必改：witness close 故障分支（src/fs-utils.mjs `independentDescriptor` 的 `catch { if (!failed) fail(code) }`）在 `readFailed` 门控后失去全套件唯一（且属意外获得的）覆盖——该分支在绿色平台本就无覆盖、方向为 fail-closed，本次未移除任何有意覆盖；已列为后续独立用例候补并在此披露。成果复审 APPROVE（diff 与工作树逐字节一致、六处门控精确、断言/错误集合零变更、独立复跑全部零失败），其必改项（npm run 内 PATH 劫持导致三个 Node 22 辅助日志实跑于系统 Node 24）已在发布前以锁定二进制直跑重生成修正。证据：`ci-followup/residual-seam/`（18 文件，`copied-evidence.json` 逐文件 SHA256）。本地零设备注入是托管条件的本地复现，不冒充托管证据；本次推送后的三个托管任务为最终兼容门。
 
-**完整 Windows 宿主验收未完成，不能标为 HOST_ACCEPTANCE_COMPLETE。** 本批提供可复核的代码和当前环境能取得的真实证据，不扩大为 Windows 生产重构、真实模型调用或付费接入。
+### H.6 边界（维持 OPEN）
+
+已批准的线性 sweep 时序权衡（两次外层扫描间完全恢复的瞬时祖先替换可能失去内部观察机会）、witness close 故障分支覆盖缺口（上文）、ZC-07 最终 syscall 同用户替换竞态——均保持 OPEN，未因本次 seam 修复改变。
+
+### H.7 最终托管结果（69b0d93，run 41173120891 attempt 1）
+
+| 任务 | 结果 |
+|---|---|
+| offline-contracts (ubuntu-latest) | 成功 |
+| render-upstream | 成功 |
+| offline-contracts (windows-latest) | 成功 |
+
+三个托管任务在修复提交 `69b0d93de54099b430348f59595fda09528101bc`（分支 `audit/local-m3-windows-20261030`）上全部通过；运行与任务明细快照存于 `ci-followup/residual-seam/ci-69b0d93-run.json`、`ci-69b0d93-jobs.json`。至此本次验收的全部托管兼容门通过；合并决定移交 ChatGPT/用户。

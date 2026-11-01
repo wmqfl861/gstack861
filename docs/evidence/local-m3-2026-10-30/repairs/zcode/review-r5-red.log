@@ -1,0 +1,97 @@
+✖ install transaction rolls back exact bytes after config-write (131.4581ms)
+✖ R5 receipt temp content ownership after operator data EIO (32.9554ms)
+✔ R5 receipt temp content ownership after prewrite EIO (31.1857ms)
+✖ R5 receipt temp content ownership after partial EIO (32.4798ms)
+✖ R5 config temp content ownership after operator data EIO (61.5865ms)
+✔ R5 config temp content ownership after prewrite EIO (80.2729ms)
+✖ R5 config temp content ownership after partial EIO (87.1397ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 2
+ℹ fail 5
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 669.5708
+
+✖ failing tests:
+
+test at gstack861-m3-audit\test\zcode-profile.test.mjs:202:92
+✖ install transaction rolls back exact bytes after config-write (131.4581ms)
+  Error: ENOENT: no such file or directory, open 'C:\Users\ADMINI~1\AppData\Local\Temp\g861-zc-C9fm6V\workspace\.zcode\config.json.9bc93ed0-f443-490d-bf7b-f3541d818cbb.tmp'
+      at Object.readFileSync (node:fs:483:20)
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:220:21)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    errno: -4058,
+    code: 'ENOENT',
+    syscall: 'open',
+    path: 'C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\g861-zc-C9fm6V\\workspace\\.zcode\\config.json.9bc93ed0-f443-490d-bf7b-f3541d818cbb.tmp'
+  }
+
+test at gstack861-m3-audit\test\zcode-profile.test.mjs:439:107
+✖ R5 receipt temp content ownership after operator data EIO (32.9554ms)
+  Error: ENOENT: no such file or directory, open 'C:\Users\ADMINI~1\AppData\Local\Temp\g861-zc-K6RA5o\workspace\.zcode\.gstack861-zcode-receipt.json.f7bcbedf-1a8c-40de-8e24-6b562af85ddb.tmp'
+      at Object.readFileSync (node:fs:483:20)
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:457:21)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18) {
+    errno: -4058,
+    code: 'ENOENT',
+    syscall: 'open',
+    path: 'C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\g861-zc-K6RA5o\\workspace\\.zcode\\.gstack861-zcode-receipt.json.f7bcbedf-1a8c-40de-8e24-6b562af85ddb.tmp'
+  }
+
+test at gstack861-m3-audit\test\zcode-profile.test.mjs:439:107
+✖ R5 receipt temp content ownership after partial EIO (32.4798ms)
+  Error: ENOENT: no such file or directory, open 'C:\Users\ADMINI~1\AppData\Local\Temp\g861-zc-UiBlnl\workspace\.zcode\.gstack861-zcode-receipt.json.fcacf760-0864-4ab8-a463-bf18d521e200.tmp'
+      at Object.readFileSync (node:fs:483:20)
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:457:21)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    errno: -4058,
+    code: 'ENOENT',
+    syscall: 'open',
+    path: 'C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\g861-zc-UiBlnl\\workspace\\.zcode\\.gstack861-zcode-receipt.json.fcacf760-0864-4ab8-a463-bf18d521e200.tmp'
+  }
+
+test at gstack861-m3-audit\test\zcode-profile.test.mjs:439:107
+✖ R5 config temp content ownership after operator data EIO (61.5865ms)
+  Error: ENOENT: no such file or directory, open 'C:\Users\ADMINI~1\AppData\Local\Temp\g861-zc-t9AMph\workspace\.zcode\config.json.b1af0945-b572-4f1b-8e11-6ddb85be3893.tmp'
+      at Object.readFileSync (node:fs:483:20)
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:457:21)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    errno: -4058,
+    code: 'ENOENT',
+    syscall: 'open',
+    path: 'C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\g861-zc-t9AMph\\workspace\\.zcode\\config.json.b1af0945-b572-4f1b-8e11-6ddb85be3893.tmp'
+  }
+
+test at gstack861-m3-audit\test\zcode-profile.test.mjs:439:107
+✖ R5 config temp content ownership after partial EIO (87.1397ms)
+  Error: ENOENT: no such file or directory, open 'C:\Users\ADMINI~1\AppData\Local\Temp\g861-zc-9afUwS\workspace\.zcode\config.json.41527cde-8a22-4aa7-b8e7-4bdbe5a7b8da.tmp'
+      at Object.readFileSync (node:fs:483:20)
+      at TestContext.<anonymous> (file:///C:/Users/Administrator/.zcode/workspace/9c06bcdc-025c-4764-9ec1-da6db48d1f77/gstack861-m3-audit/test/zcode-profile.test.mjs:457:21)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    errno: -4058,
+    code: 'ENOENT',
+    syscall: 'open',
+    path: 'C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\g861-zc-9afUwS\\workspace\\.zcode\\config.json.41527cde-8a22-4aa7-b8e7-4bdbe5a7b8da.tmp'
+  }

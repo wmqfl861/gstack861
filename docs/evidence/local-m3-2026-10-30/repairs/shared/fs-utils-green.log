@@ -1,0 +1,15 @@
+✔ plain path inspection is read-only and reads an identity-verified regular file (15.9913ms)
+✔ plain paths refuse links in a leaf or any ancestor, plus hardlinked file leaves (8.6536ms)
+✔ plain paths reject traversal, controls, wrong ancestor types and absent required paths (5.4177ms)
+✔ snapshots reject plain ancestor replacement even with identical file bytes (7.5812ms)
+✔ snapshot expected absence is not rebased over unexpected creation (12.2545ms)
+✔ verified file reads detect a file replacement at open and always close the descriptor (7.6755ms)
+✔ native Windows extended namespace resolves to the same plain physical path (6.9901ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 7
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 257.2828

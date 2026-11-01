@@ -1,0 +1,784 @@
+{
+  "schemaVersion": 1,
+  "commit": "5755601dac5d35ebd7dde181fdefe52a023c73d9",
+  "scope": "top-level-source-skills",
+  "fullParity": false,
+  "note": "Static inventory only; subcommands, binaries and lifecycle hooks need separate coverage. Indicators require review, not blind replacements.",
+  "skills": [
+    {
+      "name": "autoplan",
+      "blob": "e990496a13f623179341280d264a2e861798ace1",
+      "source": "autoplan/SKILL.md.tmpl",
+      "sha256": "6b6bc74b2ed979b8377a79a4b18362eaa4d0911242fe6404e354e5a079349d87",
+      "indicators": [
+        "claude-reference",
+        "host-path-or-env",
+        "host-interaction",
+        "template-resolvers"
+      ],
+      "zcode": "planned",
+      "dsh": "planned"
+    },
+    {
+      "name": "benchmark",
+      "blob": "ec386b3c73f942363ca4011bf01df3b617649eba",
+      "source": "benchmark/SKILL.md.tmpl",
+      "sha256": "51bd1c23fda2c26ea5a3b35248ff8a11c760c0d37f0ccd9edf369df8a5d20994",
+      "indicators": [
+        "claude-reference",
+        "host-path-or-env",
+        "host-interaction",
+        "template-resolvers"
+      ],
+      "zcode": "planned",
+      "dsh": "planned"
+    },
+    {
+      "name": "benchmark-models",
+      "blob": "7360183c7119ae4c954d2bc3d31df5b1fd860971",
+      "source": "benchmark-models/SKILL.md.tmpl",
+      "sha256": "6a2845acf5e0f9fa53d1a3c9225de3fe9f58e96a71aff4d0990d6b872c105696",
+      "indicators": [
+        "claude-reference",
+        "codex-reference",
+        "host-interaction",
+        "template-resolvers"
+      ],
+      "zcode": "planned",
+      "dsh": "planned"
+    },
+    {
+      "name": "browse",
+      "blob": "009a153f04afebc99b2d12f86967e8a728259cae",
+      "source": "browse/SKILL.md.tmpl",
+      "sha256": "b9f93a386920d1d69976d952d915a633ac779c961f9106a9c28eb8272ae28957",
+      "indicators": [
+        "host-interaction",
+        "template-resolvers"
+      ],
+      "zcode": "planned",
+      "dsh": "planned"
+    },
+    {
+      "name": "canary",
+      "blob": "6b818fcae82a2035dabe46a944343eb160035a52",
+      "source": "canary/SKILL.md.tmpl",
+      "sha256": "22017735be6cd096a736d4723134b2a2449aa03727a87c876ac9abf6eb3b7ffd",
+      "indicators": [
+        "claude-reference",
+        "host-path-or-env",
+        "host-interaction",
+        "template-resolvers"
+      ],
+      "zcode": "planned",
+      "dsh": "planned"
+    },
+    {
+      "name": "careful",
+      "blob": "89744fb5610b6eea25f46e655d792dfe6f0a2d9e",
+      "source": "careful/SKILL.md.tmpl",
+      "sha256": "60ea3fc1daf930e761938960971ce3e28c1dc42400d875a5c1d9a943f6520710",
+      "indicators": [
+        "claude-reference",
+        "host-path-or-env"
+      ],
+      "zcode": "planned",
+      "dsh": "planned"
+    },
+    {
+      "name": "claude-code",
+      "blob": "87965693e42d6ca7ec0d37e98111714f8ab84b84",
+      "source": "claude-code/SKILL.md.tmpl",
+      "sha256": "17db2c496e692019f449d5944ac0422858dec2a41e8b321e5d5cd94ae8b898fa",
+      "indicators": [
+        "claude-reference",
+        "host-path-or-env",
+        "host-interaction",
+        "template-resolvers"
+      ],
+      "zcode": "planned",
+      "dsh": "planned"
+    },
+    {
+      "name": "codex",
+      "blob": "9f55d30529bba0929bb3c4595a1b41251e0a4114",
+      "source": "codex/SKILL.md.tmpl",
+      "sha256": "e1f74bf322aef40380415f96841f5da970e16a280f8fda90fd292cc5fa4d9680",
+      "indicators": [
+        "claude-reference",
+        "codex-reference",
+        "host-path-or-env",
+        "host-interaction",
+        "template-resolvers"
+      ],
+      "zcode": "planned",
+      "dsh": "planned"
+    },
+    {
+      "name": "context-restore",
+      "blob": "c964a88f01b5aa937983a78b5ee25a0104ff4f9a",
+      "source": "context-restore/SKILL.md.tmpl",
+      "sha256": "bf4acb0f00e5b0509a52ff176c3e5cb06da3425223d812b6f92e13d92ee87398",
+      "indicators": [
+        "claude-reference",
+        "host-path-or-env",
+        "host-interaction",
+        "template-resolvers"
+      ],
+      "zcode": "planned",
+      "dsh": "planned"
+    },
+    {
+      "name": "context-save",
+      "blob": "4166cd159663b6645b0e60f91307a3fb364ad171",
+      "source": "context-save/SKILL.md.tmpl",
+      "sha256": "34f98246cedcf4b6207bf69e9e5827c5b7632d7880564b8d000ec4e55d142a8c",
+      "indicators": [
+        "claude-reference",
+        "host-path-or-env",
+        "host-interaction",
+        "template-resolvers"
+      ],
+      "zcode": "planned",
+      "dsh": "planned"
+    },
+    {
+      "name": "cso",
+      "blob": "8030addaf086c029fd0a9df9645466000c61318e",
+      "source": "cso/SKILL.md.tmpl",
+      "sha256": "a364d557b04954455d18ed4b99714cce88c4c0624dcfc04b9c828480092a0e05",
+      "indicators": [
+        "claude-reference",
+        "host-path-or-env",
+        "template-resolvers"
+      ],
+      "zcode": "planned",
+      "dsh": "planned"
+    },
+    {
+      "name": "design-consultation",
+      "blob": "64d1e4c5711f56ed09106676239902bafdb6c391",
+      "source": "design-consultation/SKILL.md.tmpl",
+      "sha256": "4c9d6ae14293aa401c34591367451c20051c915a9efa245d9068c2b0bef39779",
+      "indicators": [
+        "claude-reference",
+        "host-path-or-env",
+        "host-interaction",
+        "template-resolvers"
+      ],
+      "zcode": "planned",
+      "dsh": "planned"
+    },
+    {
+      "name": "design-html",
+      "blob": "80d425437e1e74c382627427eaef02132996f762",
+      "source": "design-html/SKILL.md.tmpl",
+      "sha256": "0d727bdf4f18a79bb3a02bed5ca12d45347b0e4ce9d95835b215404ddf4cc4e2",
+      "indicators": [
+        "claude-reference",
+        "host-path-or-env",
+        "host-interaction",
+        "template-resolvers"
+      ],
+      "zcode": "planned",
+      "dsh": "planned"
+    },
+    {
+      "name": "design-review",
+      "blob": "4e7960250dc2b1e94258760ed9f168562c7a2d33",
+      "source": "design-review/SKILL.md.tmpl",
+      "sha256": "f46e1457933ae9ead5fdc7882e46dfc17ce07dfcd1d8884799af0191413d3314",
+      "indicators": [
+        "claude-reference",
+        "host-path-or-env",
+        "host-interaction",
+        "template-resolvers"
+      ],
+      "zcode": "planned",
+      "dsh": "planned"
+    },
+    {
+      "name": "design-shotgun",
+      "blob": "ac85e05c481ff032c82bf67f7e30881eb85c003c",
+      "source": "design-shotgun/SKILL.md.tmpl",
+      "sha256": "3ff2f4e4f2608fbddc128b0ecfc4077fcc13263035fb74039551e923961b4a93",
+      "indicators": [
+        "claude-reference",
+        "host-path-or-env",
+        "host-interaction",
+        "template-resolvers"
+      ],
+      "zcode": "planned",
+      "dsh": "planned"
+    },
+    {
+      "name": "deslop-shared-libs",
+      "blob": "b87f791da63fc2298cf79bd686e56c93cf84e9ce",
+      "source": "deslop-shared-libs/SKILL.md.tmpl",
+      "sha256": "1c533efb8ccdb3bfb0ed148a9abe65b28a9da3f7d9810137c975dae29577de5b",
+      "indicators": [
+        "template-resolvers"
+      ],
+      "zcode": "planned",
+      "dsh": "planned"
+    },
+    {
+      "name": "devex-review",
+      "blob": "80a3509712b58ac358e50bdca447ac98c019ec46",
+      "source": "devex-review/SKILL.md.tmpl",
+      "sha256": "81b3ee72f0eee6048421e41d85f30edd645bd8dc770ed2450e7cf41aef4e852d",
+      "indicators": [
+        "claude-reference",
+        "host-path-or-env",
+        "host-interaction",
+        "template-resolvers"
+      ],
+      "zcode": "planned",
+      "dsh": "planned"
+    },
+    {
+      "name": "diagram",
+      "blob": "e44afe0e052600c03560b7bd23ef9c0b4c4a74a2",
+      "source": "diagram/SKILL.md.tmpl",
+      "sha256": "37fa13f687eb3b523e7958cda8f87c9e92722cfd3296d0f8a47017b3a1a816f9",
+      "indicators": [
+        "claude-reference",
+        "host-path-or-env",
+        "host-interaction",
+        "template-resolvers"
+      ],
+      "zcode": "planned",
+      "dsh": "planned"
+    },
+    {
+      "name": "document-generate",
+      "blob": "33f846038d2f07023673bd91f53d8248d5156df3",
+      "source": "document-generate/SKILL.md.tmpl",
+      "sha256": "81392cc551346b6de1a96c10e83936a4f126e6cb00812572e56e2642f3791f07",
+      "indicators": [
+        "claude-reference",
+        "host-path-or-env",
+        "host-interaction",
+        "template-resolvers"
+      ],
+      "zcode": "planned",
+      "dsh": "planned"
+    },
+    {
+      "name": "document-release",
+      "blob": "0de95321d7c03ffd8fe3abcfb349d1f6bfa5fbcf",
+      "source": "document-release/SKILL.md.tmpl",
+      "sha256": "55d63422a144e692395b91a1e733397ab9d99c7d1e14564824951b61b3319fef",
+      "indicators": [
+        "claude-reference",
+        "host-path-or-env",
+        "host-interaction",
+        "template-resolvers"
+      ],
+      "zcode": "planned",
+      "dsh": "planned"
+    },
+    {
+      "name": "eval-plan",
+      "blob": "c541639ecaaaa2474960da29a54603e567450c9b",
+      "source": "eval-plan/SKILL.md.tmpl",
+      "sha256": "605ec3dab5cec91c7dbb9baca58c3a4d85424f7262d69170b2f2a7b9e07a709b",
+      "indicators": [
+        "claude-reference",
+        "host-path-or-env",
+        "host-interaction",
+        "template-resolvers"
+      ],
+      "zcode": "planned",
+      "dsh": "planned"
+    },
+    {
+      "name": "freeze",
+      "blob": "4b95fd3e483a411313d30c64fab5eeb5c6f4efbc",
+      "source": "freeze/SKILL.md.tmpl",
+      "sha256": "2059841edda9f9a8fae566f5ebb42140c578a9d68efaf69146ff428bacea3275",
+      "indicators": [
+        "claude-reference",
+        "host-path-or-env",
+        "host-interaction",
+        "template-resolvers"
+      ],
+      "zcode": "planned",
+      "dsh": "planned"
+    },
+    {
+      "name": "gstack-upgrade",
+      "blob": "7298daa15a9cdcd51073a78f740a4b015994999f",
+      "source": "gstack-upgrade/SKILL.md.tmpl",
+      "sha256": "77ab610e91376817601fc5aec4bc6086fb11ff1c5ba2bccf9c2dacb7e45c97f8",
+      "indicators": [
+        "claude-reference",
+        "host-path-or-env",
+        "host-interaction",
+        "template-resolvers"
+      ],
+      "zcode": "planned",
+      "dsh": "planned"
+    },
+    {
+      "name": "guard",
+      "blob": "a7a27891369b91ca01f43c3420f7b350e179894a",
+      "source": "guard/SKILL.md.tmpl",
+      "sha256": "9f3ac06acb085789ad8dc815710ceb4abd3493091eed349eaa4eef5129af1891",
+      "indicators": [
+        "claude-reference",
+        "host-path-or-env",
+        "host-interaction",
+        "template-resolvers"
+      ],
+      "zcode": "planned",
+      "dsh": "planned"
+    },
+    {
+      "name": "health",
+      "blob": "47f83551ee15637191292c93973724a4f39e6d25",
+      "source": "health/SKILL.md.tmpl",
+      "sha256": "942e7b94930e8f81f5da52c49dad19d0ae276e826f5b048da2b91461c77a2ef5",
+      "indicators": [
+        "claude-reference",
+        "host-path-or-env",
+        "host-interaction",
+        "template-resolvers"
+      ],
+      "zcode": "planned",
+      "dsh": "planned"
+    },
+    {
+      "name": "investigate",
+      "blob": "384bcf6eacd333a6a3eec5117b9e8e5083103d93",
+      "source": "investigate/SKILL.md.tmpl",
+      "sha256": "f8a7833e7fc52a19d174625f3b602a3042f0a18fd10d8714a7df74d9072149d0",
+      "indicators": [
+        "claude-reference",
+        "host-path-or-env",
+        "host-interaction",
+        "template-resolvers"
+      ],
+      "zcode": "planned",
+      "dsh": "planned"
+    },
+    {
+      "name": "ios-clean",
+      "blob": "dcb1f7be24608e830b2b86a4a6920dfee7c58e7a",
+      "source": "ios-clean/SKILL.md.tmpl",
+      "sha256": "cc571a44852e0e9ac6f7c8a3498d5a504e5fd7a2376018a246058bf89a30bc5f",
+      "indicators": [
+        "host-interaction",
+        "template-resolvers"
+      ],
+      "zcode": "planned",
+      "dsh": "planned"
+    },
+    {
+      "name": "ios-design-review",
+      "blob": "e2866da1fb6b301870242263c978c214b19eff81",
+      "source": "ios-design-review/SKILL.md.tmpl",
+      "sha256": "66b251302b561e2f06c0f26d3cfe3fb9599bb90c583d45ba1edb1cf505b5a237",
+      "indicators": [
+        "host-interaction",
+        "template-resolvers"
+      ],
+      "zcode": "planned",
+      "dsh": "planned"
+    },
+    {
+      "name": "ios-fix",
+      "blob": "7c83d299b615fb17d8eded6d978a23634a6ab24b",
+      "source": "ios-fix/SKILL.md.tmpl",
+      "sha256": "41d1fd20b7e110e30aa92584385b1786d502b8985d997b5c920e92b5a69d484d",
+      "indicators": [
+        "host-interaction",
+        "template-resolvers"
+      ],
+      "zcode": "planned",
+      "dsh": "planned"
+    },
+    {
+      "name": "ios-qa",
+      "blob": "3c957a051fcc1daa73ce8dc9256423dc4cc52ec4",
+      "source": "ios-qa/SKILL.md.tmpl",
+      "sha256": "94f644ddbd4d5cf086db50ec07d9832261ff6d1190f834bfb752c4f33a1a1597",
+      "indicators": [
+        "claude-reference",
+        "host-path-or-env",
+        "host-interaction",
+        "template-resolvers"
+      ],
+      "zcode": "planned",
+      "dsh": "planned"
+    },
+    {
+      "name": "ios-sync",
+      "blob": "07f358560e223f6e95b5131a3df25721253eec83",
+      "source": "ios-sync/SKILL.md.tmpl",
+      "sha256": "81f649f9cb19e0dc9e795cd0edbcde24b540873f7799f92974c098a0ca921448",
+      "indicators": [
+        "claude-reference",
+        "host-path-or-env",
+        "host-interaction",
+        "template-resolvers"
+      ],
+      "zcode": "planned",
+      "dsh": "planned"
+    },
+    {
+      "name": "land-and-deploy",
+      "blob": "6243389b1fe2eacc81a76537f1c8f965659d4a0a",
+      "source": "land-and-deploy/SKILL.md.tmpl",
+      "sha256": "e73feb994f17737b0d6fecb242322e66892334e6a1e1a1fd9649234e144802a9",
+      "indicators": [
+        "claude-reference",
+        "host-path-or-env",
+        "host-interaction",
+        "template-resolvers"
+      ],
+      "zcode": "planned",
+      "dsh": "planned"
+    },
+    {
+      "name": "landing-report",
+      "blob": "8b1663d90be528926082f741374be0de49467557",
+      "source": "landing-report/SKILL.md.tmpl",
+      "sha256": "640202c0611f46e481276fe0815d6694c1465bc740878d9c9426f23797119bd4",
+      "indicators": [
+        "claude-reference",
+        "host-path-or-env",
+        "template-resolvers"
+      ],
+      "zcode": "planned",
+      "dsh": "planned"
+    },
+    {
+      "name": "learn",
+      "blob": "e0da507766c7a1947a6126576eb76f11d0bc030c",
+      "source": "learn/SKILL.md.tmpl",
+      "sha256": "d27126f82ae7c63cedc79fbc5d9c31dae673139a4b488f0d076b09af81a5f2ad",
+      "indicators": [
+        "claude-reference",
+        "host-path-or-env",
+        "host-interaction",
+        "template-resolvers"
+      ],
+      "zcode": "planned",
+      "dsh": "planned"
+    },
+    {
+      "name": "make-pdf",
+      "blob": "b55cf768af23b9699fa3367a35731176cfb7b91a",
+      "source": "make-pdf/SKILL.md.tmpl",
+      "sha256": "7d48f5b025e1f2b7bedcd9d7bcd33e62e2c852ae1b13f42f18a47e4e35343cb1",
+      "indicators": [
+        "host-interaction",
+        "template-resolvers"
+      ],
+      "zcode": "planned",
+      "dsh": "planned"
+    },
+    {
+      "name": "office-hours",
+      "blob": "76766b934550e39b302e7e2c2c6c138cea9fddb8",
+      "source": "office-hours/SKILL.md.tmpl",
+      "sha256": "1b7daa313eff81916f3f78761237f7d739a009645a983267f046f8e0a84c8d17",
+      "indicators": [
+        "claude-reference",
+        "host-path-or-env",
+        "host-interaction",
+        "template-resolvers"
+      ],
+      "zcode": "planned",
+      "dsh": "planned"
+    },
+    {
+      "name": "open-gstack-browser",
+      "blob": "f4d31b7cef75299d23166154b43ea0ececb1c0b4",
+      "source": "open-gstack-browser/SKILL.md.tmpl",
+      "sha256": "d33bbd01af12812a368f27d73fd198baf884174702fdd61a987d8c819f2ee8c3",
+      "indicators": [
+        "claude-reference",
+        "host-path-or-env",
+        "host-interaction",
+        "template-resolvers"
+      ],
+      "zcode": "planned",
+      "dsh": "planned"
+    },
+    {
+      "name": "pair-agent",
+      "blob": "0460989aecb534666979e544023ad7b4704bb104",
+      "source": "pair-agent/SKILL.md.tmpl",
+      "sha256": "4b78a66ad267def88382e2330b65c1df38319ae2d4dd29949437ea2462514c6f",
+      "indicators": [
+        "claude-reference",
+        "codex-reference",
+        "host-path-or-env",
+        "host-interaction",
+        "template-resolvers"
+      ],
+      "zcode": "planned",
+      "dsh": "planned"
+    },
+    {
+      "name": "plan-ceo-review",
+      "blob": "a40d8531fce4ab5f1abff37bb4a77860198b6616",
+      "source": "plan-ceo-review/SKILL.md.tmpl",
+      "sha256": "1207d92df081315ee9d2b8f71b9077b1f23f198697cc4f07a1872de667c0b3a0",
+      "indicators": [
+        "claude-reference",
+        "host-path-or-env",
+        "host-interaction",
+        "template-resolvers"
+      ],
+      "zcode": "planned",
+      "dsh": "planned"
+    },
+    {
+      "name": "plan-design-review",
+      "blob": "923bbeeedd641b4246af120160d1fcd43bd4c2a9",
+      "source": "plan-design-review/SKILL.md.tmpl",
+      "sha256": "e5043f17e9d074bf294858fa1fc50e8f2fc13d97747ec5222e577dcf6e8d08e4",
+      "indicators": [
+        "claude-reference",
+        "host-path-or-env",
+        "host-interaction",
+        "template-resolvers"
+      ],
+      "zcode": "planned",
+      "dsh": "planned"
+    },
+    {
+      "name": "plan-devex-review",
+      "blob": "572890826d02e7d460fafb4f72b2fccc155d757a",
+      "source": "plan-devex-review/SKILL.md.tmpl",
+      "sha256": "3fb2b407f0abadcc050b1544058d6ff211031b1a3d994e3c2321b62c1ad262af",
+      "indicators": [
+        "claude-reference",
+        "host-path-or-env",
+        "host-interaction",
+        "template-resolvers"
+      ],
+      "zcode": "planned",
+      "dsh": "planned"
+    },
+    {
+      "name": "plan-eng-review",
+      "blob": "66d1efa955404903ac69b5160599f310abc7354d",
+      "source": "plan-eng-review/SKILL.md.tmpl",
+      "sha256": "5e2865cac0b18898620fccb4be7cc153c97dcd6ace59e4d1e2f5c698ee301cec",
+      "indicators": [
+        "claude-reference",
+        "host-path-or-env",
+        "host-interaction",
+        "template-resolvers"
+      ],
+      "zcode": "planned",
+      "dsh": "planned"
+    },
+    {
+      "name": "plan-tune",
+      "blob": "2aa16edd87d5248dcd8b1b0cbce5e7620866a859",
+      "source": "plan-tune/SKILL.md.tmpl",
+      "sha256": "269e074822dcfec547f83efadd1f79059f9770a5b620f1177be8b38d1ff4fc38",
+      "indicators": [
+        "claude-reference",
+        "codex-reference",
+        "host-path-or-env",
+        "host-interaction",
+        "template-resolvers"
+      ],
+      "zcode": "planned",
+      "dsh": "planned"
+    },
+    {
+      "name": "qa",
+      "blob": "5b56d11adf2a6066d253653cc5ca04ebff2d586a",
+      "source": "qa/SKILL.md.tmpl",
+      "sha256": "fb39c88ec68ce3143fda85e8ef119aac6fbb4051ad826c0528f2518ce331d2ba",
+      "indicators": [
+        "claude-reference",
+        "host-path-or-env",
+        "host-interaction",
+        "template-resolvers"
+      ],
+      "zcode": "planned",
+      "dsh": "planned"
+    },
+    {
+      "name": "qa-only",
+      "blob": "aacc16cc93f977b7dafc0086df3e24ba5c326d42",
+      "source": "qa-only/SKILL.md.tmpl",
+      "sha256": "c5103a9f9d9e4812cf06e4004f65db88380671e93c90edde01d0851d33fb19f4",
+      "indicators": [
+        "host-interaction",
+        "template-resolvers"
+      ],
+      "zcode": "planned",
+      "dsh": "planned"
+    },
+    {
+      "name": "retro",
+      "blob": "156ecd7df499906c8fd273be01b5d5d5d693f13c",
+      "source": "retro/SKILL.md.tmpl",
+      "sha256": "8ea1cb1988338376e3d6abe67b9331c4a3eb48e5c68a054fb9270a475447b04e",
+      "indicators": [
+        "claude-reference",
+        "codex-reference",
+        "host-path-or-env",
+        "host-interaction",
+        "template-resolvers"
+      ],
+      "zcode": "planned",
+      "dsh": "planned"
+    },
+    {
+      "name": "review",
+      "blob": "667c2aa9f72472536ceb89c7d0b5234395d43693",
+      "source": "review/SKILL.md.tmpl",
+      "sha256": "37bd01fda9deb0913c32dd879c16829f974dd276981012a009b9612c8a928d97",
+      "indicators": [
+        "claude-reference",
+        "host-path-or-env",
+        "host-interaction",
+        "template-resolvers"
+      ],
+      "zcode": "planned",
+      "dsh": "planned"
+    },
+    {
+      "name": "scrape",
+      "blob": "28069b8584a87acc042d6caf2ae2c483c025863b",
+      "source": "scrape/SKILL.md.tmpl",
+      "sha256": "ebf0b799d101a1b91fe08c059b74062b23a6cfdfccaa1f5a517994a41eb0ae5c",
+      "indicators": [
+        "host-interaction",
+        "template-resolvers"
+      ],
+      "zcode": "planned",
+      "dsh": "planned"
+    },
+    {
+      "name": "setup-browser-cookies",
+      "blob": "82313c668c4a511fadffdf831a78e2412c4d461a",
+      "source": "setup-browser-cookies/SKILL.md.tmpl",
+      "sha256": "db77abfccfeb32bc7374b5b15d953bd148076d219e59f5c296379b6ee3413f84",
+      "indicators": [
+        "host-interaction",
+        "template-resolvers"
+      ],
+      "zcode": "planned",
+      "dsh": "planned"
+    },
+    {
+      "name": "setup-deploy",
+      "blob": "d0005dd06ae82ab8f51a3272be842b3c4a169d03",
+      "source": "setup-deploy/SKILL.md.tmpl",
+      "sha256": "7d3dd15dec7f0d1b2d432ba074ba761a34c396ce5fae7402b01fca86afcf6b74",
+      "indicators": [
+        "host-interaction",
+        "template-resolvers"
+      ],
+      "zcode": "planned",
+      "dsh": "planned"
+    },
+    {
+      "name": "setup-gbrain",
+      "blob": "02c0f096a89117fe9bab54c90835fa949213e38c",
+      "source": "setup-gbrain/SKILL.md.tmpl",
+      "sha256": "41775da600e28929bcdc4e4ec3ce808826e5ff6335d3557540e0667f5eb2c707",
+      "indicators": [
+        "claude-reference",
+        "host-path-or-env",
+        "host-interaction",
+        "template-resolvers"
+      ],
+      "zcode": "planned",
+      "dsh": "planned"
+    },
+    {
+      "name": "ship",
+      "blob": "c4c21022f2e6165cac26111829240edcd2f19f9c",
+      "source": "ship/SKILL.md.tmpl",
+      "sha256": "bdf56b3d56b5457d358d948c4eccdc24dab6ede3670ec13da5954d9dc13631b6",
+      "indicators": [
+        "claude-reference",
+        "host-path-or-env",
+        "host-interaction",
+        "template-resolvers"
+      ],
+      "zcode": "planned",
+      "dsh": "planned"
+    },
+    {
+      "name": "skillify",
+      "blob": "0c741c7348349a524085e21660f6f45bbeb4da2f",
+      "source": "skillify/SKILL.md.tmpl",
+      "sha256": "e344f7111b40535c1466d994ede0e154b395dc28d9036393dcb4754e3ac9fca9",
+      "indicators": [
+        "host-interaction",
+        "template-resolvers"
+      ],
+      "zcode": "planned",
+      "dsh": "planned"
+    },
+    {
+      "name": "spec",
+      "blob": "aad712c2220b8e0700e7793575a6ed6a8c3126fa",
+      "source": "spec/SKILL.md.tmpl",
+      "sha256": "0ac1787fba16754b2695bfed05e3f8827e1cd1d7fa1717a74d2d492bbb96a95c",
+      "indicators": [
+        "claude-reference",
+        "codex-reference",
+        "host-path-or-env",
+        "host-interaction",
+        "template-resolvers"
+      ],
+      "zcode": "planned",
+      "dsh": "planned"
+    },
+    {
+      "name": "sync-gbrain",
+      "blob": "a822ee4818002d8195fbaad4ebd9ed2ae1446778",
+      "source": "sync-gbrain/SKILL.md.tmpl",
+      "sha256": "5faf49a986192ee2a3542131ab91eb9fe2b7b3496b14b058ae23fd68d5af099a",
+      "indicators": [
+        "claude-reference",
+        "host-path-or-env",
+        "host-interaction",
+        "template-resolvers"
+      ],
+      "zcode": "planned",
+      "dsh": "planned"
+    },
+    {
+      "name": "test-audit",
+      "blob": "b063cd16d72c1c11224f745be5c58112b354ec91",
+      "source": "test-audit/SKILL.md.tmpl",
+      "sha256": "c2571ce79bb689b0eae34d7446755324d67536b082fe4c5301d8d30860ec2f25",
+      "indicators": [
+        "claude-reference",
+        "host-path-or-env",
+        "host-interaction",
+        "template-resolvers"
+      ],
+      "zcode": "planned",
+      "dsh": "planned"
+    },
+    {
+      "name": "unfreeze",
+      "blob": "1e08fc7b58ce43a3f4f66e3e22b436ad34e54602",
+      "source": "unfreeze/SKILL.md.tmpl",
+      "sha256": "da05ec4a9f1f536d676e7751f907ae407dd8325babe76d5342f6701772e9c24c",
+      "indicators": [
+        "claude-reference",
+        "host-path-or-env",
+        "template-resolvers"
+      ],
+      "zcode": "planned",
+      "dsh": "planned"
+    }
+  ]
+}

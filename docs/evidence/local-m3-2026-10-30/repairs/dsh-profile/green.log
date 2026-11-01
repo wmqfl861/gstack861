@@ -1,0 +1,298 @@
+TAP version 13
+# Subtest: generates DSH profile with complete dependency chain and local adapter shim
+ok 1 - generates DSH profile with complete dependency chain and local adapter shim
+  ---
+  duration_ms: 269.0566
+  type: 'test'
+  ...
+# Subtest: refuses existing output without touching operator files
+ok 2 - refuses existing output without touching operator files
+  ---
+  duration_ms: 7.6119
+  type: 'test'
+  ...
+# Subtest: refuses workspace-contained policy, symlinked adapter and missing skills root
+ok 3 - refuses workspace-contained policy, symlinked adapter and missing skills root
+  ---
+  duration_ms: 30.6957
+  type: 'test'
+  ...
+# Subtest: rejects invalid profile name and malformed policy before creating output
+ok 4 - rejects invalid profile name and malformed policy before creating output
+  ---
+  duration_ms: 10.9904
+  type: 'test'
+  ...
+# Subtest: emits both importable plugin packages pointing to the real repository adapters
+ok 5 - emits both importable plugin packages pointing to the real repository adapters
+  ---
+  duration_ms: 283.6841
+  type: 'test'
+  ...
+# Subtest: file URL shims preserve spaces, Unicode and ADMINI~1 short-name spelling
+ok 6 - file URL shims preserve spaces, Unicode and ADMINI~1 short-name spelling
+  ---
+  duration_ms: 262.5154
+  type: 'test'
+  ...
+# Subtest: validates adapter files without evaluating caller code
+ok 7 - validates adapter files without evaluating caller code
+  ---
+  duration_ms: 238.5443
+  type: 'test'
+  ...
+# Subtest: rejects invalid complete policies before creating output
+    # Subtest: missing root arrays
+    ok 1 - missing root arrays
+      ---
+      duration_ms: 15.2841
+      type: 'test'
+      ...
+    # Subtest: unknown field
+    ok 2 - unknown field
+      ---
+      duration_ms: 17.0323
+      type: 'test'
+      ...
+    # Subtest: malformed binding
+    ok 3 - malformed binding
+      ---
+      duration_ms: 13.4525
+      type: 'test'
+      ...
+    # Subtest: unknown host
+    ok 4 - unknown host
+      ---
+      duration_ms: 13.0103
+      type: 'test'
+      ...
+    # Subtest: root outside workspace
+    ok 5 - root outside workspace
+      ---
+      duration_ms: 13.6757
+      type: 'test'
+      ...
+    # Subtest: oversized policy
+    ok 6 - oversized policy
+      ---
+      duration_ms: 13.5821
+      type: 'test'
+      ...
+    1..6
+ok 8 - rejects invalid complete policies before creating output
+  ---
+  duration_ms: 88.573
+  type: 'test'
+  ...
+# Subtest: rejects unsafe optional skills adapter paths without creating output
+    # Subtest: relative
+    ok 1 - relative
+      ---
+      duration_ms: 4.4698
+      type: 'test'
+      ...
+    # Subtest: missing
+    ok 2 - missing
+      ---
+      duration_ms: 7.4906
+      type: 'test'
+      ...
+    # Subtest: directory
+    ok 3 - directory
+      ---
+      duration_ms: 8.3988
+      type: 'test'
+      ...
+    # Subtest: symlink
+    ok 4 - symlink
+      ---
+      duration_ms: 9.5854
+      type: 'test'
+      ...
+    # Subtest: hardlink
+    ok 5 - hardlink
+      ---
+      duration_ms: 8.8796
+      type: 'test'
+      ...
+    1..5
+ok 9 - rejects unsafe optional skills adapter paths without creating output
+  ---
+  duration_ms: 40.2992
+  type: 'test'
+  ...
+# Subtest: rejects linked ancestors of every scaffold input and output
+    # Subtest: policy
+    ok 1 - policy
+      ---
+      duration_ms: 6.9584
+      type: 'test'
+      ...
+    # Subtest: guard
+    ok 2 - guard
+      ---
+      duration_ms: 10.8737
+      type: 'test'
+      ...
+    # Subtest: skills adapter
+    ok 3 - skills adapter
+      ---
+      duration_ms: 9.913
+      type: 'test'
+      ...
+    # Subtest: skills
+    ok 4 - skills
+      ---
+      duration_ms: 9.7463
+      type: 'test'
+      ...
+    # Subtest: workspace
+    ok 5 - workspace
+      ---
+      duration_ms: 11.2213
+      type: 'test'
+      ...
+    # Subtest: output
+    ok 6 - output
+      ---
+      duration_ms: 7.7693
+      type: 'test'
+      ...
+    1..6
+ok 10 - rejects linked ancestors of every scaffold input and output
+  ---
+  duration_ms: 58.435
+  type: 'test'
+  ...
+# Subtest: rejects traversal and hardlinked source files before creating output
+    # Subtest: output traversal
+    ok 1 - output traversal
+      ---
+      duration_ms: 5.4006
+      type: 'test'
+      ...
+    # Subtest: policy traversal
+    ok 2 - policy traversal
+      ---
+      duration_ms: 6.972
+      type: 'test'
+      ...
+    # Subtest: policy hardlink
+    ok 3 - policy hardlink
+      ---
+      duration_ms: 9.4553
+      type: 'test'
+      ...
+    # Subtest: guard hardlink
+    ok 4 - guard hardlink
+      ---
+      duration_ms: 9.4547
+      type: 'test'
+      ...
+    1..4
+ok 11 - rejects traversal and hardlinked source files before creating output
+  ---
+  duration_ms: 32.7448
+  type: 'test'
+  ...
+# Subtest: rejects output overlapping workspace or external skills inputs
+    # Subtest: workspace
+    ok 1 - workspace
+      ---
+      duration_ms: 15.4688
+      type: 'test'
+      ...
+    # Subtest: skills
+    ok 2 - skills
+      ---
+      duration_ms: 16.6203
+      type: 'test'
+      ...
+    # Subtest: namespace workspace
+    ok 3 - namespace workspace
+      ---
+      duration_ms: 13.1898
+      type: 'test'
+      ...
+    1..3
+ok 12 - rejects output overlapping workspace or external skills inputs
+  ---
+  duration_ms: 46.5412
+  type: 'test'
+  ...
+# Subtest: refuses identical-content policy replacement during its read
+ok 13 - refuses identical-content policy replacement during its read
+  ---
+  duration_ms: 14.2323
+  type: 'test'
+  ...
+# Subtest: refuses observed input identity swaps after creating output
+    # Subtest: guard
+    ok 1 - guard
+      ---
+      duration_ms: 23.9266
+      type: 'test'
+      ...
+    # Subtest: skills adapter
+    ok 2 - skills adapter
+      ---
+      duration_ms: 42.0127
+      type: 'test'
+      ...
+    # Subtest: skills directory
+    ok 3 - skills directory
+      ---
+      duration_ms: 21.9722
+      type: 'test'
+      ...
+    1..3
+ok 14 - refuses observed input identity swaps after creating output
+  ---
+  duration_ms: 88.9883
+  type: 'test'
+  ...
+# Subtest: retains the initial output parent snapshot across preflight inspection
+ok 15 - retains the initial output parent snapshot across preflight inspection
+  ---
+  duration_ms: 11.3219
+  type: 'test'
+  ...
+# Subtest: checks saved existing ancestors before refreshing a newly created output suffix
+ok 16 - checks saved existing ancestors before refreshing a newly created output suffix
+  ---
+  duration_ms: 21.9765
+  type: 'test'
+  ...
+# Subtest: removes only invocation-owned files and directories after a write failure
+ok 17 - removes only invocation-owned files and directories after a write failure
+  ---
+  duration_ms: 66.4584
+  type: 'test'
+  ...
+# Subtest: preserves concurrent foreign output entries on EIO cleanup
+ok 18 - preserves concurrent foreign output entries on EIO cleanup
+  ---
+  duration_ms: 69.7245
+  type: 'test'
+  ...
+# Subtest: preserves an EEXIST collision created by another writer
+ok 19 - preserves an EEXIST collision created by another writer
+  ---
+  duration_ms: 43.8956
+  type: 'test'
+  ...
+# Subtest: preserves replaced generated files rather than deleting by name
+ok 20 - preserves replaced generated files rather than deleting by name
+  ---
+  duration_ms: 51.7091
+  type: 'test'
+  ...
+1..20
+# tests 47
+# suites 0
+# pass 47
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1963.9028

@@ -1,0 +1,2 @@
+# Preserve exact bytes of captured evidence across platform checkouts.
+* -text

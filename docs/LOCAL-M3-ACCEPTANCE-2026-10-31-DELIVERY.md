@@ -27,7 +27,7 @@ Windows runner 是 Windows Server 2025 / 10.0.26100 / Node 22.16.0。原先 27 �
 
 ## 已归档成果
 
-- [主验收报告](LOCAL-M3-ACCEPTANCE-2026-10-30.md)：三模块修复、原始 680 基线、环境和宿主边界。
+- [主验收报告](LOCAL-M3-ACCEPTANCE-2026-10-30-LINUX.md)：三模块修复、原始 680 基线、环境和宿主边界。
 - [第一次 Windows CI 整改](LOCAL-M3-ACCEPTANCE-2026-10-30-WINDOWS-CI-ADDENDUM.md)：该轮真实输入与历史结果。
 - [零设备号最终整改报告](LOCAL-M3-ACCEPTANCE-2026-10-30-WINDOWS-CI-V2-ADDENDUM.md)：前一轮解释的纠正、红绿、最终本地门禁及非作者复核。
 - [本次发布证据包](LOCAL-M3-ACCEPTANCE-2026-10-31-DELIVERY.evidence.jsonl)：19 条逐字节原始文本记录，包含两份完整成功 CI 日志、运行状态、正式交接、正常提交/推送记录、238 文件的提交树校验，以及最终 staged diff。每行保存路径、SHA-256、字节数和 UTF-8 原文。

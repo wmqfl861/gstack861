@@ -1,0 +1,142 @@
+{
+  "evidenceClass": "raw-adapter-contract-not-host",
+  "modelRequests": 0,
+  "hostProcessesLaunched": 0,
+  "cases": [
+    {
+      "name": "allowed",
+      "command": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "<repo>\\bin\\gstack861.mjs",
+        "hook",
+        "zcode",
+        "--policy",
+        "<fixture>\\policy.json"
+      ],
+      "stdin": {
+        "hook_event_name": "PreToolUse",
+        "tool_name": "Write",
+        "tool_input": {
+          "file_path": "<fixture>\\workspace\\allowed.txt",
+          "content": "adapter-only fixture"
+        },
+        "cwd": "<fixture>\\workspace"
+      },
+      "exit": 0,
+      "stdout": "{}\n",
+      "stderr": "",
+      "wantCode": null
+    },
+    {
+      "name": "outside",
+      "command": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "<repo>\\bin\\gstack861.mjs",
+        "hook",
+        "zcode",
+        "--policy",
+        "<fixture>\\policy.json"
+      ],
+      "stdin": {
+        "hook_event_name": "PreToolUse",
+        "tool_name": "Write",
+        "tool_input": {
+          "file_path": "<fixture>\\outside\\blocked.txt",
+          "content": "adapter-only fixture"
+        },
+        "cwd": "<fixture>\\workspace"
+      },
+      "exit": 2,
+      "stdout": "{\n  \"hookSpecificOutput\": {\n    \"hookEventName\": \"PreToolUse\",\n    \"permissionDecision\": \"deny\",\n    \"permissionDecisionReason\": \"gstack861:OUTSIDE_SCOPE\"\n  }\n}\n",
+      "stderr": "",
+      "wantCode": "OUTSIDE_SCOPE"
+    },
+    {
+      "name": "git-protected",
+      "command": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "<repo>\\bin\\gstack861.mjs",
+        "hook",
+        "zcode",
+        "--policy",
+        "<fixture>\\policy.json"
+      ],
+      "stdin": {
+        "hook_event_name": "PreToolUse",
+        "tool_name": "Write",
+        "tool_input": {
+          "file_path": "<fixture>\\workspace\\.git\\config",
+          "content": "adapter-only fixture"
+        },
+        "cwd": "<fixture>\\workspace"
+      },
+      "exit": 2,
+      "stdout": "{\n  \"hookSpecificOutput\": {\n    \"hookEventName\": \"PreToolUse\",\n    \"permissionDecision\": \"deny\",\n    \"permissionDecisionReason\": \"gstack861:PROTECTED_PATH\"\n  }\n}\n",
+      "stderr": "",
+      "wantCode": "PROTECTED_PATH"
+    },
+    {
+      "name": "policy-corrupt",
+      "command": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "<repo>\\bin\\gstack861.mjs",
+        "hook",
+        "zcode",
+        "--policy",
+        "<fixture>\\policy.json"
+      ],
+      "stdin": {
+        "hook_event_name": "PreToolUse",
+        "tool_name": "Write",
+        "tool_input": {
+          "file_path": "<fixture>\\workspace\\blocked.txt",
+          "content": "adapter-only fixture"
+        },
+        "cwd": "<fixture>\\workspace"
+      },
+      "exit": 2,
+      "stdout": "{\n  \"hookSpecificOutput\": {\n    \"hookEventName\": \"PreToolUse\",\n    \"permissionDecision\": \"deny\",\n    \"permissionDecisionReason\": \"gstack861:HOOK_INPUT_OR_POLICY_ERROR\"\n  }\n}\n",
+      "stderr": "",
+      "wantCode": "HOOK_INPUT_OR_POLICY_ERROR"
+    },
+    {
+      "name": "policy-restored",
+      "command": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "<repo>\\bin\\gstack861.mjs",
+        "hook",
+        "zcode",
+        "--policy",
+        "<fixture>\\policy.json"
+      ],
+      "stdin": {
+        "hook_event_name": "PreToolUse",
+        "tool_name": "Write",
+        "tool_input": {
+          "file_path": "<fixture>\\workspace\\restored.txt",
+          "content": "adapter-only fixture"
+        },
+        "cwd": "<fixture>\\workspace"
+      },
+      "exit": 0,
+      "stdout": "{}\n",
+      "stderr": "",
+      "wantCode": null
+    }
+  ],
+  "sourceFiles": [
+    {
+      "path": "bin/gstack861.mjs",
+      "sha256": "74ef060c9c4c72288e669558db3e21a5645f0225ca913f96c0c510750860f7c3"
+    },
+    {
+      "path": "src/adapters/zcode.mjs",
+      "sha256": "290beebafec8b813774200455078347e4516d31b03a09b624fe6047addfa4bfe"
+    },
+    {
+      "path": "src/policy.mjs",
+      "sha256": "f40b601b0560d6c8183637dd430d813f74684e284ba9525f1621e734a9830f5d"
+    }
+  ],
+  "note": "Real repository CLI adapter subprocess; no native ZCode tool runner, no Write body executed. Startup/timeout host behavior untested."
+}

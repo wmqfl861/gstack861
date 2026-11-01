@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "baseline": "680b2f19b2dbef8831e3be1fd996203589b5c41d",
+  "stage": "final-round3",
+  "tests": {
+    "tests": 1338,
+    "pass": 1318,
+    "fail": 0,
+    "skipped": 20,
+    "cancelled": 0
+  },
+  "allCommandsPassed": true,
+  "sourceStable": true,
+  "totalsSource": "test.stdout.log"
+}

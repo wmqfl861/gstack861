@@ -1,0 +1,12 @@
+✔ pinned source fixture zcode, auxiliary augmentation false (1934.2291ms)
+✔ pinned source fixture zcode, auxiliary augmentation true (3156.7229ms)
+✔ pinned source fixture dsh, auxiliary augmentation false (1842.2707ms)
+✔ pinned source fixture dsh, auxiliary augmentation true (2743.9408ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 9910.6829

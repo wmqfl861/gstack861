@@ -1,0 +1,4 @@
+dsh: warning: 3 entries did not activate
+tools (@deepseek-ai/dsh-tools): pending (waiting for service: systemPrompt)
+gstack861-guard (gstack861-guard): pending (waiting for service: tools)
+gstack861-skills (gstack861-skills): pending (waiting for service: systemPrompt)
